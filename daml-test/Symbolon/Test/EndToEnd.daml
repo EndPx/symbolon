@@ -15,6 +15,7 @@
 module Symbolon.Test.EndToEnd where
 
 import DA.Assert ((===))
+import DA.Date (Month (Jan), date)
 import DA.Time
 import Daml.Script
 import Symbolon.DemoAsset
@@ -28,14 +29,22 @@ data Desk = Desk with
   dealerB : Party
   mallory : Party
 
+-- Party hints are salted with the ledger clock so the same script can run
+-- twice against one persistent ledger (a live sandbox) without "party
+-- already exists". On the IDE ledger the salt is constant — and irrelevant,
+-- since every test gets a fresh ledger anyway.
 setupDesk : Script Desk
 setupDesk = do
-  issuer <- allocateParty "issuer"
-  oracle <- allocateParty "oracle"
-  borrower <- allocateParty "borrower"
-  dealerA <- allocateParty "dealerA"
-  dealerB <- allocateParty "dealerB"
-  mallory <- allocateParty "mallory"
+  now <- getTime
+  let epoch = time (date 1970 Jan 1) 0 0 0
+      salt = show (convertRelTimeToMicroseconds (subTime now epoch))
+      alloc n = allocateParty (n <> "-" <> salt)
+  issuer <- alloc "issuer"
+  oracle <- alloc "oracle"
+  borrower <- alloc "borrower"
+  dealerA <- alloc "dealerA"
+  dealerB <- alloc "dealerB"
+  mallory <- alloc "mallory"
   pure Desk with issuer; oracle; borrower; dealerA; dealerB; mallory
 
 mint : Party -> Party -> Text -> Decimal -> Script (ContractId Holding)
@@ -49,8 +58,10 @@ balanceOf p inst = do
   pure $ sum [h.amount | (_, h) <- hs, h.owner == p, h.instrument == inst]
 
 -- | RFQ → quote → settle → margin call → cure → substitute → default.
-repoLifecycle : Script ()
-repoLifecycle = do
+-- Parameterized over how time passes, so the SAME flow runs on the IDE
+-- ledger (passTime) and on a live wall-clock Canton (sleep) unchanged.
+lifecycleWith : (Int -> Script ()) -> Script ()
+lifecycleWith wait = do
   desk <- setupDesk
   let issuer = desk.issuer
       oracle = desk.oracle
@@ -123,7 +134,7 @@ repoLifecycle = do
   pos1.repurchasePrice === 1000.0 + 1000.0 * 0.052 * intToDecimal 30 / 360.0
 
   -- dealer B's unaccepted quote expires; the ledger itself enforces it
-  passTime (seconds 3)
+  wait 3
   bCethNow <- queryFilter @Holding borrower
     (\h -> h.owner == borrower && h.instrument == "CETH")
   let [(bCethCid, _)] = bCethNow
@@ -194,7 +205,7 @@ repoLifecycle = do
   -- the cure window is still open — default must wait for it
   submitMustFail dealerA $ exerciseCmd posCid5 DeclareDefault
 
-  passTime (seconds 6)
+  wait 6
   closedCid <- submit dealerA $ exerciseCmd posCid5 DeclareDefault
 
   Some closed <- queryContractId dealerA closedCid
@@ -207,6 +218,10 @@ repoLifecycle = do
   bCashAfter === 1000.0
 
   debug "repoLifecycle: privacy, atomic settlement, margin call, cure, substitution, default - all proven"
+
+-- | The IDE-ledger run: simulated time.
+repoLifecycle : Script ()
+repoLifecycle = lifecycleWith $ \s -> passTime (seconds s)
 
 -- | Strike → settle → early repurchase. The dealer earns exactly the fixed
 -- rate; all collateral goes home.
