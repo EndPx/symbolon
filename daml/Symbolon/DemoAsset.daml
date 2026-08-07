@@ -1,0 +1,54 @@
+-- Symbolon.DemoAsset — a deliberately small stand-in for CIP-56 holdings.
+--
+-- The repo lifecycle needs assets that can change owner atomically inside
+-- another template's choice. The real thing (Splice token standard) does this
+-- through registry factories and off-ledger choice contexts — pure wiring,
+-- already proven out elsewhere. Carrying that weight here would bury the part
+-- that is actually new (the repo lifecycle), so the demo asset keeps only the
+-- properties that matter: title transfer under the owner's authority, and
+-- explicit visibility. A counterparty can only spend-from or verify a holding
+-- it can SEE — the owner grants that with `viewers`, which is exactly how a
+-- dealer proves a quote is funded before the borrower accepts it.
+
+module Symbolon.DemoAsset where
+
+template Holding
+  with
+    issuer : Party
+    owner : Party
+    instrument : Text
+    amount : Decimal
+    viewers : [Party]   -- extra observers, e.g. the counterparty of a trade
+  where
+    signatory issuer
+    observer owner, viewers
+    ensure amount > 0.0
+
+    -- Owner-controlled transfer with change, like breaking a banknote. The
+    -- recipient needs no consent (the issuer already signs every holding) —
+    -- fine for a demo asset, wrong for production; CIP-56 does offer/accept.
+    -- The change deliberately DROPS viewers: what remains after a trade leg
+    -- is the owner's business again.
+    choice Transfer : (ContractId Holding, Optional (ContractId Holding))
+      with
+        to : Party
+        qty : Decimal
+        newViewers : [Party]
+      controller owner
+      do
+        assertMsg "transfer amount must be positive" (qty > 0.0)
+        assertMsg "insufficient holding" (qty <= amount)
+        sent <- create this with owner = to, amount = qty, viewers = newViewers
+        change <-
+          if qty < amount
+            then Some <$> create this with amount = amount - qty, viewers = []
+            else pure None
+        pure (sent, change)
+
+    -- Show (or re-hide) this holding to chosen parties — the escrow move a
+    -- dealer makes right before quoting, so the borrower can verify funding.
+    choice SetViewers : ContractId Holding
+      with
+        newViewers : [Party]
+      controller owner
+      do create this with viewers = newViewers

@@ -1,0 +1,11 @@
+# Daml build output
+.daml/
+*.log
+
+# secrets — never commit
+.env
+.env.*
+
+# js later
+node_modules/
+.next/
