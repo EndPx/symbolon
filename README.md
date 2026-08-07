@@ -48,5 +48,23 @@ accepted, healthy positions reject margin calls, defaults can't be
 declared while the cure window is open, and outsiders see nothing at
 all.
 
+## Run it on a real Canton
+
+The identical flows also pass on a live wall-clock Canton ledger —
+quote expiry and the margin-call cure window elapse in real seconds
+(verified on the Canton 3.5.6 sandbox: ledger offset 10 → 187 across
+the two runs, twice — party hints are salted so reruns just work).
+
+```bash
+dpm sandbox   # a full Canton: gRPC :6865, HTTP JSON :6864
+curl -X POST localhost:6864/v2/packages \
+  --data-binary @daml/.daml/dist/symbolon-0.1.0.dar \
+  -H "Content-Type: application/octet-stream"
+cd daml-live && dpm build
+dpm script --dar .daml/dist/symbolon-live-0.1.0.dar \
+  --script-name Symbolon.Live:liveLifecycle \
+  --ledger-host 127.0.0.1 --ledger-port 6865 --wall-clock-time
+```
+
 Note: paths with spaces break `damlc` data-dependency resolution — if
 the checkout lives in one, build from a space-free copy or symlink.

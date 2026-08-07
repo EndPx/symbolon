@@ -1,0 +1,27 @@
+-- Symbolon.Live — the same proofs, on a real Canton ledger.
+--
+-- The IDE-ledger tests in symbolon-test simulate time with passTime; a live
+-- Canton (dpm sandbox, DevNet) runs on the wall clock, so here the identical
+-- flow waits in real seconds instead. Run with:
+--
+--   dpm script --dar .daml/dist/symbolon-live-0.1.0.dar \
+--     --script-name Symbolon.Live:liveLifecycle \
+--     --ledger-host 127.0.0.1 --ledger-port <grpc-port> --wall-clock-time
+--
+-- Nothing else differs: same templates, same assertions, same privacy checks —
+-- which is the point. What passed on the emulator passes on Canton.
+
+module Symbolon.Live where
+
+import DA.Time
+import Daml.Script
+import Symbolon.Test.EndToEnd
+
+-- | Full lifecycle on a wall-clock ledger: quote expiry and the margin-call
+-- cure window elapse in real time.
+liveLifecycle : Script ()
+liveLifecycle = lifecycleWith $ \s -> sleep (seconds s)
+
+-- | Happy path needs no waiting — identical run, live ledger.
+liveHappyPath : Script ()
+liveHappyPath = repoHappyPath
