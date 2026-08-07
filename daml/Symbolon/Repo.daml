@@ -1,0 +1,346 @@
+-- Symbolon.Repo — a bilateral repurchase agreement, quoted in private.
+--
+-- The market shape is RFQ (quote-driven), not an order book: the borrower
+-- asks each dealer separately, each dealer prices in private, and a losing
+-- dealer never learns the winning rate — or that a trade happened at all.
+-- Every contract here has at most two stakeholders plus the agreed oracle,
+-- so Canton never delivers the data to anyone else's node in the first place.
+--
+-- The trade itself is a classic repo: sell collateral today at the purchase
+-- price, commit to buy it back at the repurchase price on a fixed date. The
+-- difference IS the interest — fixed the moment the quote is struck. Title
+-- transfers: during the term the dealer owns the collateral, which is why
+-- default needs no liquidation machinery at the end.
+
+module Symbolon.Repo where
+
+import DA.Foldable (forA_)
+import DA.Time
+import Symbolon.DemoAsset
+
+-- | Where collateral marks come from. One live contract per instrument; the
+-- oracle rolls it forward with SetPrice, which archives the old cid — so a
+-- stale feed reference simply fails to fetch instead of pricing anything.
+template PriceFeed
+  with
+    oracle : Party
+    instrument : Text
+    price : Decimal   -- cash units per 1 unit of instrument
+    asOf : Time
+    readers : [Party]
+  where
+    signatory oracle
+    observer readers
+
+    choice SetPrice : ContractId PriceFeed
+      with
+        newPrice : Decimal
+        at : Time
+      controller oracle
+      do
+        assertMsg "price must be positive" (newPrice > 0.0)
+        create this with price = newPrice, asOf = at
+
+data PositionStatus
+  = Active
+  | UnderCall Time   -- the cure deadline
+  deriving (Eq, Show)
+
+data RepoOutcome = Repurchased | Defaulted deriving (Eq, Show)
+
+-- | Borrower → one dealer, in private. Sent once per dealer; each dealer
+-- only ever sees their own copy, so nobody can read the borrower's shortlist.
+template QuoteRequest
+  with
+    borrower : Party
+    dealer : Party
+    oracle : Party
+    collateralInstrument : Text
+    collateralAmount : Decimal
+    cashInstrument : Text
+    cashAmount : Decimal          -- purchase price the borrower wants to raise
+    termDays : Int
+    marginThresholdPct : Decimal  -- 1.05 = collateral must stay >= 105% of cash
+    cureSeconds : Int             -- margin-call cure window
+  where
+    signatory borrower
+    observer dealer
+    ensure cashAmount > 0.0 && collateralAmount > 0.0 && termDays > 0
+      && marginThresholdPct >= 1.0 && cureSeconds > 0
+
+    -- A quote is firm because the cash is attached: the dealer names the
+    -- holding that will fund it, and acceptance spends exactly that holding.
+    choice SubmitQuote : ContractId RepoQuote
+      with
+        rate : Decimal        -- annualized, ACT/360
+        validSeconds : Int
+        cashCid : ContractId Holding
+      controller dealer
+      do
+        now <- getTime
+        cash <- fetch cashCid
+        assertMsg "quote must be funded by the dealer in the requested instrument"
+          (cash.owner == dealer && cash.instrument == cashInstrument
+             && cash.amount >= cashAmount)
+        create RepoQuote with
+          borrower; dealer; oracle
+          collateralInstrument; collateralAmount
+          cashInstrument; cashAmount
+          termDays; marginThresholdPct; cureSeconds
+          rate; cashCid
+          validUntil = addRelTime now (seconds validSeconds)
+
+    choice WithdrawRequest : ()
+      controller borrower
+      do pure ()
+
+    choice PassRequest : ()
+      controller dealer
+      do pure ()
+
+-- | A dealer's private, funded, expiring quote. Stakeholders: this dealer and
+-- the borrower. Dealer B's node never receives dealer A's quote — that is the
+-- product.
+template RepoQuote
+  with
+    borrower : Party
+    dealer : Party
+    oracle : Party
+    collateralInstrument : Text
+    collateralAmount : Decimal
+    cashInstrument : Text
+    cashAmount : Decimal
+    termDays : Int
+    marginThresholdPct : Decimal
+    cureSeconds : Int
+    rate : Decimal
+    cashCid : ContractId Holding
+    validUntil : Time
+  where
+    signatory dealer
+    observer borrower
+
+    -- Acceptance IS settlement: collateral title moves to the dealer, cash
+    -- moves to the borrower, and the position exists — one atomic transaction.
+    choice AcceptQuote : ContractId RepoPosition
+      with
+        collateralCid : ContractId Holding
+      controller borrower
+      do
+        now <- getTime
+        assertMsg "quote has expired" (now <= validUntil)
+        coll <- fetch collateralCid
+        assertMsg "collateral holding mismatch"
+          (coll.owner == borrower && coll.instrument == collateralInstrument
+             && coll.amount >= collateralAmount)
+        -- the borrower keeps sight of the pledged collateral for the whole
+        -- term — that visibility is what lets Repurchase bring it home later
+        (pledged, _) <- exercise collateralCid Transfer with
+          to = dealer, qty = collateralAmount, newViewers = [borrower]
+        _ <- exercise cashCid Transfer with
+          to = borrower, qty = cashAmount, newViewers = []
+        let interest = cashAmount * rate * intToDecimal termDays / 360.0
+        create RepoPosition with
+          borrower; dealer; oracle
+          collateralInstrument; collateralAmount
+          cashInstrument; cashAmount
+          repurchasePrice = cashAmount + interest
+          rate; marginThresholdPct; cureSeconds
+          pledgedCids = [pledged]
+          startTime = now
+          maturity = addRelTime now (days termDays)
+          status = Active
+
+    choice RevokeQuote : ()
+      controller dealer
+      do pure ()
+
+    choice RejectQuote : ()
+      controller borrower
+      do pure ()
+
+-- | The live trade. Signatories: both. This is where post-trade actually
+-- happens — the part that order books stop short of.
+template RepoPosition
+  with
+    borrower : Party
+    dealer : Party
+    oracle : Party
+    collateralInstrument : Text
+    collateralAmount : Decimal
+    cashInstrument : Text
+    cashAmount : Decimal        -- purchase price paid at settlement
+    repurchasePrice : Decimal   -- fixed the moment the quote was struck
+    rate : Decimal
+    marginThresholdPct : Decimal
+    cureSeconds : Int
+    pledgedCids : [ContractId Holding]  -- collateral, now titled to the dealer
+    startTime : Time
+    maturity : Time
+    status : PositionStatus
+  where
+    signatory borrower, dealer
+
+    -- Happy path. Early close allowed: the repurchase price was fixed at the
+    -- strike, so paying it settles the trade whenever the borrower chooses.
+    choice Repurchase : ContractId ClosedRepo
+      with
+        cashCid : ContractId Holding
+      controller borrower
+      do
+        cash <- fetch cashCid
+        assertMsg "repurchase must be paid in full, in the cash instrument"
+          (cash.owner == borrower && cash.instrument == cashInstrument
+             && cash.amount >= repurchasePrice)
+        _ <- exercise cashCid Transfer with
+          to = dealer, qty = repurchasePrice, newViewers = []
+        -- the collateral goes home
+        forA_ pledgedCids $ \cid -> do
+          h <- fetch cid
+          exercise cid Transfer with to = borrower, qty = h.amount, newViewers = []
+        now <- getTime
+        create ClosedRepo with
+          borrower; dealer
+          collateralInstrument; collateralAmount
+          cashInstrument; repurchasePrice
+          outcome = Repurchased
+          closedAt = now
+
+    -- The dealer cannot call at will: the contract itself re-marks the
+    -- position against the agreed oracle feed and rejects the call while the
+    -- position is healthy. A rogue risk bot gets refused by the ledger.
+    choice IssueMarginCall : ContractId RepoPosition
+      with
+        feedCid : ContractId PriceFeed
+      controller dealer
+      do
+        case status of
+          UnderCall _ -> assertMsg "already under margin call" False
+          Active -> pure ()
+        feed <- fetch feedCid
+        assertMsg "feed is not the agreed oracle/instrument"
+          (feed.oracle == oracle && feed.instrument == collateralInstrument)
+        let collateralValue = collateralAmount * feed.price
+            requiredValue = cashAmount * marginThresholdPct
+        assertMsg "position is healthy - margin call rejected"
+          (collateralValue < requiredValue)
+        now <- getTime
+        create this with status = UnderCall (addRelTime now (seconds cureSeconds))
+
+    -- Cure: pledge more of the same collateral. Must actually restore health
+    -- at the current mark, or the ledger rejects the top-up as insufficient.
+    choice TopUpCollateral : ContractId RepoPosition
+      with
+        extraCid : ContractId Holding
+        extraQty : Decimal
+        feedCid : ContractId PriceFeed
+      controller borrower
+      do
+        feed <- fetch feedCid
+        assertMsg "feed is not the agreed oracle/instrument"
+          (feed.oracle == oracle && feed.instrument == collateralInstrument)
+        extra <- fetch extraCid
+        assertMsg "top-up holding mismatch"
+          (extra.owner == borrower && extra.instrument == collateralInstrument
+             && extra.amount >= extraQty)
+        (sentCid, _) <- exercise extraCid Transfer with
+          to = dealer, qty = extraQty, newViewers = [borrower]
+        let newAmount = collateralAmount + extraQty
+        assertMsg "top-up does not restore the margin"
+          (newAmount * feed.price >= cashAmount * marginThresholdPct)
+        create this with
+          collateralAmount = newAmount
+          pledgedCids = pledgedCids ++ [sentCid]
+          status = Active
+
+    -- Substitution executes only through SubstitutionProposal below, so both
+    -- authorities are present: the borrower proposed, the dealer accepted.
+    choice ExecuteSubstitution : ContractId RepoPosition
+      with
+        newInstrument : Text
+        newQty : Decimal
+        newHoldingCid : ContractId Holding
+        newFeedCid : ContractId PriceFeed
+      controller borrower, dealer
+      do
+        feed <- fetch newFeedCid
+        assertMsg "feed is not the agreed oracle for the new instrument"
+          (feed.oracle == oracle && feed.instrument == newInstrument)
+        newH <- fetch newHoldingCid
+        assertMsg "substitute holding mismatch"
+          (newH.owner == borrower && newH.instrument == newInstrument
+             && newH.amount >= newQty)
+        assertMsg "substitute collateral is undervalued at the current mark"
+          (newQty * feed.price >= cashAmount * marginThresholdPct)
+        (inCid, _) <- exercise newHoldingCid Transfer with
+          to = dealer, qty = newQty, newViewers = [borrower]
+        -- the old collateral goes home mid-term, trade intact
+        forA_ pledgedCids $ \cid -> do
+          h <- fetch cid
+          exercise cid Transfer with to = borrower, qty = h.amount, newViewers = []
+        create this with
+          collateralInstrument = newInstrument
+          collateralAmount = newQty
+          pledgedCids = [inCid]
+          status = Active
+
+    -- Title transfer is the point: on default there is nothing to liquidate.
+    -- The dealer already owns the collateral; the position simply closes.
+    choice DeclareDefault : ContractId ClosedRepo
+      controller dealer
+      do
+        now <- getTime
+        let cureLapsed = case status of
+              UnderCall deadline -> now > deadline
+              Active -> False
+        assertMsg "no default trigger: cure window open and not past maturity"
+          (cureLapsed || now > maturity)
+        create ClosedRepo with
+          borrower; dealer
+          collateralInstrument; collateralAmount
+          cashInstrument; repurchasePrice
+          outcome = Defaulted
+          closedAt = now
+
+-- | The borrower's offer to swap collateral mid-term. Its own template so the
+-- dealer's acceptance carries both authorities into ExecuteSubstitution.
+template SubstitutionProposal
+  with
+    borrower : Party
+    dealer : Party
+    posCid : ContractId RepoPosition
+    newInstrument : Text
+    newQty : Decimal
+    newHoldingCid : ContractId Holding
+    newFeedCid : ContractId PriceFeed
+  where
+    signatory borrower
+    observer dealer
+
+    choice AcceptSubstitution : ContractId RepoPosition
+      controller dealer
+      do
+        exercise posCid ExecuteSubstitution with
+          newInstrument; newQty; newHoldingCid; newFeedCid
+
+    choice RejectSubstitution : ()
+      controller dealer
+      do pure ()
+
+    choice WithdrawSubstitution : ()
+      controller borrower
+      do pure ()
+
+-- | Receipt: both parties keep an auditable record of how the trade ended.
+template ClosedRepo
+  with
+    borrower : Party
+    dealer : Party
+    collateralInstrument : Text
+    collateralAmount : Decimal
+    cashInstrument : Text
+    repurchasePrice : Decimal
+    outcome : RepoOutcome
+    closedAt : Time
+  where
+    signatory borrower, dealer
