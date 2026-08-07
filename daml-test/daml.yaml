@@ -1,0 +1,11 @@
+sdk-version: 3.5.2
+name: symbolon-test
+version: 0.1.0
+source: .
+dependencies:
+  - daml-prim
+  - daml-stdlib
+  - daml-script
+data-dependencies:
+  # Main package DAR — produced by `dpm build` in ../daml/.
+  - ../daml/.daml/dist/symbolon-0.1.0.dar

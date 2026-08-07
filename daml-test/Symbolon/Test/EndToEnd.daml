@@ -1,0 +1,263 @@
+-- Symbolon.Test.EndToEnd — the full life of a repo, adversarial checks included.
+--
+-- Two top-level scripts, each a complete end-to-end run on a fresh ledger:
+--
+--   repoLifecycle  RFQ to two dealers → privacy assertions (the losing dealer
+--                  sees nothing) → atomic settlement → margin call → cure →
+--                  collateral substitution → second breach → default.
+--   repoHappyPath  strike → atomic settlement → early repurchase; every
+--                  balance checked against the fixed repurchase price.
+--
+-- The privacy assertions are the point: `query @T party` returns exactly what
+-- that party's node would hold, so `dealerB sees []` is not a mock — it is
+-- the Daml ledger model saying the data was never theirs to see.
+
+module Symbolon.Test.EndToEnd where
+
+import DA.Assert ((===))
+import DA.Time
+import Daml.Script
+import Symbolon.DemoAsset
+import Symbolon.Repo
+
+data Desk = Desk with
+  issuer : Party
+  oracle : Party
+  borrower : Party
+  dealerA : Party
+  dealerB : Party
+  mallory : Party
+
+setupDesk : Script Desk
+setupDesk = do
+  issuer <- allocateParty "issuer"
+  oracle <- allocateParty "oracle"
+  borrower <- allocateParty "borrower"
+  dealerA <- allocateParty "dealerA"
+  dealerB <- allocateParty "dealerB"
+  mallory <- allocateParty "mallory"
+  pure Desk with issuer; oracle; borrower; dealerA; dealerB; mallory
+
+mint : Party -> Party -> Text -> Decimal -> Script (ContractId Holding)
+mint issuer owner instrument amount =
+  submit issuer $ createCmd Holding with
+    issuer; owner; instrument; amount; viewers = []
+
+balanceOf : Party -> Text -> Script Decimal
+balanceOf p inst = do
+  hs <- query @Holding p
+  pure $ sum [h.amount | (_, h) <- hs, h.owner == p, h.instrument == inst]
+
+-- | RFQ → quote → settle → margin call → cure → substitute → default.
+repoLifecycle : Script ()
+repoLifecycle = do
+  desk <- setupDesk
+  let issuer = desk.issuer
+      oracle = desk.oracle
+      borrower = desk.borrower
+      dealerA = desk.dealerA
+      dealerB = desk.dealerB
+      mallory = desk.mallory
+
+  -- funding
+  cethB <- mint issuer borrower "CETH" 20.0
+  cashA <- mint issuer dealerA "CUSD" 100000.0
+  cashB <- mint issuer dealerB "CUSD" 100000.0
+
+  -- oracle marks CETH at 100
+  now0 <- getTime
+  feed1 <- submit oracle $ createCmd PriceFeed with
+    oracle; instrument = "CETH"; price = 100.0; asOf = now0
+    readers = [borrower, dealerA, dealerB]
+
+  -- RFQ: one private request per dealer — neither dealer can see the other's
+  let mkRequest dealer = createCmd QuoteRequest with
+        borrower; dealer; oracle
+        collateralInstrument = "CETH"; collateralAmount = 15.0
+        cashInstrument = "CUSD"; cashAmount = 1000.0
+        termDays = 30; marginThresholdPct = 1.05; cureSeconds = 5
+  reqA <- submit borrower $ mkRequest dealerA
+  reqB <- submit borrower $ mkRequest dealerB
+
+  -- each dealer escrows funding into the borrower's view, then prices in
+  -- private — the borrower can verify a quote is real before accepting it
+  escrowA <- submit dealerA $ exerciseCmd cashA SetViewers with
+    newViewers = [borrower]
+  escrowB <- submit dealerB $ exerciseCmd cashB SetViewers with
+    newViewers = [borrower]
+  quoteA <- submit dealerA $ exerciseCmd reqA SubmitQuote with
+    rate = 0.052, validSeconds = 3600, cashCid = escrowA
+  quoteB <- submit dealerB $ exerciseCmd reqB SubmitQuote with
+    rate = 0.056, validSeconds = 2, cashCid = escrowB
+
+  -- ===== privacy: the whole point =====
+  aQuotes <- query @RepoQuote dealerA
+  bQuotes <- query @RepoQuote dealerB
+  map (\(_, q) -> q.rate) aQuotes === [0.052]   -- A sees only A's rate
+  map (\(_, q) -> q.rate) bQuotes === [0.056]   -- B sees only B's rate
+  borrowerQuotes <- query @RepoQuote borrower
+  length borrowerQuotes === 2                    -- only the borrower compares
+  malloryQuotes <- query @RepoQuote mallory
+  malloryQuotes === []                           -- outsiders get nothing
+
+  -- borrower hits dealer A's 5.2% — acceptance settles atomically
+  posCid1 <- submit borrower $ exerciseCmd quoteA AcceptQuote with
+    collateralCid = cethB
+
+  -- money moved, title moved
+  bCash <- balanceOf borrower "CUSD"
+  bCash === 1000.0
+  bColl <- balanceOf borrower "CETH"
+  bColl === 5.0
+  aColl <- balanceOf dealerA "CETH"
+  aColl === 15.0
+  aCash <- balanceOf dealerA "CUSD"
+  aCash === 99000.0
+
+  -- the losing dealer learned nothing: no position, no rate, no trade
+  bPositions <- query @RepoPosition dealerB
+  bPositions === []
+
+  -- repurchase price was fixed the moment the quote was struck
+  Some pos1 <- queryContractId borrower posCid1
+  pos1.repurchasePrice === 1000.0 + 1000.0 * 0.052 * intToDecimal 30 / 360.0
+
+  -- dealer B's unaccepted quote expires; the ledger itself enforces it
+  passTime (seconds 3)
+  bCethNow <- queryFilter @Holding borrower
+    (\h -> h.owner == borrower && h.instrument == "CETH")
+  let [(bCethCid, _)] = bCethNow
+  submitMustFail borrower $ exerciseCmd quoteB AcceptQuote with
+    collateralCid = bCethCid
+  submit borrower $ exerciseCmd quoteB RejectQuote
+
+  -- a healthy position rejects a margin call — even from the real dealer
+  submitMustFail dealerA $ exerciseCmd posCid1 IssueMarginCall with
+    feedCid = feed1
+  -- and an outsider cannot touch the position at all
+  submitMustFail mallory $ exerciseCmd posCid1 IssueMarginCall with
+    feedCid = feed1
+
+  -- ===== the market moves: CETH 100 → 63 =====
+  now1 <- getTime
+  feed2 <- submit oracle $ exerciseCmd feed1 SetPrice with
+    newPrice = 63.0, at = now1
+  -- 15 × 63 = 945 < 1000 × 1.05 = 1050 → breach
+
+  posCid2 <- submit dealerA $ exerciseCmd posCid1 IssueMarginCall with
+    feedCid = feed2
+
+  -- borrower cures inside the window: +3 CETH → 18 × 63 = 1134 ≥ 1050
+  bCeth2s <- queryFilter @Holding borrower
+    (\h -> h.owner == borrower && h.instrument == "CETH")
+  let [(bCeth2, _)] = bCeth2s
+  posCid3 <- submit borrower $ exerciseCmd posCid2 TopUpCollateral with
+    extraCid = bCeth2, extraQty = 3.0, feedCid = feed2
+
+  Some pos3 <- queryContractId borrower posCid3
+  pos3.collateralAmount === 18.0
+  pos3.status === Active
+
+  -- ===== substitution: the borrower needs that CETH back mid-term =====
+  tbill <- mint issuer borrower "TBILL" 1200.0
+  now2 <- getTime
+  feedT <- submit oracle $ createCmd PriceFeed with
+    oracle; instrument = "TBILL"; price = 1.0; asOf = now2
+    readers = [borrower, dealerA, dealerB]
+
+  -- the borrower shows the substitute to the dealer — same escrow move,
+  -- mirrored: the dealer verifies the TBILL exists before accepting the swap
+  tbillShown <- submit borrower $ exerciseCmd tbill SetViewers with
+    newViewers = [dealerA]
+  subProp <- submit borrower $ createCmd SubstitutionProposal with
+    borrower; dealer = dealerA; posCid = posCid3
+    newInstrument = "TBILL"; newQty = 1200.0
+    newHoldingCid = tbillShown; newFeedCid = feedT
+  posCid4 <- submit dealerA $ exerciseCmd subProp AcceptSubstitution
+
+  -- every CETH came home, and the trade never broke
+  collHome <- balanceOf borrower "CETH"
+  collHome === 20.0
+  aTbill <- balanceOf dealerA "TBILL"
+  aTbill === 1200.0
+  Some pos4 <- queryContractId borrower posCid4
+  pos4.collateralInstrument === "TBILL"
+
+  -- ===== second breach, no cure → default =====
+  now3 <- getTime
+  feedT2 <- submit oracle $ exerciseCmd feedT SetPrice with
+    newPrice = 0.5, at = now3
+  -- 1200 × 0.5 = 600 < 1050 → breach
+  posCid5 <- submit dealerA $ exerciseCmd posCid4 IssueMarginCall with
+    feedCid = feedT2
+
+  -- the cure window is still open — default must wait for it
+  submitMustFail dealerA $ exerciseCmd posCid5 DeclareDefault
+
+  passTime (seconds 6)
+  closedCid <- submit dealerA $ exerciseCmd posCid5 DeclareDefault
+
+  Some closed <- queryContractId dealerA closedCid
+  closed.outcome === Defaulted
+
+  -- nothing to liquidate: title had already transferred at settlement
+  aTbillAfter <- balanceOf dealerA "TBILL"
+  aTbillAfter === 1200.0
+  bCashAfter <- balanceOf borrower "CUSD"
+  bCashAfter === 1000.0
+
+  debug "repoLifecycle: privacy, atomic settlement, margin call, cure, substitution, default - all proven"
+
+-- | Strike → settle → early repurchase. The dealer earns exactly the fixed
+-- rate; all collateral goes home.
+repoHappyPath : Script ()
+repoHappyPath = do
+  desk <- setupDesk
+  let issuer = desk.issuer
+      oracle = desk.oracle
+      borrower = desk.borrower
+      dealerA = desk.dealerA
+
+  cethB <- mint issuer borrower "CETH" 20.0
+  _ <- mint issuer borrower "CUSD" 1050.0    -- to fund the repurchase leg
+  cashA <- mint issuer dealerA "CUSD" 100000.0
+
+  now0 <- getTime
+  _ <- submit oracle $ createCmd PriceFeed with
+    oracle; instrument = "CETH"; price = 100.0; asOf = now0
+    readers = [borrower, dealerA]
+
+  reqA <- submit borrower $ createCmd QuoteRequest with
+    borrower; dealer = dealerA; oracle
+    collateralInstrument = "CETH"; collateralAmount = 15.0
+    cashInstrument = "CUSD"; cashAmount = 1000.0
+    termDays = 30; marginThresholdPct = 1.05; cureSeconds = 3600
+  escrowA <- submit dealerA $ exerciseCmd cashA SetViewers with
+    newViewers = [borrower]
+  quoteA <- submit dealerA $ exerciseCmd reqA SubmitQuote with
+    rate = 0.052, validSeconds = 3600, cashCid = escrowA
+  posCid <- submit borrower $ exerciseCmd quoteA AcceptQuote with
+    collateralCid = cethB
+
+  let expectedPrice = 1000.0 + 1000.0 * 0.052 * intToDecimal 30 / 360.0
+
+  -- early close: pay the fixed repurchase price, collateral comes home
+  paySrc <- queryFilter @Holding borrower
+    (\h -> h.owner == borrower && h.instrument == "CUSD" && h.amount >= expectedPrice)
+  let [(payCid, _)] = paySrc
+  closedCid <- submit borrower $ exerciseCmd posCid Repurchase with
+    cashCid = payCid
+
+  Some closed <- queryContractId borrower closedCid
+  closed.outcome === Repurchased
+
+  bColl <- balanceOf borrower "CETH"
+  bColl === 20.0
+  bCash <- balanceOf borrower "CUSD"
+  bCash === 2050.0 - expectedPrice
+  aCash <- balanceOf dealerA "CUSD"
+  aCash === 99000.0 + expectedPrice
+  aColl <- balanceOf dealerA "CETH"
+  aColl === 0.0
+
+  debug "repoHappyPath: strike, atomic settlement, early repurchase - dealer earned the fixed rate, collateral home"
