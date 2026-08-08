@@ -1,6 +1,13 @@
-import { useEffect, useRef } from "react";
+import { createElement, useEffect, useRef } from "react";
 
 const GITHUB = "https://github.com/EndPx/symbolon";
+
+// <model-viewer> is a custom element; createElement sidesteps JSX typings.
+// The library itself (three.js inside) lazy-loads after first paint, so the
+// main bundle stays lean and the PNG poster covers the wait.
+function ModelViewer(props: Record<string, unknown>) {
+  return createElement("model-viewer", props);
+}
 
 // Adds .lit when the element scrolls into view — drives the page's one
 // authored motion (the visibility record assembling).
@@ -93,6 +100,13 @@ function Cell({ v }: { v: string }) {
 
 export default function App() {
   const vizRef = useReveal<HTMLDivElement>();
+  const reducedMotion =
+    typeof window !== "undefined" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  useEffect(() => {
+    import("@google/model-viewer");
+  }, []);
 
   // On narrow screens the table scrolls horizontally and Dealer B's empty
   // column — the punchline — starts off-screen. Once the record has
@@ -320,7 +334,17 @@ export default function App() {
         <section className="band">
           <div className="shell">
             <div className="name-block">
-              <img src="/brand/logo-mark.png" alt="The Symbolon mark: a gold coin broken in two." />
+              <ModelViewer
+                src="/brand/logo.glb"
+                poster="/brand/logo-mark.png"
+                alt="The Symbolon mark: a gold coin broken in two, slowly turning."
+                {...(reducedMotion
+                  ? {}
+                  : { "auto-rotate": true, "rotation-per-second": "24deg" })}
+                interaction-prompt="none"
+                disable-zoom={true}
+                shadow-intensity="0"
+              />
               <p>
                 A <strong>symbolon</strong> was a contract token broken in two —
                 each party kept a half, and only the matching halves proved the
@@ -328,6 +352,24 @@ export default function App() {
                 centuries later, that is still the correct design.
               </p>
             </div>
+          </div>
+        </section>
+
+        <section className="closing">
+          <img
+            className="closing-art"
+            src="/brand/closing.png"
+            alt="Two sculpted hands reach up from the dark toward the glowing split gold coin of the Symbolon mark."
+          />
+          <div className="closing-content">
+            <h2 className="closing-head">
+              Sealed on <span>Canton</span>.
+              <br />
+              Settled by <span>Symbolon</span>.
+            </h2>
+            <a className="seal" href={GITHUB} target="_blank" rel="noreferrer">
+              Read the source ↗
+            </a>
           </div>
         </section>
       </main>

@@ -584,6 +584,56 @@ table.viz {
   color: var(--parchment);
 }
 
+/* ---------------- closing ---------------- */
+
+.closing {
+  position: relative;
+  overflow: hidden;
+  background: var(--ink);
+  min-height: clamp(520px, 84vh, 840px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.closing-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.closing-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 36px;
+  padding: 48px 20px;
+  /* rest between the coin above and the reaching hands below */
+  margin-top: clamp(16px, 4.5vh, 52px);
+}
+
+.closing-head {
+  font-family: "Marcellus", serif;
+  font-weight: 400;
+  font-size: clamp(1.85rem, 3.8vw, 3.3rem);
+  line-height: 1.22;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--parchment);
+  border-top: none;
+  padding-top: 0;
+}
+
+.closing-head span {
+  color: var(--gold);
+}
+
 /* ---------------- the name & footer ---------------- */
 
 .name-block {
@@ -596,6 +646,15 @@ table.viz {
   width: 58px;
   height: 58px;
   margin-inline: auto;
+}
+
+/* the artifact itself, turning slowly — museum piece before the finale */
+.name-block model-viewer {
+  display: block;
+  width: 210px;
+  height: 210px;
+  margin-inline: auto;
+  --poster-color: transparent;
 }
 
 .name-block p {
