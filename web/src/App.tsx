@@ -488,9 +488,12 @@ export default function App() {
           />
           <div className="closing-content">
             <h2 className="closing-head">
-              Sealed on <span>Canton</span>.
-              <br />
-              Settled by <span>Symbolon</span>.
+              <span className="line-l">
+                Sealed on <span className="accent">Canton</span>.
+              </span>
+              <span className="line-r">
+                Settled by <span className="accent">Symbolon</span>.
+              </span>
             </h2>
             <a className="seal" href={GITHUB} target="_blank" rel="noreferrer">
               Read the source ↗

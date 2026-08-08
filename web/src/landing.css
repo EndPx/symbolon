@@ -754,7 +754,14 @@ h2 {
   margin-top: clamp(16px, 4.5vh, 52px);
 }
 
+/* The two lines pull apart to the edges, each landing above the hand that
+   reaches from that side, and the coin between them stops being crowded. */
 .closing-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  /* wide enough that the first line clears the coin on its way to the edge */
+  width: min(1440px, 92vw);
   font-family: "Marcellus", serif;
   font-weight: 400;
   font-size: clamp(1.85rem, 3.8vw, 3.3rem);
@@ -766,8 +773,30 @@ h2 {
   padding-top: 0;
 }
 
-.closing-head span {
+.closing-head .line-l {
+  align-self: flex-start;
+}
+
+.closing-head .line-r {
+  align-self: flex-end;
+}
+
+.closing-head .accent {
   color: var(--gold);
+}
+
+/* On a phone there is no width to pull apart into — the split would just
+   read as ragged text, so both lines return to centre. */
+@media (max-width: 700px) {
+  .closing-head {
+    width: auto;
+    text-align: center;
+  }
+
+  .closing-head .line-l,
+  .closing-head .line-r {
+    align-self: center;
+  }
 }
 
 /* ---------------- the name & footer ---------------- */
