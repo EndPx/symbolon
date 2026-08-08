@@ -602,7 +602,21 @@ table.viz {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center;
+  /* the coin lives at the image's top — anchor there so wide viewports
+     crop the dark ground below the wrists instead of beheading the coin */
+  object-position: center top;
+}
+
+/* the parchment above melts into the night — no hard seam */
+.closing::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  inset-inline: 0;
+  height: clamp(90px, 14vh, 170px);
+  background: linear-gradient(180deg, var(--parchment) 0%, rgba(244, 233, 206, 0) 100%);
+  z-index: 1;
+  pointer-events: none;
 }
 
 .closing-content {
