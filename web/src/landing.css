@@ -1,0 +1,617 @@
+/* Symbolon — The Quayside Agreement.
+   Ink-and-gold Aegean painting over financial-print chrome. Flat, hairlined,
+   term-sheet structured. Gold means money or action; circles belong to the
+   coin; separation is a rule line, never a shadow. */
+
+:root {
+  /* sampled from brand/hero.png + the committed mark */
+  --ink: #0b1220; /* logo navy — dark grounds */
+  --ink-warm: #221c19; /* the painting's own dark — text over parchment */
+  --ink-soft: #4a3a26; /* secondary text on light, tinted from the world */
+  --gold: #c9a227; /* the mark's gold — money & action */
+  --gold-sun: #dc993a; /* the painted sun */
+  --sky: #edc175; /* hero sky, sampled at (300,300) */
+  --parchment: #f4e9ce; /* page light ground */
+  --parchment-dim: #d8c89e; /* secondary text on ink, tinted warm */
+  --hairline: rgba(34, 28, 25, 0.26);
+  --hairline-gold: rgba(201, 162, 39, 0.24);
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-color: var(--ink-warm) var(--parchment);
+}
+
+body {
+  font-family: "Libre Franklin", system-ui, sans-serif;
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  color: var(--ink-warm);
+  background: var(--parchment);
+  -webkit-font-smoothing: antialiased;
+  caret-color: var(--gold);
+}
+
+::selection {
+  background: var(--gold);
+  color: var(--ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--ink-warm);
+  outline-offset: 3px;
+}
+
+.band-ink :focus-visible {
+  outline-color: var(--gold);
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+a {
+  color: inherit;
+}
+
+.shell {
+  max-width: 1180px;
+  margin-inline: auto;
+  padding-inline: clamp(20px, 4.5vw, 56px);
+}
+
+/* ---------------- nav ---------------- */
+
+.nav {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  z-index: 10;
+}
+
+.nav .shell {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  padding-block: 20px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  margin-right: auto;
+}
+
+.brand img {
+  width: 27px;
+  height: 27px;
+}
+
+.brand span {
+  font-family: "Marcellus", serif;
+  font-size: 1.02rem;
+  letter-spacing: 0.16em;
+}
+
+.nav a.link {
+  font-size: 0.88rem;
+  font-weight: 500;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  padding-bottom: 2px;
+}
+
+.nav a.link:hover {
+  border-bottom-color: var(--ink-warm);
+}
+
+/* ---------------- hero ---------------- */
+
+.hero {
+  position: relative;
+  min-height: clamp(600px, 96svh, 920px);
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  background: var(--sky);
+}
+
+.hero-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 74% center;
+}
+
+.hero-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(237, 193, 117, 0.94) 0%,
+    rgba(237, 193, 117, 0.72) 34%,
+    rgba(237, 193, 117, 0) 62%
+  );
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  padding-block: 120px 72px;
+}
+
+.hero-inner {
+  max-width: 33rem;
+}
+
+h1 {
+  font-family: "Marcellus", serif;
+  font-weight: 400;
+  font-size: clamp(2.5rem, 4.8vw, 4.1rem);
+  line-height: 1.06;
+  letter-spacing: 0.005em;
+  text-wrap: balance;
+}
+
+.hero-inner > p {
+  margin-top: 26px;
+  max-width: 30rem;
+  font-size: 1.06rem;
+  color: var(--ink-soft);
+}
+
+.cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 26px;
+  margin-top: 38px;
+}
+
+.seal {
+  display: inline-block;
+  background: var(--ink-warm);
+  color: var(--gold);
+  border: 1px solid var(--ink-warm);
+  padding: 15px 28px;
+  font-size: 0.94rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-decoration: none;
+  transition: background 0.25s var(--ease);
+}
+
+.seal:hover {
+  background: var(--ink);
+}
+
+.quiet {
+  font-size: 0.94rem;
+  font-weight: 500;
+  text-decoration: none;
+  border-bottom: 1px solid var(--ink-warm);
+  padding-bottom: 3px;
+}
+
+.quiet:hover {
+  border-bottom-width: 2px;
+}
+
+.hero-receipts {
+  margin-top: 44px;
+  font-family: "Courier Prime", monospace;
+  font-size: 0.82rem;
+  letter-spacing: 0.02em;
+  color: var(--ink-soft);
+}
+
+/* ---------------- bands & headings ---------------- */
+
+section.band {
+  padding-block: clamp(76px, 10vw, 122px);
+}
+
+.band-ink {
+  background: var(--ink);
+  color: var(--parchment);
+}
+
+h2 {
+  font-family: "Marcellus", serif;
+  font-weight: 400;
+  font-size: clamp(1.75rem, 3.1vw, 2.35rem);
+  line-height: 1.18;
+  letter-spacing: 0.01em;
+  padding-top: 26px;
+  border-top: 1px solid var(--hairline);
+  text-wrap: balance;
+}
+
+.band-ink h2 {
+  border-top-color: var(--hairline-gold);
+}
+
+h2 .sk {
+  color: var(--ink-soft);
+}
+
+.band-ink h2 .sk {
+  color: var(--parchment-dim);
+}
+
+.lede {
+  margin-top: 18px;
+  max-width: 40rem;
+  font-size: 1.05rem;
+  color: var(--ink-soft);
+}
+
+.band-ink .lede {
+  color: var(--parchment-dim);
+}
+
+/* ---------------- mechanism ---------------- */
+
+.mech-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: clamp(40px, 6vw, 88px);
+  margin-top: 54px;
+  align-items: start;
+}
+
+dl.rows {
+  border-bottom: 1px solid var(--hairline);
+}
+
+dl.rows > div {
+  display: grid;
+  grid-template-columns: 168px 1fr;
+  gap: 22px;
+  padding-block: 24px;
+  border-top: 1px solid var(--hairline);
+}
+
+dl.rows dt {
+  font-family: "Marcellus", serif;
+  font-size: 1.22rem;
+  line-height: 1.35;
+}
+
+dl.rows dd {
+  font-size: 0.97rem;
+  line-height: 1.62;
+  color: var(--ink-soft);
+  max-width: 62ch;
+}
+
+/* the term-sheet artifact — an ink seal on the parchment page */
+.ticket {
+  background: var(--ink);
+  color: var(--parchment);
+  padding: 30px 30px 22px;
+}
+
+.ticket header {
+  font-family: "Courier Prime", monospace;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  color: var(--gold);
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--hairline-gold);
+}
+
+.ticket dl > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 18px;
+  padding-block: 12px;
+  border-top: 1px solid rgba(201, 162, 39, 0.14);
+}
+
+.ticket dl > div:first-child {
+  border-top: none;
+}
+
+.ticket dt {
+  font-size: 0.76rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--parchment-dim);
+}
+
+.ticket dd {
+  font-family: "Courier Prime", monospace;
+  font-size: 0.95rem;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.ticket .rate dd {
+  color: var(--gold);
+  font-weight: 700;
+}
+
+.ticket-note {
+  margin-top: 12px;
+  font-size: 0.8rem;
+  font-style: italic;
+  color: var(--ink-soft);
+}
+
+/* ---------------- visibility ---------------- */
+
+.viz-wrap {
+  margin-top: 54px;
+  overflow-x: auto;
+  /* overflow-x:auto alone forces overflow-y to auto too, and the reveal's
+     translateY briefly overflows — clip kills the stray vertical scrollbar */
+  overflow-y: clip;
+}
+
+table.viz {
+  width: 100%;
+  min-width: 700px;
+  border-collapse: collapse;
+}
+
+.viz th {
+  font-family: "Courier Prime", monospace;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold);
+  text-align: left;
+  padding: 12px 18px 14px;
+  border-bottom: 1px solid var(--hairline-gold);
+}
+
+.viz td {
+  padding: 15px 18px;
+  border-top: 1px solid rgba(201, 162, 39, 0.16);
+  font-size: 0.95rem;
+  vertical-align: baseline;
+}
+
+.viz td:first-child {
+  color: var(--parchment-dim);
+  font-size: 0.9rem;
+}
+
+.viz td .fig {
+  font-family: "Courier Prime", monospace;
+}
+
+.viz .na {
+  color: rgba(244, 233, 206, 0.32);
+}
+
+.viz th:last-child,
+.viz td:last-child {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.viz tr.print td {
+  border-top-color: var(--hairline-gold);
+  font-weight: 600;
+}
+
+.viz tr.print td .fig {
+  color: var(--gold);
+}
+
+/* the page's one authored motion: the record assembles, and Dealer B's
+   column simply never fills */
+.viz th,
+.viz td {
+  opacity: 0;
+  transform: translateY(10px);
+  transition:
+    opacity 0.8s var(--ease),
+    transform 0.8s var(--ease);
+}
+
+.viz th:nth-child(2),
+.viz td:nth-child(2) {
+  transition-delay: 0.12s;
+}
+
+.viz th:nth-child(3),
+.viz td:nth-child(3) {
+  transition-delay: 0.28s;
+}
+
+.viz th:nth-child(4),
+.viz td:nth-child(4) {
+  transition-delay: 0.5s;
+}
+
+.lit .viz th,
+.lit .viz td {
+  opacity: 1;
+  transform: none;
+}
+
+.viz-note {
+  margin-top: 20px;
+  font-size: 0.86rem;
+  color: var(--parchment-dim);
+}
+
+.viz-note a {
+  color: var(--parchment);
+}
+
+/* ---------------- receipts / proof ---------------- */
+
+.receipts {
+  margin-top: 54px;
+  border-bottom: 1px solid var(--hairline-gold);
+}
+
+.receipt {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 24px;
+  padding-block: 18px;
+  border-top: 1px solid var(--hairline-gold);
+  font-family: "Courier Prime", monospace;
+  font-size: 0.92rem;
+}
+
+.receipt .ok {
+  color: var(--gold);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.cmd {
+  margin-top: 34px;
+  padding: 20px 24px;
+  border: 1px solid var(--hairline-gold);
+  background: rgba(0, 0, 0, 0.3);
+  font-family: "Courier Prime", monospace;
+  font-size: 0.92rem;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.cmd .dim {
+  color: var(--parchment-dim);
+}
+
+.proof-close {
+  margin-top: 34px;
+  max-width: 42rem;
+  color: var(--parchment-dim);
+}
+
+.proof-close a {
+  color: var(--parchment);
+}
+
+/* ---------------- the name & footer ---------------- */
+
+.name-block {
+  text-align: center;
+  max-width: 36rem;
+  margin-inline: auto;
+}
+
+.name-block img {
+  width: 58px;
+  height: 58px;
+  margin-inline: auto;
+}
+
+.name-block p {
+  margin-top: 30px;
+  font-size: 1.08rem;
+  line-height: 1.7;
+  color: var(--ink-soft);
+}
+
+.name-block p strong {
+  color: var(--ink-warm);
+  font-weight: 600;
+}
+
+footer .shell {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 28px;
+  justify-content: space-between;
+  padding-block: 26px 34px;
+  border-top: 1px solid var(--hairline);
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+}
+
+footer a {
+  color: inherit;
+}
+
+footer a:hover {
+  color: var(--ink-warm);
+}
+
+/* ---------------- responsive ---------------- */
+
+@media (max-width: 920px) {
+  .hero {
+    flex-direction: column;
+    align-items: stretch;
+    min-height: 0;
+  }
+
+  .hero-art {
+    position: static;
+    order: 2;
+    height: auto;
+    aspect-ratio: 1672 / 941;
+    object-position: center;
+  }
+
+  .hero-scrim {
+    display: none;
+  }
+
+  .hero-content {
+    order: 1;
+    padding-block: 108px 48px;
+  }
+
+  .mech-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ticket {
+    max-width: 480px;
+  }
+
+  dl.rows > div {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+}
+
+@media (max-width: 700px) {
+  .nav a.link {
+    display: none;
+  }
+
+  .nav a.link.keep {
+    display: inline;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .viz th,
+  .viz td {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
