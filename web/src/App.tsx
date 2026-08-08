@@ -64,20 +64,48 @@ function useReveal<T extends HTMLElement>() {
   return ref;
 }
 
+// Four marks drawn as plain geometry in one stroke weight — the same
+// diagram language as the rate chart, not an icon set bolted on. Terracotta
+// is the structural accent here; gold stays reserved for money and action.
+const MARKS: Record<string, string[]> = {
+  // a line that runs into a sealed gap and comes out the other side
+  private: ["M2,12 H7", "M17,12 H22", "M9,6 V18", "M15,6 V18"],
+  // a flat span, pinned at both ends
+  fixed: ["M3,12 H21", "M3,8 V16", "M21,8 V16"],
+  // a marker post standing on a timeline
+  date: ["M2,17 H22", "M15,17 V7", "M11,7 H19"],
+  // two things trading places
+  swap: ["M4,9 H17", "M14,6 L17,9 L14,12", "M20,15 H7", "M10,12 L7,15 L10,18"],
+};
+
+function Mark({ name }: { name: string }) {
+  return (
+    <svg className="card-mark" viewBox="0 0 24 24" aria-hidden="true">
+      {MARKS[name].map((d) => (
+        <path key={d} d={d} />
+      ))}
+    </svg>
+  );
+}
+
 const WHY = [
   {
+    mark: "private",
     title: "Your position stays private",
     body: "Nobody can see how much you borrowed, at what rate, or that you borrowed at all. On every public chain, your whole position is readable by anyone.",
   },
   {
+    mark: "fixed",
     title: "Your rate never moves",
     body: "It's fixed the moment you borrow. On variable-rate protocols your interest can double overnight while the market sits still.",
   },
   {
+    mark: "date",
     title: "You choose the end date",
     body: "Borrow for 23 days or 6 months — any date you and your lender agree on. No standard monthly buckets, no auto-rollover you didn't ask for.",
   },
   {
+    mark: "swap",
     title: "Swap collateral without closing",
     body: "Need that exact token back mid-loan? Replace it with another asset of equal value. Your loan keeps running, same rate, same end date.",
   },
@@ -298,7 +326,7 @@ export default function App() {
       </header>
 
       <main>
-        <section className="band" id="why">
+        <section className="band band-center" id="why">
           <div className="shell">
             <h2>Borrowing, the way it should feel</h2>
             <p className="lede">
@@ -308,6 +336,7 @@ export default function App() {
             <div className="card-grid" ref={whyRef}>
               {WHY.map((c) => (
                 <div className="card" data-spot key={c.title}>
+                  <Mark name={c.mark} />
                   <h3>{c.title}</h3>
                   <p>{c.body}</p>
                 </div>
