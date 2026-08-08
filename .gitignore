@@ -6,6 +6,6 @@
 .env
 .env.*
 
-# js later
+# js
 node_modules/
-.next/
+dist/
