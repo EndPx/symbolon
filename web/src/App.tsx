@@ -371,20 +371,19 @@ export default function App() {
               Read the source ↗
             </a>
           </div>
+          <footer className="closing-footer">
+            <div className="shell">
+              <span>© 2026 Symbolon · Built on Canton Network</span>
+              <span>
+                <a href={GITHUB} target="_blank" rel="noreferrer">
+                  GitHub ↗
+                </a>
+                {" · "}All market figures on this page are simulated.
+              </span>
+            </div>
+          </footer>
         </section>
       </main>
-
-      <footer>
-        <div className="shell">
-          <span>© 2026 Symbolon · Built on Canton Network</span>
-          <span>
-            <a href={GITHUB} target="_blank" rel="noreferrer">
-              GitHub ↗
-            </a>
-            {" · "}All market figures on this page are simulated.
-          </span>
-        </div>
-      </footer>
     </>
   );
 }

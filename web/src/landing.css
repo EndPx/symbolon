@@ -59,7 +59,7 @@
 
 html {
   scroll-behavior: smooth;
-  scrollbar-color: var(--ink-warm) var(--parchment);
+  scrollbar-color: #ffffff rgba(11, 18, 32, 0.16);
 }
 
 body {
@@ -669,23 +669,33 @@ table.viz {
   font-weight: 600;
 }
 
-footer .shell {
+/* the footer lives inside the closing artwork, Rocky-style — one dark
+   finale, no parchment band breaking the spell */
+.closing-footer {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 2;
+  border-top: 1px solid rgba(244, 233, 206, 0.14);
+  background: rgba(2, 10, 18, 0.38);
+}
+
+.closing-footer .shell {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px 28px;
+  gap: 8px 28px;
   justify-content: space-between;
-  padding-block: 26px 34px;
-  border-top: 1px solid var(--hairline);
+  padding-block: 18px;
   font-size: 0.82rem;
-  color: var(--ink-soft);
+  color: var(--parchment-dim);
 }
 
-footer a {
-  color: inherit;
+.closing-footer a {
+  color: var(--parchment);
 }
 
-footer a:hover {
-  color: var(--ink-warm);
+.closing-footer a:hover {
+  color: var(--gold);
 }
 
 /* ---------------- responsive ---------------- */
