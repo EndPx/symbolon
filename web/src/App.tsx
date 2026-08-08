@@ -408,6 +408,18 @@ export default function App() {
                 <span className="key key-float">
                   {RATE_SOURCE.label} — the variable lending rate, as it happened
                 </span>
+                {/* A chart claiming real data has to say where it came from;
+                    it belongs in the chart's own furniture, not a paragraph. */}
+                <span className="key-source">
+                  {RATE_SOURCE.from} – {RATE_SOURCE.to} ·{" "}
+                  <a
+                    href="https://defillama.com/yields/pool/aa70268e-4b52-42bf-a116-608b370f9501"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    DefiLlama
+                  </a>
+                </span>
               </div>
               <p className="chart-stat">
                 It ranged from <strong>{RATE_SOURCE.min}%</strong> to{" "}
@@ -415,18 +427,6 @@ export default function App() {
                 <strong>{RATE_SOURCE.biggestDailyMove} points in a single day</strong>{" "}
                 ({RATE_SOURCE.biggestMoveDate}). If you were borrowing that week,
                 your interest bill quadrupled while you slept.
-              </p>
-              <p className="chart-note">
-                Real data · {RATE_SOURCE.from} – {RATE_SOURCE.to} · source:{" "}
-                <a
-                  href="https://defillama.com/yields/pool/aa70268e-4b52-42bf-a116-608b370f9501"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  DefiLlama
-                </a>
-                . The flat line sits at the period average ({RATE_SOURCE.avg}%) —
-                the fairest stand-in for a rate agreed on day one.
               </p>
             </div>
           </div>

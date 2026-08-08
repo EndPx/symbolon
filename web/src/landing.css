@@ -628,15 +628,20 @@ h2 {
   border-top-width: 3px;
 }
 
-.chart-note {
-  margin-top: 14px;
-  max-width: 44rem;
-  margin-inline: auto;
+/* Period and source ride in the legend as chart furniture — quieter than the
+   keys, and never a paragraph of its own. */
+.key-source {
   font-size: 0.82rem;
+  font-weight: 400;
   color: var(--ink-soft);
 }
 
-.chart-note a {
+.key-source a {
+  color: var(--ink-soft);
+  text-underline-offset: 3px;
+}
+
+.key-source a:hover {
   color: var(--ink-warm);
 }
 
