@@ -112,6 +112,7 @@ a {
   inset-inline: 0;
   top: 0;
   z-index: 10;
+  border-bottom: 1px solid rgba(34, 28, 25, 0.22);
 }
 
 .nav .shell {
@@ -272,14 +273,6 @@ h1 {
 
 .quiet:hover {
   border-bottom-width: 2px;
-}
-
-.hero-receipts {
-  margin-top: 44px;
-  font-family: "Courier Prime", monospace;
-  font-size: 0.82rem;
-  letter-spacing: 0.02em;
-  color: var(--ink-soft);
 }
 
 /* ---------------- bands & headings ---------------- */

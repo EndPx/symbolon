@@ -180,9 +180,6 @@ export default function App() {
                   Read the source ↗
                 </a>
               </div>
-              <p className="hero-receipts">
-                contracts live · dpm test 3/3 · canton 3.5.6 sandbox: SUCCESS
-              </p>
             </div>
           </div>
         </div>
