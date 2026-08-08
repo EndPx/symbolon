@@ -9,6 +9,27 @@ function ModelViewer(props: Record<string, unknown>) {
   return createElement("model-viewer", props);
 }
 
+// A pool of lamplight follows the cursor across a grid of cards. One listener
+// per grid writing two CSS variables — no re-render, no animation library.
+// Skipped entirely on touch, where there is no cursor to follow.
+function useSpotlight<T extends HTMLElement>() {
+  const ref = useRef<T>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || !window.matchMedia("(hover: hover)").matches) return;
+    const onMove = (e: PointerEvent) => {
+      const card = (e.target as Element).closest<HTMLElement>("[data-spot]");
+      if (!card) return;
+      const r = card.getBoundingClientRect();
+      card.style.setProperty("--mx", `${e.clientX - r.left}px`);
+      card.style.setProperty("--my", `${e.clientY - r.top}px`);
+    };
+    el.addEventListener("pointermove", onMove);
+    return () => el.removeEventListener("pointermove", onMove);
+  }, []);
+  return ref;
+}
+
 // Adds .lit when the element scrolls into view — drives the page's one
 // authored motion (the rate chart drawing itself).
 function useReveal<T extends HTMLElement>() {
@@ -112,6 +133,8 @@ const FIXED_PATH = "M20,182 L620,182";
 
 export default function App() {
   const chartRef = useReveal<HTMLDivElement>();
+  const whyRef = useSpotlight<HTMLDivElement>();
+  const stepRef = useSpotlight<HTMLDivElement>();
   const reducedMotion =
     typeof window !== "undefined" &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -236,9 +259,9 @@ export default function App() {
               Private, predictable, and done in minutes — on rails built for
               institutions.
             </p>
-            <div className="card-grid">
+            <div className="card-grid" ref={whyRef}>
               {WHY.map((c) => (
-                <div className="card" key={c.title}>
+                <div className="card" data-spot key={c.title}>
                   <h3>{c.title}</h3>
                   <p>{c.body}</p>
                 </div>
@@ -253,9 +276,9 @@ export default function App() {
             <p className="lede">
               Four steps, start to finish. No order books, no waiting rooms.
             </p>
-            <div className="step-grid">
+            <div className="step-grid" ref={stepRef}>
               {STEPS.map((s, i) => (
-                <div className="step-card" key={s.title}>
+                <div className="step-card" data-spot key={s.title}>
                   <img src={s.img} alt={s.alt} loading="lazy" />
                   <div className="step-body">
                     <h3>

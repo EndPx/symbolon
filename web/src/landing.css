@@ -352,6 +352,46 @@ h2 {
   color: var(--ink-soft);
 }
 
+/* ---------------- lamplight cards ---------------- */
+/* A warm pool follows the cursor across the paper, and the hairline warms
+   with it. Same interaction as the spotlight cards going around, rendered in
+   this page's material: gold on parchment, flat, no glow on black. */
+
+[data-spot] {
+  position: relative;
+  overflow: hidden;
+  transition: border-color 0.35s var(--ease);
+}
+
+[data-spot]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.35s var(--ease);
+  background: radial-gradient(
+    280px circle at var(--mx, 50%) var(--my, 50%),
+    rgba(201, 162, 39, 0.24),
+    rgba(201, 162, 39, 0.07) 46%,
+    transparent 72%
+  );
+}
+
+[data-spot]:hover {
+  border-color: rgba(201, 162, 39, 0.5);
+}
+
+[data-spot]:hover::before {
+  opacity: 1;
+}
+
+[data-spot] > * {
+  position: relative;
+  z-index: 1;
+}
+
 /* ---------------- why cards ---------------- */
 
 .card-grid {
