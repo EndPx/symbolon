@@ -473,9 +473,41 @@ h2 {
 
 /* ---------------- rate chart ---------------- */
 
+/* The rate section argues with one picture, so it sits centred on the page
+   rather than ranged left like the reading sections. */
+.band-center .shell {
+  text-align: center;
+}
+
+.band-center .lede,
+.band-center .chart-wrap {
+  margin-inline: auto;
+}
+
 .chart-wrap {
   margin-top: 54px;
   max-width: 760px;
+}
+
+.chart .axis {
+  font-family: "Courier Prime", monospace;
+  font-size: 11px;
+  fill: var(--ink-soft);
+  text-anchor: end;
+}
+
+.chart-stat {
+  margin-top: 20px;
+  max-width: 44rem;
+  margin-inline: auto;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+
+.chart-stat strong {
+  color: var(--ink-warm);
+  font-weight: 600;
 }
 
 .chart {
@@ -494,8 +526,10 @@ h2 {
 .chart .line-float {
   fill: none;
   stroke: var(--terracotta);
-  stroke-width: 2.5;
+  /* 123 real daily points — a thinner stroke keeps every spike readable */
+  stroke-width: 1.8;
   stroke-linejoin: round;
+  stroke-linecap: round;
 }
 
 .chart .line-fixed {
@@ -506,24 +540,27 @@ h2 {
 
 /* the one authored motion: the fixed line holds steady while the floating
    one staggers in behind it */
-.chart path {
+/* Only a page that reached the arming script hides the lines; everything
+   else renders the chart finished. */
+.armed .chart path {
   stroke-dasharray: 1000;
   stroke-dashoffset: 1000;
   transition: stroke-dashoffset 1.6s var(--ease);
 }
 
-.chart .line-float {
+.armed .chart .line-float {
   transition-delay: 0.2s;
   transition-duration: 2.2s;
 }
 
-.lit .chart path {
+.armed.lit .chart path {
   stroke-dashoffset: 0;
 }
 
 .chart-legend {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: 10px 28px;
   margin-top: 16px;
   font-size: 0.9rem;
@@ -550,10 +587,15 @@ h2 {
 }
 
 .chart-note {
-  margin-top: 10px;
+  margin-top: 14px;
+  max-width: 44rem;
+  margin-inline: auto;
   font-size: 0.82rem;
-  font-style: italic;
   color: var(--ink-soft);
+}
+
+.chart-note a {
+  color: var(--ink-warm);
 }
 
 /* ---------------- faq ---------------- */

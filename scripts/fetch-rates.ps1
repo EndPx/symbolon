@@ -1,0 +1,72 @@
+# Regenerates web/src/rates.ts from live market data.
+#
+# Source: DefiLlama's free yields API — the Aave V3 USDC pool on Ethereum,
+# the deepest stablecoin lending market in DeFi. We plot its lending rate
+# because DefiLlama moved historical *borrow* rates behind a paid plan; the
+# two track each other closely (both are driven by pool utilisation), and the
+# page labels exactly which one is shown.
+#
+#   pwsh scripts/fetch-rates.ps1
+
+$ErrorActionPreference = "Stop"
+$pool = "aa70268e-4b52-42bf-a116-608b370f9501"
+$out = Join-Path $PSScriptRoot "..\web\src\rates.ts"
+
+Write-Host "fetching $pool ..."
+$r = Invoke-RestMethod -Uri "https://yields.llama.fi/chart/$pool" -TimeoutSec 90
+$pts = $r.data | Where-Object { $_.apyBase -ne $null } | Select-Object -Last 365
+
+# Every third day keeps the SVG path short enough to read at a glance while
+# preserving every spike that matters.
+$sample = @()
+for ($i = 0; $i -lt $pts.Count; $i += 3) { $sample += $pts[$i] }
+if ($sample[-1].timestamp -ne $pts[-1].timestamp) { $sample += $pts[-1] }
+
+$vals = $pts | ForEach-Object { [double]$_.apyBase }
+$st = $vals | Measure-Object -Minimum -Maximum -Average
+
+# The headline number: the largest single-day change over the window.
+$maxJump = 0.0
+$jumpDate = ""
+for ($i = 1; $i -lt $vals.Count; $i++) {
+  $d = [Math]::Abs($vals[$i] - $vals[$i - 1])
+  if ($d -gt $maxJump) {
+    $maxJump = $d
+    $jumpDate = ([datetime]$pts[$i].timestamp).ToString("d MMM yyyy")
+  }
+}
+
+$rows = ($sample | ForEach-Object {
+  "  [{0}, {1:N2}]," -f ([DateTimeOffset]([datetime]$_.timestamp)).ToUnixTimeSeconds(), [double]$_.apyBase
+}) -join "`n"
+
+$body = @"
+// Real market data — Aave V3 USDC lending rate on Ethereum.
+//
+// Source: DefiLlama yields API, pool $pool
+//   https://yields.llama.fi/chart/$pool
+// Pulled $(Get-Date -Format 'yyyy-MM-dd'), covering $(([datetime]$pts[0].timestamp).ToString('d MMM yyyy')) to $(([datetime]$pts[-1].timestamp).ToString('d MMM yyyy')),
+// sampled every third day for a legible line. Values are apyBase, in percent.
+//
+// Regenerate: pwsh scripts/fetch-rates.ps1
+
+export const RATE_SOURCE = {
+  label: "Aave V3 · USDC · Ethereum",
+  from: "$(([datetime]$pts[0].timestamp).ToString('d MMM yyyy'))",
+  to: "$(([datetime]$pts[-1].timestamp).ToString('d MMM yyyy'))",
+  min: $("{0:N2}" -f $st.Minimum),
+  max: $("{0:N2}" -f $st.Maximum),
+  avg: $("{0:N2}" -f $st.Average),
+  biggestDailyMove: $("{0:N2}" -f $maxJump),
+  biggestMoveDate: "$jumpDate",
+} as const;
+
+/** [unix seconds, rate in percent] */
+export const RATE_SERIES: ReadonlyArray<readonly [number, number]> = [
+$rows
+];
+"@
+
+Set-Content -Path $out -Value $body -Encoding utf8
+Write-Host ("wrote {0} points; min {1:N2}%  max {2:N2}%  avg {3:N2}%  biggest daily move {4:N2} pts on {5}" -f `
+  $sample.Count, $st.Minimum, $st.Maximum, $st.Average, $maxJump, $jumpDate)

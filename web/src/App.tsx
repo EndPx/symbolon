@@ -1,4 +1,11 @@
-import { createElement, useEffect, useRef, useState } from "react";
+import {
+  createElement,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
+import { RATE_SERIES, RATE_SOURCE } from "./rates";
 
 const GITHUB = "https://github.com/EndPx/symbolon";
 
@@ -30,13 +37,18 @@ function useSpotlight<T extends HTMLElement>() {
   return ref;
 }
 
-// Adds .lit when the element scrolls into view — drives the page's one
-// authored motion (the rate chart drawing itself).
+// Drives the page's one authored motion: the rate chart drawing itself.
+//
+// The hiding is applied by JS (.armed) rather than sitting in the stylesheet,
+// so a browser that never runs this — JS off, a script error, a crawler —
+// still gets the finished chart instead of an empty frame. useLayoutEffect
+// arms it before paint, so nobody sees the line flash in first.
 function useReveal<T extends HTMLElement>() {
   const ref = useRef<T>(null);
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
+    el.classList.add("armed");
     const io = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -54,20 +66,20 @@ function useReveal<T extends HTMLElement>() {
 
 const WHY = [
   {
-    title: "Nobody watches you trade",
-    body: "Your deal is visible to exactly two parties: you and your dealer. Other dealers can't see your price — or that you traded at all.",
+    title: "Your position stays private",
+    body: "Nobody can see how much you borrowed, at what rate, or that you borrowed at all. On every public chain, your whole position is readable by anyone.",
   },
   {
-    title: "One price, locked",
-    body: "The rate you shake hands on is the rate you pay. It cannot drift overnight, and it cannot be changed by anyone.",
+    title: "Your rate never moves",
+    body: "It's fixed the moment you borrow. On variable-rate protocols your interest can double overnight while the market sits still.",
   },
   {
-    title: "Your collateral comes home",
-    body: "Pledge it, take your cash, buy it back on the agreed day. Need that exact asset mid-way? Swap it for another — the deal survives.",
+    title: "You choose the end date",
+    body: "Borrow for 23 days or 6 months — any date you and your lender agree on. No standard monthly buckets, no auto-rollover you didn't ask for.",
   },
   {
-    title: "Built on Canton",
-    body: "The network serious financial institutions run on. Privacy here isn't a promise in a policy — it's how the rails are built.",
+    title: "Swap collateral without closing",
+    body: "Need that exact token back mid-loan? Replace it with another asset of equal value. Your loan keeps running, same rate, same end date.",
   },
 ];
 
@@ -75,61 +87,82 @@ const STEPS = [
   {
     img: "/brand/step-ask.jpg",
     alt: "Two merchants meeting on a quay",
-    title: "Ask around, quietly",
-    body: "Pick your dealers and ask each one for a price. Every conversation is separate — and private.",
+    title: "Deposit collateral",
+    body: "Put up the asset you want to borrow against — cETH, cBTC, a tokenised bond. Only you and your lender can see it.",
   },
   {
     img: "/brand/step-lock.jpg",
     alt: "A split gold coin glowing",
-    title: "Shake hands on a rate",
-    body: "Take the offer you like. The price locks the moment you accept, and money changes hands instantly.",
+    title: "Borrow at a fixed rate",
+    body: "Ask a few lenders for a rate, privately and separately. Take the best one. Your rate and end date lock the moment you accept.",
   },
   {
     img: "/brand/step-safe.jpg",
     alt: "A marble temple on the hillside",
-    title: "Sleep through the storm",
-    body: "Markets move; your rate doesn't. If your collateral's value dips, you simply top it up within a fair window.",
+    title: "Monitor your position",
+    body: "If your collateral falls in value, your lender asks you to top up and you get a set window to do it. A healthy position can't be touched.",
   },
   {
     img: "/brand/step-home.jpg",
     alt: "Ships resting in the harbor",
-    title: "Buy it back",
-    body: "On the agreed day, pay the agreed price — and your collateral sails home. Done.",
+    title: "Repay and get it back",
+    body: "On the end date, repay exactly what you agreed at the start — not a cent more — and your collateral returns to you.",
   },
 ];
 
 const FAQ = [
   {
-    q: "What exactly is a repo?",
-    a: "Think of a pawn shop between professionals: you sell an asset today and agree — in the same breath — to buy it back at a fixed price on a fixed date. The gap between the two prices is the interest, known from second one.",
+    q: "What is Symbolon?",
+    a: "Symbolon is the fixed-rate credit layer for Canton. You post collateral, agree a rate and an end date directly with a lender, and settle on-chain — with nobody else able to see the size, the rate, or that the loan happened.",
   },
   {
-    q: "Who can see my trade?",
-    a: "You, your dealer, and the price source you both agreed on. Not other dealers, not other users, not a public explorer. On Canton the data never even reaches anyone else's servers.",
+    q: "How does privacy work on Symbolon?",
+    a: "Canton doesn't broadcast transactions to everyone; it delivers them only to the parties involved. So a lender you asked but didn't borrow from receives nothing at all — not an encrypted copy, not a hidden entry. There is no public explorer where your position can be looked up.",
   },
   {
-    q: "What if my collateral drops in value?",
-    a: "Your dealer asks you to top up, and you get a window to do it. The contract itself checks the numbers — nobody can call you unfairly, and a healthy position can't be touched.",
+    q: "What can I borrow against?",
+    a: "Any asset issued on Canton that you and your lender both accept — cBTC, cETH, tokenised treasuries and funds. Because every loan is agreed one-to-one, you're not limited to a preset list of markets.",
   },
   {
-    q: "What if I can't pay at the end?",
-    a: "The dealer simply keeps the collateral — it has been legally theirs since the day the deal was struck. No panic auctions, no cascading liquidations.",
+    q: "How do I get started?",
+    a: "Connect a Canton wallet, deposit the asset you want to borrow against, and request rates from lenders. There is no signup, no account to fund first, and no deposit held by us — Symbolon never takes custody of your assets.",
   },
   {
-    q: "Is this real, or a mock-up?",
-    a: "The engine is real: every flow on this page has been executed on a live Canton ledger, and the receipts live in the open-source repository.",
+    q: "What happens if my collateral drops in value?",
+    a: "Your lender can ask you to top up, and you get an agreed window to do it. The contract checks the price itself against a feed you both signed up to, so a healthy position cannot be called and a top-up that doesn't fix the shortfall is rejected.",
   },
   {
-    q: "When can I trade?",
-    a: "The desk opens with HackCanton Season 3. The contracts are already built and proven — the door just isn't open yet.",
+    q: "What fees and risks should I review?",
+    a: "Symbolon charges no protocol fee today. The real risks are the ordinary ones: your collateral can fall in value and require a top-up, and if you don't repay by the end date the lender keeps the collateral. Rates are fixed, so interest-rate risk is the one thing you don't carry.",
+  },
+  {
+    q: "Where can I follow Symbolon's progress?",
+    a: "Everything is open source and built in public — contracts, tests, and the on-chain proof runs.",
+    link: true,
   },
 ];
 
-// The floating line wanders; the fixed one doesn't. Simulated paths — the
-// honesty label sits right under the chart.
-const FLOAT_PATH =
-  "M20,150 L60,96 L100,168 L140,64 L180,142 L220,208 L260,112 L300,252 L340,150 L380,84 L420,196 L460,246 L500,124 L540,214 L580,96 L620,164";
-const FIXED_PATH = "M20,182 L620,182";
+// The variable line is a real year of Aave V3 USDC rates (see rates.ts and
+// scripts/fetch-rates.ps1). The flat line sits at that year's average, which
+// is the fairest stand-in for a rate someone would have fixed on day one.
+const CHART = { w: 640, h: 300, padL: 46, padR: 20, padT: 24, padB: 34, top: 14 };
+
+function chartY(rate: number) {
+  const inner = CHART.h - CHART.padT - CHART.padB;
+  return CHART.padT + inner - (rate / CHART.top) * inner;
+}
+
+const VARIABLE_PATH = RATE_SERIES.map(([, rate], i) => {
+  const innerW = CHART.w - CHART.padL - CHART.padR;
+  const x = CHART.padL + (i / (RATE_SERIES.length - 1)) * innerW;
+  return `${i === 0 ? "M" : "L"}${x.toFixed(1)},${chartY(rate).toFixed(1)}`;
+}).join(" ");
+
+const FIXED_PATH = `M${CHART.padL},${chartY(RATE_SOURCE.avg).toFixed(1)} L${
+  CHART.w - CHART.padR
+},${chartY(RATE_SOURCE.avg).toFixed(1)}`;
+
+const GRID_LINES = [0, 4, 8, 12];
 
 export default function App() {
   const chartRef = useReveal<HTMLDivElement>();
@@ -161,6 +194,18 @@ export default function App() {
       window.clearTimeout(t);
     };
   }, []);
+
+  // The browser applies a URL hash before React has rendered anything, so a
+  // shared link to #rates or #faq would silently land at the top of the page.
+  // Re-apply it once the veil is gone and the layout has settled.
+  useEffect(() => {
+    if (!heroReady) return;
+    const id = window.location.hash.slice(1);
+    if (!id) return;
+    document
+      .getElementById(id)
+      ?.scrollIntoView({ behavior: "instant", block: "start" });
+  }, [heroReady]);
 
   return (
     <>
@@ -236,7 +281,8 @@ export default function App() {
                 <span className="accent">Symbolon</span> deals.
               </h1>
               <p>
-                Quote in private. Strike a fixed rate. No one else ever knows.
+                Fixed-rate borrowing and lending on Canton. Your rate, your
+                size, and your position stay private.
               </p>
               <div className="cta-row">
                 <a className="seal" href="#why">
@@ -293,34 +339,65 @@ export default function App() {
           </div>
         </section>
 
-        <section className="band" id="rates">
+        <section className="band band-center" id="rates">
           <div className="shell">
             <h2>Why a fixed rate?</h2>
             <p className="lede">
-              Most crypto lending floats: your rate changes every hour, and a
-              calm market can still ruin your week — the rate itself is the
-              risk. Fixing it removes that whole category.
+              On most lending protocols your rate is recalculated constantly
+              from how much of the pool is borrowed. Here is what that actually
+              looked like on USDC — the largest, calmest market in DeFi — over
+              the past year.
             </p>
             <div className="chart-wrap" ref={chartRef}>
               <svg
                 className="chart"
-                viewBox="0 0 640 300"
+                viewBox={`0 0 ${CHART.w} ${CHART.h}`}
                 role="img"
-                aria-label="A jagged floating-rate line swings wildly while the fixed-rate line stays flat."
+                aria-label={`Aave V3 USDC lending rate from ${RATE_SOURCE.from} to ${RATE_SOURCE.to}, swinging between ${RATE_SOURCE.min}% and ${RATE_SOURCE.max}%, against a flat fixed rate at ${RATE_SOURCE.avg}%.`}
               >
-                <line x1="20" y1="60" x2="620" y2="60" className="grid" />
-                <line x1="20" y1="150" x2="620" y2="150" className="grid" />
-                <line x1="20" y1="240" x2="620" y2="240" className="grid" />
-                <path d={FLOAT_PATH} className="line-float" pathLength={1000} />
+                {GRID_LINES.map((r) => (
+                  <g key={r}>
+                    <line
+                      x1={CHART.padL}
+                      y1={chartY(r)}
+                      x2={CHART.w - CHART.padR}
+                      y2={chartY(r)}
+                      className="grid"
+                    />
+                    <text x={CHART.padL - 10} y={chartY(r) + 4} className="axis">
+                      {r}%
+                    </text>
+                  </g>
+                ))}
+                <path d={VARIABLE_PATH} className="line-float" pathLength={1000} />
                 <path d={FIXED_PATH} className="line-fixed" pathLength={1000} />
               </svg>
               <div className="chart-legend">
-                <span className="key key-fixed">Symbolon — fixed the day you strike</span>
-                <span className="key key-float">Floating — wherever the market drags it</span>
+                <span className="key key-fixed">
+                  A rate fixed on day one — flat for the whole term
+                </span>
+                <span className="key key-float">
+                  {RATE_SOURCE.label} — the variable rate, as it happened
+                </span>
               </div>
+              <p className="chart-stat">
+                It ranged from <strong>{RATE_SOURCE.min}%</strong> to{" "}
+                <strong>{RATE_SOURCE.max}%</strong>, and once moved{" "}
+                <strong>{RATE_SOURCE.biggestDailyMove} points in a single day</strong>{" "}
+                ({RATE_SOURCE.biggestMoveDate}). If you were borrowing that week,
+                your interest bill quadrupled while you slept.
+              </p>
               <p className="chart-note">
-                Illustration — simulated paths, drawn to the shape of real
-                floating-rate swings.
+                Real data · {RATE_SOURCE.from} – {RATE_SOURCE.to} · source:{" "}
+                <a
+                  href="https://defillama.com/yields/pool/aa70268e-4b52-42bf-a116-608b370f9501"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  DefiLlama
+                </a>
+                . The flat line sits at the period average ({RATE_SOURCE.avg}%) —
+                the fairest stand-in for a rate agreed on day one.
               </p>
             </div>
           </div>
@@ -328,18 +405,18 @@ export default function App() {
 
         <section className="band" id="faq">
           <div className="shell">
-            <h2>Questions, answered</h2>
+            <h2>Frequently Asked Questions</h2>
             <div className="faq-list">
               {FAQ.map((f) => (
                 <details key={f.q}>
                   <summary>{f.q}</summary>
                   <p>
                     {f.a}
-                    {f.q.startsWith("Is this real") && (
+                    {f.link && (
                       <>
                         {" "}
                         <a href={GITHUB} target="_blank" rel="noreferrer">
-                          See it on GitHub ↗
+                          Follow along on GitHub ↗
                         </a>
                       </>
                     )}
