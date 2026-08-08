@@ -377,7 +377,7 @@ export default function App() {
                   A rate fixed on day one — flat for the whole term
                 </span>
                 <span className="key key-float">
-                  {RATE_SOURCE.label} — the variable rate, as it happened
+                  {RATE_SOURCE.label} — the variable lending rate, as it happened
                 </span>
               </div>
               <p className="chart-stat">
