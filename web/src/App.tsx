@@ -10,7 +10,7 @@ function ModelViewer(props: Record<string, unknown>) {
 }
 
 // Adds .lit when the element scrolls into view — drives the page's one
-// authored motion (the visibility record assembling).
+// authored motion (the rate chart drawing itself).
 function useReveal<T extends HTMLElement>() {
   const ref = useRef<T>(null);
   useEffect(() => {
@@ -23,7 +23,7 @@ function useReveal<T extends HTMLElement>() {
           io.disconnect();
         }
       },
-      { threshold: 0.3 },
+      { threshold: 0.35 },
     );
     io.observe(el);
     return () => io.disconnect();
@@ -31,75 +31,87 @@ function useReveal<T extends HTMLElement>() {
   return ref;
 }
 
-const MECHANISM = [
+const WHY = [
   {
-    term: "Request",
-    desc: "One private note per dealer — there is no order book to post to, and no one can read your shortlist.",
+    title: "Nobody watches you trade",
+    body: "Your deal is visible to exactly two parties: you and your dealer. Other dealers can't see your price — or that you traded at all.",
   },
   {
-    term: "Quote",
-    desc: "Each dealer prices you alone. A quote arrives funded: the cash that will settle it is already escrowed into your view.",
+    title: "One price, locked",
+    body: "The rate you shake hands on is the rate you pay. It cannot drift overnight, and it cannot be changed by anyone.",
   },
   {
-    term: "Strike",
-    desc: "Acceptance is settlement. Collateral title and cash move in one atomic transaction; the repurchase price is fixed then and forever.",
+    title: "Your collateral comes home",
+    body: "Pledge it, take your cash, buy it back on the agreed day. Need that exact asset mid-way? Swap it for another — the deal survives.",
   },
   {
-    term: "Terms",
-    desc: "Fixed rate, ACT/360, any date you both sign. No bucket tenors, no curve — the price is the agreement.",
-  },
-];
-
-const LIFECYCLE = [
-  {
-    term: "Margin call",
-    desc: "The dealer cannot call at will: the contract re-marks the position against the oracle feed both sides agreed to, and a healthy position refuses the call.",
-  },
-  {
-    term: "Cure",
-    desc: "Top up within the window. A cure that does not restore the margin at the current mark is rejected by the ledger, not by a UI.",
-  },
-  {
-    term: "Substitution",
-    desc: "Swap collateral mid-term without breaking the trade — the old collateral goes home, the position survives. Order books don't have a word for this.",
-  },
-  {
-    term: "Default",
-    desc: "There is nothing to liquidate. Title transferred at settlement; the dealer already owns the collateral, and the position simply closes.",
+    title: "Built on Canton",
+    body: "The network serious financial institutions run on. Privacy here isn't a promise in a policy — it's how the rails are built.",
   },
 ];
 
-const TICKET: Array<{ label: string; value: string; rate?: boolean }> = [
-  { label: "Purchase price", value: "1,000.00 CUSD" },
-  { label: "Repurchase price", value: "1,004.33 CUSD" },
-  { label: "Rate — fixed at strike", value: "5.20% p.a.", rate: true },
-  { label: "Tenor", value: "30 days" },
-  { label: "Collateral", value: "15.00 CETH · title transfers" },
-  { label: "Margin threshold", value: "105%" },
+const STEPS = [
+  {
+    img: "/brand/step-ask.jpg",
+    alt: "Two merchants meeting on a quay",
+    title: "Ask around, quietly",
+    body: "Pick your dealers and ask each one for a price. Every conversation is separate — and private.",
+  },
+  {
+    img: "/brand/step-lock.jpg",
+    alt: "A split gold coin glowing",
+    title: "Shake hands on a rate",
+    body: "Take the offer you like. The price locks the moment you accept, and money changes hands instantly.",
+  },
+  {
+    img: "/brand/step-safe.jpg",
+    alt: "A marble temple on the hillside",
+    title: "Sleep through the storm",
+    body: "Markets move; your rate doesn't. If your collateral's value dips, you simply top it up within a fair window.",
+  },
+  {
+    img: "/brand/step-home.jpg",
+    alt: "Ships resting in the harbor",
+    title: "Buy it back",
+    body: "On the agreed day, pay the agreed price — and your collateral sails home. Done.",
+  },
 ];
 
-const VIZ_ROWS: Array<{
-  fact: string;
-  you: string;
-  a: string;
-  b: string;
-  print?: boolean;
-}> = [
-  { fact: "Your request", you: "sent to A and B", a: "received", b: "received" },
-  { fact: "Dealer A's quote", you: "5.20% p.a.", a: "5.20% p.a.", b: "—" },
-  { fact: "Dealer B's quote", you: "5.55% p.a.", a: "—", b: "5.55% p.a." },
-  { fact: "The strike", you: "settled · T+0", a: "settled · T+0", b: "—" },
-  { fact: "The printed rate", you: "5.20%", a: "5.20%", b: "—", print: true },
+const FAQ = [
+  {
+    q: "What exactly is a repo?",
+    a: "Think of a pawn shop between professionals: you sell an asset today and agree — in the same breath — to buy it back at a fixed price on a fixed date. The gap between the two prices is the interest, known from second one.",
+  },
+  {
+    q: "Who can see my trade?",
+    a: "You, your dealer, and the price source you both agreed on. Not other dealers, not other users, not a public explorer. On Canton the data never even reaches anyone else's servers.",
+  },
+  {
+    q: "What if my collateral drops in value?",
+    a: "Your dealer asks you to top up, and you get a window to do it. The contract itself checks the numbers — nobody can call you unfairly, and a healthy position can't be touched.",
+  },
+  {
+    q: "What if I can't pay at the end?",
+    a: "The dealer simply keeps the collateral — it has been legally theirs since the day the deal was struck. No panic auctions, no cascading liquidations.",
+  },
+  {
+    q: "Is this real, or a mock-up?",
+    a: "The engine is real: every flow on this page has been executed on a live Canton ledger, and the receipts live in the open-source repository.",
+  },
+  {
+    q: "When can I trade?",
+    a: "The desk opens with HackCanton Season 3. The contracts are already built and proven — the door just isn't open yet.",
+  },
 ];
 
-function Cell({ v }: { v: string }) {
-  if (v === "—") return <td className="na">—</td>;
-  const numeric = /\d/.test(v);
-  return <td>{numeric ? <span className="fig">{v}</span> : v}</td>;
-}
+// The floating line wanders; the fixed one doesn't. Simulated paths — the
+// honesty label sits right under the chart.
+const FLOAT_PATH =
+  "M20,150 L60,96 L100,168 L140,64 L180,142 L220,208 L260,112 L300,252 L340,150 L380,84 L420,196 L460,246 L500,124 L540,214 L580,96 L620,164";
+const FIXED_PATH = "M20,182 L620,182";
 
 export default function App() {
-  const vizRef = useReveal<HTMLDivElement>();
+  const chartRef = useReveal<HTMLDivElement>();
   const reducedMotion =
     typeof window !== "undefined" &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -126,35 +138,6 @@ export default function App() {
       window.clearTimeout(t);
     };
   }, []);
-
-  // On narrow screens the table scrolls horizontally and Dealer B's empty
-  // column — the punchline — starts off-screen. Once the record has
-  // assembled, glide the view to rest on the emptiness.
-  useEffect(() => {
-    const wrap = vizRef.current;
-    if (!wrap) return;
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry.isIntersecting) return;
-        io.disconnect();
-        if (wrap.scrollWidth <= wrap.clientWidth + 8) return;
-        const reduced = window.matchMedia(
-          "(prefers-reduced-motion: reduce)",
-        ).matches;
-        window.setTimeout(
-          () =>
-            wrap.scrollTo({
-              left: wrap.scrollWidth,
-              behavior: reduced ? "auto" : "smooth",
-            }),
-          reduced ? 0 : 1600,
-        );
-      },
-      { threshold: 0.3 },
-    );
-    io.observe(wrap);
-    return () => io.disconnect();
-  }, [vizRef]);
 
   return (
     <>
@@ -190,17 +173,17 @@ export default function App() {
             <img src="/brand/logo-mark.png" alt="" />
             <span>SYMBOLON</span>
           </a>
-          <a className="link" href="#mechanism">
-            Mechanism
+          <a className="link" href="#why">
+            Why Symbolon
           </a>
-          <a className="link" href="#visibility">
-            Visibility
+          <a className="link" href="#how">
+            How it works
           </a>
-          <a className="link" href="#lifecycle">
-            Lifecycle
+          <a className="link" href="#rates">
+            Rates
           </a>
-          <a className="link keep" href="#proof">
-            Proof
+          <a className="link keep" href="#faq">
+            FAQ
           </a>
           <span
             className="pending"
@@ -233,8 +216,8 @@ export default function App() {
                 Quote in private. Strike a fixed rate. No one else ever knows.
               </p>
               <div className="cta-row">
-                <a className="seal" href="#proof">
-                  See it proven on-ledger
+                <a className="seal" href="#why">
+                  See how it works
                 </a>
                 <a className="quiet" href={GITHUB} target="_blank" rel="noreferrer">
                   Read the source ↗
@@ -246,134 +229,101 @@ export default function App() {
       </header>
 
       <main>
-        <section className="band" id="mechanism">
+        <section className="band" id="why">
           <div className="shell">
-            <h2>
-              <span className="sk">Schedule I · </span>The mechanism
-            </h2>
-            <div className="mech-grid">
-              <dl className="rows">
-                {MECHANISM.map((r) => (
-                  <div key={r.term}>
-                    <dt>{r.term}</dt>
-                    <dd>{r.desc}</dd>
-                  </div>
-                ))}
-              </dl>
-              <div>
-                <aside className="ticket" aria-label="Indicative term sheet">
-                  <header>Indicative term sheet</header>
-                  <dl>
-                    {TICKET.map((t) => (
-                      <div key={t.label} className={t.rate ? "rate" : undefined}>
-                        <dt>{t.label}</dt>
-                        <dd>{t.value}</dd>
-                      </div>
-                    ))}
-                  </dl>
-                </aside>
-                <p className="ticket-note">Illustration — simulated figures.</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="band band-ink" id="visibility">
-          <div className="shell">
-            <h2>
-              <span className="sk">Schedule II · </span>The losing dealer learns
-              nothing
-            </h2>
+            <h2>Borrowing, the way it should feel</h2>
             <p className="lede">
-              Three parties, one trade. This is the entire record each of them
-              can see — not by policy, but because Canton never delivers the
-              data to the other node.
+              Private, predictable, and done in minutes — on rails built for
+              institutions.
             </p>
-            <div className="viz-wrap" ref={vizRef}>
-              <table className="viz">
-                <thead>
-                  <tr>
-                    <th scope="col" aria-label="Fact"></th>
-                    <th scope="col">You — borrower</th>
-                    <th scope="col">Dealer A — won</th>
-                    <th scope="col">Dealer B — lost</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {VIZ_ROWS.map((r) => (
-                    <tr key={r.fact} className={r.print ? "print" : undefined}>
-                      <td>{r.fact}</td>
-                      <Cell v={r.you} />
-                      <Cell v={r.a} />
-                      <Cell v={r.b} />
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <p className="viz-note">
-              Simulated illustration. The blanks are the product — asserted
-              per-party in{" "}
-              <a
-                href={`${GITHUB}/blob/main/daml-test/Symbolon/Test/EndToEnd.daml`}
-                target="_blank"
-                rel="noreferrer"
-              >
-                repoLifecycle ↗
-              </a>
-            </p>
-          </div>
-        </section>
-
-        <section className="band" id="lifecycle">
-          <div className="shell">
-            <h2>
-              <span className="sk">Schedule III · </span>After the trade
-            </h2>
-            <p className="lede">Order books stop at the trade. A desk begins there.</p>
-            <dl className="rows" style={{ marginTop: 54 }}>
-              {LIFECYCLE.map((r) => (
-                <div key={r.term}>
-                  <dt>{r.term}</dt>
-                  <dd>{r.desc}</dd>
+            <div className="card-grid">
+              {WHY.map((c) => (
+                <div className="card" key={c.title}>
+                  <h3>{c.title}</h3>
+                  <p>{c.body}</p>
                 </div>
               ))}
-            </dl>
+            </div>
           </div>
         </section>
 
-        <section className="band band-ink" id="proof">
+        <section className="band" id="how">
           <div className="shell">
-            <h2>
-              <span className="sk">Schedule IV · </span>Proven, not promised
-            </h2>
-            <div className="receipts">
-              <div className="receipt">
-                <span>repoLifecycle — 29 transactions · privacy asserted per party</span>
-                <span className="ok">ok</span>
-              </div>
-              <div className="receipt">
-                <span>repoHappyPath — 9 transactions · every balance checked</span>
-                <span className="ok">ok</span>
-              </div>
-              <div className="receipt">
-                <span>canton 3.5.6 sandbox · both flows, wall-clock time</span>
-                <span className="ok">offset 10 → 187</span>
-              </div>
-            </div>
-            <div className="cmd">
-              <span className="dim"># the whole lifecycle, on a fresh ledger</span>
-              {"\n"}cd daml-test && dpm test
-            </div>
-            <p className="proof-close">
-              Every mechanism on this page runs today, in the open — the margin
-              call that refuses, the substitution that survives, the empty
-              column above. Each is an assertion in{" "}
-              <a href={GITHUB} target="_blank" rel="noreferrer">
-                the repository ↗
-              </a>
-              , reproducible with one command.
+            <h2>How it works</h2>
+            <p className="lede">
+              Four steps, start to finish. No order books, no waiting rooms.
             </p>
+            <div className="step-grid">
+              {STEPS.map((s, i) => (
+                <div className="step-card" key={s.title}>
+                  <img src={s.img} alt={s.alt} loading="lazy" />
+                  <div className="step-body">
+                    <h3>
+                      <span className="step-no">{i + 1}</span>
+                      {s.title}
+                    </h3>
+                    <p>{s.body}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="band" id="rates">
+          <div className="shell">
+            <h2>Why a fixed rate?</h2>
+            <p className="lede">
+              Most crypto lending floats: your rate changes every hour, and a
+              calm market can still ruin your week — the rate itself is the
+              risk. Fixing it removes that whole category.
+            </p>
+            <div className="chart-wrap" ref={chartRef}>
+              <svg
+                className="chart"
+                viewBox="0 0 640 300"
+                role="img"
+                aria-label="A jagged floating-rate line swings wildly while the fixed-rate line stays flat."
+              >
+                <line x1="20" y1="60" x2="620" y2="60" className="grid" />
+                <line x1="20" y1="150" x2="620" y2="150" className="grid" />
+                <line x1="20" y1="240" x2="620" y2="240" className="grid" />
+                <path d={FLOAT_PATH} className="line-float" pathLength={1000} />
+                <path d={FIXED_PATH} className="line-fixed" pathLength={1000} />
+              </svg>
+              <div className="chart-legend">
+                <span className="key key-fixed">Symbolon — fixed the day you strike</span>
+                <span className="key key-float">Floating — wherever the market drags it</span>
+              </div>
+              <p className="chart-note">
+                Illustration — simulated paths, drawn to the shape of real
+                floating-rate swings.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="band" id="faq">
+          <div className="shell">
+            <h2>Questions, answered</h2>
+            <div className="faq-list">
+              {FAQ.map((f) => (
+                <details key={f.q}>
+                  <summary>{f.q}</summary>
+                  <p>
+                    {f.a}
+                    {f.q.startsWith("Is this real") && (
+                      <>
+                        {" "}
+                        <a href={GITHUB} target="_blank" rel="noreferrer">
+                          See it on GitHub ↗
+                        </a>
+                      </>
+                    )}
+                  </p>
+                </details>
+              ))}
+            </div>
           </div>
         </section>
 

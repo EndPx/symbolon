@@ -123,7 +123,7 @@ body {
   outline-offset: 3px;
 }
 
-.band-ink :focus-visible {
+.closing :focus-visible {
   outline-color: var(--gold);
 }
 
@@ -334,16 +334,6 @@ section.band {
   padding-block: clamp(76px, 10vw, 122px);
 }
 
-.band-ink {
-  /* the neutral-luminance tile (mean ~50% gray) modulates lightness only,
-     so soft-light returns the committed navy with paper mottle — the gold
-     tile here turned the ink olive */
-  background: var(--ink) url("/brand/grain-neutral.png");
-  background-size: 768px;
-  background-blend-mode: soft-light;
-  color: var(--parchment);
-}
-
 h2 {
   font-family: "Marcellus", serif;
   font-weight: 400;
@@ -355,18 +345,6 @@ h2 {
   text-wrap: balance;
 }
 
-.band-ink h2 {
-  border-top-color: var(--hairline-gold);
-}
-
-h2 .sk {
-  color: var(--ink-soft);
-}
-
-.band-ink h2 .sk {
-  color: var(--parchment-dim);
-}
-
 .lede {
   margin-top: 18px;
   max-width: 40rem;
@@ -374,267 +352,220 @@ h2 .sk {
   color: var(--ink-soft);
 }
 
-.band-ink .lede {
-  color: var(--parchment-dim);
-}
+/* ---------------- why cards ---------------- */
 
-/* ---------------- mechanism ---------------- */
-
-.mech-grid {
+.card-grid {
   display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
-  gap: clamp(40px, 6vw, 88px);
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 18px;
   margin-top: 54px;
-  align-items: start;
 }
 
-dl.rows {
+.card {
+  background: #f9f2de;
+  border: 1px solid var(--hairline);
+  padding: 26px 24px 28px;
+}
+
+.card h3 {
+  font-family: "Marcellus", serif;
+  font-weight: 400;
+  font-size: 1.28rem;
+  line-height: 1.3;
+}
+
+.card p {
+  margin-top: 10px;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+
+/* ---------------- how-it-works steps ---------------- */
+
+.step-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 18px;
+  margin-top: 54px;
+}
+
+.step-card {
+  border: 1px solid var(--hairline);
+  background: #f9f2de;
+  display: flex;
+  flex-direction: column;
+}
+
+.step-card img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
   border-bottom: 1px solid var(--hairline);
 }
 
-dl.rows > div {
-  display: grid;
-  grid-template-columns: 168px 1fr;
-  gap: 22px;
-  padding-block: 24px;
-  border-top: 1px solid var(--hairline);
+.step-body {
+  padding: 20px 20px 24px;
 }
 
-dl.rows dt {
+.step-body h3 {
   font-family: "Marcellus", serif;
-  font-size: 1.22rem;
-  line-height: 1.35;
-}
-
-dl.rows dd {
-  font-size: 0.97rem;
-  line-height: 1.62;
-  color: var(--ink-soft);
-  max-width: 62ch;
-}
-
-/* the term-sheet artifact — an ink seal on the parchment page */
-.ticket {
-  background: var(--ink);
-  color: var(--parchment);
-  padding: 30px 30px 22px;
-}
-
-.ticket header {
-  font-family: "Courier Prime", monospace;
-  font-size: 0.74rem;
-  font-weight: 700;
-  letter-spacing: 0.24em;
-  /* labels are chrome, not money — gold stays with the figures */
-  color: var(--parchment-dim);
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--hairline-gold);
-}
-
-.ticket dl > div {
+  font-weight: 400;
+  font-size: 1.18rem;
   display: flex;
-  justify-content: space-between;
   align-items: baseline;
-  gap: 18px;
-  padding-block: 12px;
-  border-top: 1px solid rgba(201, 162, 39, 0.14);
+  gap: 10px;
 }
 
-.ticket dl > div:first-child {
-  border-top: none;
-}
-
-.ticket dt {
-  font-size: 0.76rem;
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--parchment-dim);
-}
-
-.ticket dd {
+.step-no {
   font-family: "Courier Prime", monospace;
-  font-size: 0.95rem;
-  text-align: right;
-  white-space: nowrap;
-}
-
-.ticket .rate dd {
-  color: var(--gold);
+  font-size: 0.85rem;
   font-weight: 700;
+  color: var(--terracotta);
 }
 
-.ticket-note {
-  margin-top: 12px;
-  font-size: 0.8rem;
+.step-body p {
+  margin-top: 8px;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+
+/* ---------------- rate chart ---------------- */
+
+.chart-wrap {
+  margin-top: 54px;
+  max-width: 760px;
+}
+
+.chart {
+  width: 100%;
+  height: auto;
+  display: block;
+  border: 1px solid var(--hairline);
+  background: #f9f2de;
+}
+
+.chart .grid {
+  stroke: var(--hairline);
+  stroke-width: 1;
+}
+
+.chart .line-float {
+  fill: none;
+  stroke: var(--terracotta);
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+}
+
+.chart .line-fixed {
+  fill: none;
+  stroke: #a8861d; /* gold, deepened for contrast on the panel */
+  stroke-width: 4;
+}
+
+/* the one authored motion: the fixed line holds steady while the floating
+   one staggers in behind it */
+.chart path {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  transition: stroke-dashoffset 1.6s var(--ease);
+}
+
+.chart .line-float {
+  transition-delay: 0.2s;
+  transition-duration: 2.2s;
+}
+
+.lit .chart path {
+  stroke-dashoffset: 0;
+}
+
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 28px;
+  margin-top: 16px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.key::before {
+  content: "";
+  display: inline-block;
+  width: 22px;
+  height: 0;
+  vertical-align: middle;
+  margin-right: 9px;
+  border-top: 4px solid;
+}
+
+.key-fixed::before {
+  border-color: #a8861d;
+}
+
+.key-float::before {
+  border-color: var(--terracotta);
+  border-top-width: 3px;
+}
+
+.chart-note {
+  margin-top: 10px;
+  font-size: 0.82rem;
   font-style: italic;
   color: var(--ink-soft);
 }
 
-/* ---------------- visibility ---------------- */
+/* ---------------- faq ---------------- */
 
-.viz-wrap {
-  margin-top: 54px;
-  overflow-x: auto;
-  /* overflow-x:auto alone forces overflow-y to auto too, and the reveal's
-     translateY briefly overflows — clip kills the stray vertical scrollbar */
-  overflow-y: clip;
+.faq-list {
+  margin-top: 44px;
+  max-width: 46rem;
+  border-bottom: 1px solid var(--hairline);
 }
 
-table.viz {
-  width: 100%;
-  min-width: 700px;
-  border-collapse: collapse;
+.faq-list details {
+  border-top: 1px solid var(--hairline);
 }
 
-.viz th {
+.faq-list summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 20px 34px 20px 0;
+  font-family: "Marcellus", serif;
+  font-size: 1.14rem;
+  position: relative;
+}
+
+.faq-list summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq-list summary::after {
+  content: "+";
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
   font-family: "Courier Prime", monospace;
-  font-size: 0.74rem;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  /* labels are chrome, not money */
-  color: var(--parchment-dim);
-  text-align: left;
-  padding: 12px 18px 14px;
-  border-bottom: 1px solid var(--hairline-gold);
+  font-size: 1.2rem;
+  color: var(--terracotta);
 }
 
-/* the fact column stays put while the record scrolls — the blanks must
-   never lose their row names */
-.viz th:first-child,
-.viz td:first-child {
-  position: sticky;
-  left: 0;
-  background: var(--ink);
-  z-index: 2;
-  /* a hairline seats the cut where scrolled glyphs pass behind */
-  border-right: 1px solid var(--hairline-gold);
+.faq-list details[open] summary::after {
+  content: "−";
 }
 
-.viz td {
-  padding: 15px 18px;
-  border-top: 1px solid rgba(201, 162, 39, 0.16);
-  font-size: 0.95rem;
-  vertical-align: baseline;
-}
-
-.viz td:first-child {
-  color: var(--parchment-dim);
-  font-size: 0.9rem;
-}
-
-.viz td .fig {
-  font-family: "Courier Prime", monospace;
-}
-
-.viz .na {
-  color: rgba(244, 233, 206, 0.32);
-}
-
-.viz th:last-child,
-.viz td:last-child {
-  background: rgba(0, 0, 0, 0.3);
-}
-
-.viz tr.print td {
-  border-top-color: var(--hairline-gold);
-  font-weight: 600;
-}
-
-.viz tr.print td .fig {
-  color: var(--gold);
-}
-
-/* the page's one authored motion: the record assembles, and Dealer B's
-   column simply never fills */
-.viz th,
-.viz td {
-  opacity: 0;
-  transform: translateY(10px);
-  transition:
-    opacity 0.8s var(--ease),
-    transform 0.8s var(--ease);
-}
-
-.viz th:nth-child(2),
-.viz td:nth-child(2) {
-  transition-delay: 0.12s;
-}
-
-.viz th:nth-child(3),
-.viz td:nth-child(3) {
-  transition-delay: 0.28s;
-}
-
-.viz th:nth-child(4),
-.viz td:nth-child(4) {
-  transition-delay: 0.5s;
-}
-
-.lit .viz th,
-.lit .viz td {
-  opacity: 1;
-  transform: none;
-}
-
-.viz-note {
-  margin-top: 20px;
-  font-size: 0.86rem;
-  color: var(--parchment-dim);
-}
-
-.viz-note a {
-  color: var(--parchment);
-}
-
-/* ---------------- receipts / proof ---------------- */
-
-.receipts {
-  margin-top: 54px;
-  border-bottom: 1px solid var(--hairline-gold);
-}
-
-.receipt {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 24px;
-  padding-block: 18px;
-  border-top: 1px solid var(--hairline-gold);
-  font-family: "Courier Prime", monospace;
-  font-size: 0.92rem;
-}
-
-.receipt .ok {
-  color: var(--gold);
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.cmd {
-  margin-top: 34px;
-  padding: 20px 24px;
-  border: 1px solid var(--hairline-gold);
-  background: rgba(0, 0, 0, 0.3);
-  font-family: "Courier Prime", monospace;
-  font-size: 0.92rem;
-  overflow-x: auto;
-  white-space: pre;
-}
-
-.cmd .dim {
-  color: var(--parchment-dim);
-}
-
-.proof-close {
-  margin-top: 34px;
+.faq-list details p {
+  padding: 0 0 22px;
   max-width: 42rem;
-  color: var(--parchment-dim);
+  font-size: 0.97rem;
+  line-height: 1.65;
+  color: var(--ink-soft);
 }
 
-.proof-close a {
-  color: var(--parchment);
+.faq-list details a {
+  color: var(--ink-warm);
 }
 
 /* ---------------- closing ---------------- */
