@@ -1,4 +1,4 @@
-import { createElement, useEffect, useRef } from "react";
+import { createElement, useEffect, useRef, useState } from "react";
 
 const GITHUB = "https://github.com/EndPx/symbolon";
 
@@ -108,6 +108,25 @@ export default function App() {
     import("@google/model-viewer");
   }, []);
 
+  // Hold a parchment veil until the hero painting has actually decoded, so
+  // the first thing anyone sees is never a half-rendered PNG. The timeout is
+  // the escape hatch: a slow network gets the page anyway, progressively.
+  const [heroReady, setHeroReady] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    const done = () => {
+      if (alive) setHeroReady(true);
+    };
+    const img = new Image();
+    img.src = "/brand/hero.png";
+    img.decode().then(done).catch(done);
+    const t = window.setTimeout(done, 3500);
+    return () => {
+      alive = false;
+      window.clearTimeout(t);
+    };
+  }, []);
+
   // On narrow screens the table scrolls horizontally and Dealer B's empty
   // column — the punchline — starts off-screen. Once the record has
   // assembled, glide the view to rest on the emptiness.
@@ -139,6 +158,32 @@ export default function App() {
 
   return (
     <>
+      <div
+        className={heroReady ? "veil done" : "veil"}
+        role="status"
+        aria-label="Loading Symbolon"
+        aria-hidden={heroReady}
+      >
+        <svg viewBox="0 0 100 100" aria-hidden="true">
+          <circle cx="50" cy="50" r="42" fill="#c9a227" />
+          <circle
+            cx="50"
+            cy="50"
+            r="31"
+            fill="none"
+            stroke="#f4e9ce"
+            strokeWidth="2.5"
+            opacity="0.75"
+          />
+          <polyline
+            points="55,4 44,31 58,52 45,74 51,97"
+            fill="none"
+            stroke="#f4e9ce"
+            strokeWidth="7"
+          />
+        </svg>
+      </div>
+
       <nav className="nav" aria-label="Main">
         <div className="shell">
           <a className="brand" href="/">
@@ -179,12 +224,13 @@ export default function App() {
         <div className="hero-content">
           <div className="shell">
             <div className="hero-inner">
-              <h1>The rate is nobody's business.</h1>
+              <h1>
+                <span className="accent">Canton</span> conceals.
+                <br />
+                <span className="accent">Symbolon</span> deals.
+              </h1>
               <p>
-                Symbolon is a bilateral repo desk on Canton Network. Ask each
-                dealer for a price in private; the rate is fixed the moment you
-                strike — and a losing dealer never learns a trade happened at
-                all.
+                Quote in private. Strike a fixed rate. No one else ever knows.
               </p>
               <div className="cta-row">
                 <a className="seal" href="#proof">

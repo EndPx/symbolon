@@ -46,9 +46,47 @@
   --sky: #edc175; /* hero sky, sampled at (300,300) */
   --parchment: #f4e9ce; /* page light ground */
   --parchment-dim: #d8c89e; /* secondary text on ink, tinted warm */
+  --terracotta: #8a4a28; /* the robes' accent — proper nouns in the headline */
   --hairline: rgba(34, 28, 25, 0.26);
   --hairline-gold: rgba(201, 162, 39, 0.24);
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ---------------- loading veil ---------------- */
+/* Holds until the hero painting decodes; the mark is drawn as geometry so
+   the loader itself weighs nothing. */
+
+.veil {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  background: var(--parchment);
+  transition:
+    opacity 0.55s var(--ease),
+    visibility 0.55s;
+}
+
+.veil.done {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.veil svg {
+  width: 78px;
+  height: 78px;
+  animation: veil-breathe 1.5s ease-in-out infinite;
+}
+
+@keyframes veil-breathe {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 * {
@@ -199,16 +237,21 @@ a {
 }
 
 .hero-inner {
-  max-width: 33rem;
+  max-width: 36rem;
 }
 
 h1 {
   font-family: "Marcellus", serif;
   font-weight: 400;
-  font-size: clamp(2.5rem, 4.8vw, 4.1rem);
-  line-height: 1.06;
-  letter-spacing: 0.005em;
+  font-size: clamp(1.9rem, 3.4vw, 2.95rem);
+  line-height: 1.18;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
   text-wrap: balance;
+}
+
+h1 .accent {
+  color: var(--terracotta);
 }
 
 .hero-inner > p {
@@ -588,7 +631,10 @@ table.viz {
 .closing {
   position: relative;
   overflow: hidden;
-  background: var(--ink);
+  /* parchment behind: the artwork's own top edge dissolves into it via the
+     mask below, so the blend happens through the painting's pixels — a
+     parchment veil OVER dark paint just made gray */
+  background: var(--parchment);
   min-height: clamp(520px, 84vh, 840px);
   display: flex;
   align-items: center;
@@ -607,16 +653,17 @@ table.viz {
   object-position: center top;
 }
 
-/* the parchment above melts into the night — no hard seam */
-.closing::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  inset-inline: 0;
-  height: clamp(90px, 14vh, 170px);
-  background: linear-gradient(180deg, var(--parchment) 0%, rgba(244, 233, 206, 0) 100%);
-  z-index: 1;
-  pointer-events: none;
+.closing-art {
+  -webkit-mask-image: linear-gradient(
+    180deg,
+    transparent 0,
+    #000 clamp(110px, 16vh, 190px)
+  );
+  mask-image: linear-gradient(
+    180deg,
+    transparent 0,
+    #000 clamp(110px, 16vh, 190px)
+  );
 }
 
 .closing-content {
@@ -781,5 +828,9 @@ table.viz {
     opacity: 1;
     transform: none;
     transition: none;
+  }
+
+  .veil svg {
+    animation: none;
   }
 }
