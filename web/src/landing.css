@@ -237,13 +237,24 @@ a {
 }
 
 .hero-inner {
-  max-width: 36rem;
+  max-width: 38.5rem;
+}
+
+/* On wide monitors the hero composes against the painting, not the reading
+   column: nav and headline track the viewport proportionally, so the empty
+   sky never becomes a dead margin. Reading sections keep their 1180px shell. */
+@media (min-width: 921px) {
+  .nav .shell,
+  .hero-content .shell {
+    max-width: none;
+    padding-inline: clamp(48px, 12vw, 300px);
+  }
 }
 
 h1 {
   font-family: "Marcellus", serif;
   font-weight: 400;
-  font-size: clamp(1.9rem, 3.4vw, 2.95rem);
+  font-size: clamp(1.9rem, 3.4vw, 3.3rem);
   line-height: 1.18;
   letter-spacing: 0.045em;
   text-transform: uppercase;
