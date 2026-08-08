@@ -140,9 +140,15 @@ export default function App() {
           <a className="link" href="#lifecycle">
             Lifecycle
           </a>
-          <a className="link" href="#proof">
+          <a className="link keep" href="#proof">
             Proof
           </a>
+          <span
+            className="pending"
+            title="The desk application opens with HackCanton Season 3 — the contracts already run"
+          >
+            The desk · soon
+          </span>
           <a className="link keep" href={GITHUB} target="_blank" rel="noreferrer">
             GitHub ↗
           </a>

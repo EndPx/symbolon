@@ -3,6 +3,39 @@
    term-sheet structured. Gold means money or action; circles belong to the
    coin; separation is a rule line, never a shadow. */
 
+/* Self-hosted faces — no third-party calls from a confidentiality desk. */
+@font-face {
+  font-family: "Marcellus";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/marcellus-400.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Libre Franklin";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("/fonts/libre-franklin-var.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Courier Prime";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/courier-prime-400.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Courier Prime";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/courier-prime-700.woff2") format("woff2");
+}
+
 :root {
   /* sampled from brand/hero.png + the committed mark */
   --ink: #0b1220; /* logo navy — dark grounds */
@@ -34,7 +67,11 @@ body {
   font-size: 1.0625rem;
   line-height: 1.65;
   color: var(--ink-warm);
-  background: var(--parchment);
+  /* the page is paper: the grain tile is cropped from the hero painting's
+     own sky, not synthesized */
+  background: var(--parchment) url("/brand/grain.png");
+  background-size: 640px;
+  background-blend-mode: soft-light;
   -webkit-font-smoothing: antialiased;
   caret-color: var(--gold);
 }
@@ -115,6 +152,14 @@ a {
   border-bottom-color: var(--ink-warm);
 }
 
+/* honestly marked pending state: the desk itself opens with Season 3 */
+.nav .pending {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--ink-soft);
+  cursor: default;
+}
+
 /* ---------------- hero ---------------- */
 
 .hero {
@@ -181,7 +226,9 @@ h1 {
   margin-top: 38px;
 }
 
+/* the ink seal: a stamped gold keyline inside the slab, pressed on click */
 .seal {
+  position: relative;
   display: inline-block;
   background: var(--ink-warm);
   color: var(--gold);
@@ -194,8 +241,25 @@ h1 {
   transition: background 0.25s var(--ease);
 }
 
+.seal::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border: 1px solid rgba(201, 162, 39, 0.55);
+  pointer-events: none;
+  transition: border-color 0.25s var(--ease);
+}
+
 .seal:hover {
   background: var(--ink);
+}
+
+.seal:hover::after {
+  border-color: rgba(201, 162, 39, 0.9);
+}
+
+.seal:active {
+  transform: translateY(1px);
 }
 
 .quiet {
@@ -225,7 +289,12 @@ section.band {
 }
 
 .band-ink {
-  background: var(--ink);
+  /* the neutral-luminance tile (mean ~50% gray) modulates lightness only,
+     so soft-light returns the committed navy with paper mottle — the gold
+     tile here turned the ink olive */
+  background: var(--ink) url("/brand/grain-neutral.png");
+  background-size: 768px;
+  background-blend-mode: soft-light;
   color: var(--parchment);
 }
 
@@ -310,7 +379,8 @@ dl.rows dd {
   font-size: 0.74rem;
   font-weight: 700;
   letter-spacing: 0.24em;
-  color: var(--gold);
+  /* labels are chrome, not money — gold stays with the figures */
+  color: var(--parchment-dim);
   padding-bottom: 16px;
   border-bottom: 1px solid var(--hairline-gold);
 }
@@ -377,10 +447,23 @@ table.viz {
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--gold);
+  /* labels are chrome, not money */
+  color: var(--parchment-dim);
   text-align: left;
   padding: 12px 18px 14px;
   border-bottom: 1px solid var(--hairline-gold);
+}
+
+/* the fact column stays put while the record scrolls — the blanks must
+   never lose their row names */
+.viz th:first-child,
+.viz td:first-child {
+  position: sticky;
+  left: 0;
+  background: var(--ink);
+  z-index: 2;
+  /* a hairline seats the cut where scrolled glyphs pass behind */
+  border-right: 1px solid var(--hairline-gold);
 }
 
 .viz td {
@@ -600,6 +683,16 @@ footer a:hover {
 
   .nav a.link.keep {
     display: inline;
+  }
+
+  /* the wordmark yields its width so the desk's pending state — the
+     brief's primary action — stays represented on phones */
+  .brand span {
+    display: none;
+  }
+
+  .nav .pending {
+    font-size: 0.82rem;
   }
 }
 
