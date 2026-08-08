@@ -345,7 +345,7 @@ export default function App() {
           </div>
         </section>
 
-        <section className="band" id="how">
+        <section className="band band-center" id="how">
           <div className="shell">
             <h2>How it works</h2>
             <p className="lede">
@@ -432,7 +432,7 @@ export default function App() {
           </div>
         </section>
 
-        <section className="band" id="faq">
+        <section className="band band-center" id="faq">
           <div className="shell">
             <h2>Frequently Asked Questions</h2>
             <div className="faq-list">

@@ -496,6 +496,7 @@ h2 {
   font-size: 1.18rem;
   display: flex;
   align-items: baseline;
+  justify-content: center;
   gap: 10px;
 }
 
@@ -647,10 +648,14 @@ h2 {
 
 /* ---------------- faq ---------------- */
 
+/* The block centres on the page, but the rows read left — a question centred
+   against a right-hand +/- marker sits crooked. */
 .faq-list {
   margin-top: 44px;
   max-width: 46rem;
+  margin-inline: auto;
   border-bottom: 1px solid var(--hairline);
+  text-align: left;
 }
 
 .faq-list details {
