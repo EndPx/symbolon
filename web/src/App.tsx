@@ -111,28 +111,31 @@ const WHY = [
   },
 ];
 
+// Four purpose-painted vignettes following one sealed amphora — deposited,
+// priced, weighed, carried home — so the row reads as a sequence rather than
+// four unrelated crops.
 const STEPS = [
   {
-    img: "/brand/step-ask.jpg",
-    alt: "Two merchants meeting on a quay",
+    img: "/brand/step-1.jpg",
+    alt: "Two pairs of hands lowering a sealed clay amphora into a marble niche",
     title: "Deposit collateral",
     body: "Put up the asset you want to borrow against — cETH, cBTC, a tokenised bond. Only you and your lender can see it.",
   },
   {
-    img: "/brand/step-lock.jpg",
-    alt: "A split gold coin glowing",
+    img: "/brand/step-2.jpg",
+    alt: "Hands over a marble table — one sliding a stack of gold coins across, the other holding a gold coin split in two",
     title: "Borrow at a fixed rate",
     body: "Ask a few lenders for a rate, privately and separately. Take the best one. Your rate and end date lock the moment you accept.",
   },
   {
-    img: "/brand/step-safe.jpg",
-    alt: "A marble temple on the hillside",
+    img: "/brand/step-3.jpg",
+    alt: "A bronze balance scale weighing the sealed amphora against a heap of gold coins, a storm gathering over the sea behind",
     title: "Monitor your position",
     body: "If your collateral falls in value, your lender asks you to top up and you get a set window to do it. A healthy position can't be touched.",
   },
   {
-    img: "/brand/step-home.jpg",
-    alt: "Ships resting in the harbor",
+    img: "/brand/step-4.jpg",
+    alt: "A merchant carrying the sealed amphora away from a now-empty marble niche, a whole gold coin glowing above",
     title: "Repay and get it back",
     body: "On the end date, repay exactly what you agreed at the start — not a cent more — and your collateral returns to you.",
   },
