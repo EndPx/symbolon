@@ -284,12 +284,9 @@ export default function App() {
           <a className="link keep" href="#faq">
             FAQ
           </a>
-          <span
-            className="pending"
-            title="The app opens with HackCanton Season 3 — the contracts already run"
-          >
-            App · soon
-          </span>
+          <a className="link keep app-link" href="/app">
+            Open app
+          </a>
           <a className="link keep" href={GITHUB} target="_blank" rel="noreferrer">
             GitHub ↗
           </a>

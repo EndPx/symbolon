@@ -190,12 +190,16 @@ a {
   border-bottom-color: var(--ink-warm);
 }
 
-/* honestly marked pending state: the desk itself opens with Season 3 */
-.nav .pending {
-  font-size: 0.88rem;
-  font-weight: 500;
-  color: var(--ink-soft);
-  cursor: default;
+/* the one nav item that leaves the page */
+.nav a.app-link {
+  border: 1px solid var(--ink-warm);
+  padding: 7px 14px;
+  font-weight: 600;
+}
+
+.nav a.app-link:hover {
+  background: var(--ink-warm);
+  color: var(--gold);
 }
 
 /* ---------------- hero ---------------- */
@@ -912,14 +916,15 @@ h2 {
     display: inline;
   }
 
-  /* the wordmark yields its width so the desk's pending state — the
-     brief's primary action — stays represented on phones */
+  /* the wordmark yields its width so the primary action — Open app —
+     stays represented on phones */
   .brand span {
     display: none;
   }
 
-  .nav .pending {
-    font-size: 0.82rem;
+  .nav a.app-link {
+    padding: 6px 11px;
+    font-size: 0.84rem;
   }
 }
 
