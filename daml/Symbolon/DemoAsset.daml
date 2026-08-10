@@ -52,3 +52,19 @@ template Holding
         newViewers : [Party]
       controller owner
       do create this with viewers = newViewers
+
+    -- Trading breaks holdings into change, and a choice can only spend one at
+    -- a time. Without this, a party with enough of an asset spread across two
+    -- holdings cannot pledge it — the balance is there and unusable.
+    choice Merge : ContractId Holding
+      with
+        otherCid : ContractId Holding
+      controller owner
+      do
+        assertMsg "cannot merge a holding with itself" (otherCid /= self)
+        other <- fetch otherCid
+        assertMsg "holdings must share issuer, owner and instrument"
+          (other.issuer == issuer && other.owner == owner
+             && other.instrument == instrument)
+        archive otherCid
+        create this with amount = amount + other.amount, viewers = []
