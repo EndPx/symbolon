@@ -1,0 +1,66 @@
+-- Symbolon.Setup — put a working desk on a fresh ledger.
+--
+-- Run once against a running sandbox to give the web app something real to
+-- read and write:
+--
+--   dpm script --dar .daml/dist/symbolon-live-0.1.0.dar \
+--     --script-name Symbolon.Setup:setup \
+--     --ledger-host 127.0.0.1 --ledger-port 6865 --wall-clock-time
+--
+-- It allocates the desk's parties, mints the assets they trade, and publishes
+-- the price feeds their margin checks read. Nothing here is app-specific: the
+-- app discovers all of it by querying the ledger.
+
+module Symbolon.Setup where
+
+import DA.Foldable (forA_)
+import Daml.Script
+import Symbolon.DemoAsset
+import Symbolon.Repo
+
+data Desk = Desk with
+  issuer : Party
+  oracle : Party
+  borrower : Party
+  dealerA : Party
+  dealerB : Party
+
+setup : Script ()
+setup = do
+  issuer <- allocateParty "issuer"
+  oracle <- allocateParty "oracle"
+  borrower <- allocateParty "borrower"
+  dealerA <- allocateParty "dealer-a"
+  dealerB <- allocateParty "dealer-b"
+  let desk = Desk with issuer; oracle; borrower; dealerA; dealerB
+      readers = [borrower, dealerA, dealerB]
+
+  -- The borrower's book: collateral to pledge, a second asset to substitute
+  -- with, and cash to settle the repurchase leg.
+  mint desk borrower "CETH" 40.0
+  mint desk borrower "TBILL" 3000.0
+  mint desk borrower "CUSD" 5000.0
+
+  -- Lender balance sheets.
+  mint desk dealerA "CUSD" 250000.0
+  mint desk dealerB "CUSD" 250000.0
+
+  -- Marks. CETH is the volatile one the demo moves; TBILL and CBTC sit here so
+  -- a substitution or a second market has somewhere to price against.
+  now <- getTime
+  forA_ [("CETH", 100.0), ("TBILL", 1.0), ("CBTC", 64000.0)] $ \(sym, px) ->
+    submit oracle $ createCmd PriceFeed with
+      oracle; instrument = sym; price = px; asOf = now; readers
+
+  debug "Symbolon desk ready."
+  debug ("issuer   = " <> show issuer)
+  debug ("oracle   = " <> show oracle)
+  debug ("borrower = " <> show borrower)
+  debug ("dealerA  = " <> show dealerA)
+  debug ("dealerB  = " <> show dealerB)
+
+mint : Desk -> Party -> Text -> Decimal -> Script ()
+mint desk owner instrument amount = do
+  _ <- submit desk.issuer $ createCmd Holding with
+    issuer = desk.issuer; owner; instrument; amount; viewers = []
+  pure ()
