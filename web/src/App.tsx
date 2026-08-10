@@ -286,9 +286,9 @@ export default function App() {
           </a>
           <span
             className="pending"
-            title="The desk application opens with HackCanton Season 3 — the contracts already run"
+            title="The app opens with HackCanton Season 3 — the contracts already run"
           >
-            The desk · soon
+            App · soon
           </span>
           <a className="link keep" href={GITHUB} target="_blank" rel="noreferrer">
             GitHub ↗
