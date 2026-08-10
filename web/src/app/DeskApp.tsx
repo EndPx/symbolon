@@ -11,8 +11,10 @@ import {
   type WalletOption,
 } from "../ledger/session";
 import {
+  balanceOf,
   cureDeadline,
   cureLeft,
+  fmtDuration,
   daysUntil,
   deskState,
   feedFor,
@@ -27,7 +29,6 @@ import {
   type RepoPosition,
 } from "../ledger/symbolon";
 import * as act from "./actions";
-import { pickHolding } from "./actions";
 
 function useDesk(session: Session | null) {
   const [state, setState] = useState<DeskState | null>(null);
@@ -259,6 +260,9 @@ function BorrowPanel({
   const [cashAmt, setCashAmt] = useState("1000");
   const [term, setTerm] = useState("30");
   const [threshold, setThreshold] = useState("1.05");
+  // How long the borrower gets to cure a call before the lender may seize.
+  // A real negotiated term, not a constant — an hour is only the usual answer.
+  const [cure, setCure] = useState("60");
   const [picked, setPicked] = useState<string[]>([]);
 
   useEffect(() => {
@@ -312,6 +316,10 @@ function BorrowPanel({
               onChange={(e) => setThreshold(e.target.value)}
             />
           </label>
+          <label>
+            Cure window (min)
+            <input value={cure} onChange={(e) => setCure(e.target.value)} />
+          </label>
         </div>
 
         <div className="dealer-picks">
@@ -345,7 +353,7 @@ function BorrowPanel({
                 cashAmount: Number(cashAmt),
                 termDays: Number(term),
                 marginThresholdPct: Number(threshold),
-                cureSeconds: 3600,
+                cureSeconds: Math.max(1, Math.round(Number(cure) * 60)),
               }),
             )
           }
@@ -369,12 +377,13 @@ function BorrowPanel({
             .slice()
             .sort((a, b) => num(a.payload.rate) - num(b.payload.rate))
             .map((q, i) => {
-              const coll = pickHolding(
-                st.holdings,
-                s.party,
-                q.payload.collateralInstrument,
-                num(q.payload.collateralAmount),
-              );
+              const need = num(q.payload.collateralAmount);
+              const coll =
+                balanceOf(
+                  st.holdings,
+                  s.party,
+                  q.payload.collateralInstrument,
+                ) >= need;
               const expired = new Date(q.payload.validUntil) < new Date();
               return (
                 <div
@@ -407,7 +416,12 @@ function BorrowPanel({
                       }
                       onClick={() =>
                         run("Struck", () =>
-                          act.acceptQuote(s, q.contractId, coll!.contractId),
+                          act.acceptQuote(
+                            s,
+                            q.contractId,
+                            q.payload.collateralInstrument,
+                            need,
+                          ),
                         )
                       }
                     >
@@ -472,7 +486,8 @@ function LendPanel({
                     {fmtAmount(r.payload.collateralAmount, 4)}{" "}
                     {r.payload.collateralInstrument} · {r.payload.termDays}d ·
                     margin{" "}
-                    {(num(r.payload.marginThresholdPct) * 100).toFixed(0)}%
+                    {(num(r.payload.marginThresholdPct) * 100).toFixed(0)}% ·
+                    cure {fmtDuration(num(r.payload.cureSeconds))}
                     {cover !== undefined && (
                       <> · cover {(cover * 100).toFixed(0)}%</>
                     )}
@@ -623,22 +638,13 @@ function PositionsPanel({
           const asBorrower = pos.borrower === s.party;
           const h = health(pos, st.feeds);
           const feed = feedFor(st.feeds, pos.collateralInstrument);
-          const cash = pickHolding(
-            st.holdings,
-            s.party,
-            pos.cashInstrument,
-            num(pos.repurchasePrice),
-          );
+          const owed = num(pos.repurchasePrice);
+          const cash =
+            balanceOf(st.holdings, s.party, pos.cashInstrument) >= owed;
           const wanted = Number(topUps[p.contractId] ?? 0);
           const extra =
-            wanted > 0
-              ? pickHolding(
-                  st.holdings,
-                  s.party,
-                  pos.collateralInstrument,
-                  wanted,
-                )
-              : undefined;
+            wanted > 0 &&
+            balanceOf(st.holdings, s.party, pos.collateralInstrument) >= wanted;
           const deadline = cureDeadline(pos);
           const cureLapsed = deadline ? new Date(deadline) < new Date() : false;
           const swap = pendingSwap.get(p.contractId);
@@ -676,6 +682,10 @@ function PositionsPanel({
                   <dd>{daysUntil(pos.maturity)}d</dd>
                 </div>
                 <div>
+                  <dt>Cure window</dt>
+                  <dd>{fmtDuration(num(pos.cureSeconds))}</dd>
+                </div>
+                <div>
                   <dt>Status</dt>
                   <dd className={isUnderCall(pos) ? "warn" : ""}>
                     {isUnderCall(pos)
@@ -709,7 +719,7 @@ function PositionsPanel({
                           act.topUp(
                             s,
                             p.contractId,
-                            extra!.contractId,
+                            pos.collateralInstrument,
                             wanted,
                             feed!.contractId,
                           ),
@@ -755,7 +765,7 @@ function PositionsPanel({
                       title={cash ? "" : "Not enough CUSD to repurchase"}
                       onClick={() =>
                         run("Repaid", () =>
-                          act.repay(s, p.contractId, cash!.contractId),
+                          act.repay(s, p.contractId, pos.cashInstrument, owed),
                         )
                       }
                     >
