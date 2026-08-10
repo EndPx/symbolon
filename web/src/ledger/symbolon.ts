@@ -129,6 +129,22 @@ export function deskState(contracts: Contract[]): DeskState {
 
 export const num = (s: string | undefined) => Number(s ?? 0);
 
+/**
+ * What a party actually owns of an instrument, across however many holdings
+ * their trading has broken it into. This — not the size of any one holding —
+ * is what decides whether they can afford a move.
+ */
+export const balanceOf = (
+  holdings: Contract<Holding>[],
+  owner: string,
+  instrument: string,
+) =>
+  holdings
+    .filter(
+      (h) => h.payload.owner === owner && h.payload.instrument === instrument,
+    )
+    .reduce((n, h) => n + num(h.payload.amount), 0);
+
 export function priceOf(feeds: Contract<PriceFeed>[], instrument: string) {
   const f = feeds.find((x) => x.payload.instrument === instrument);
   return f ? num(f.payload.price) : undefined;
@@ -203,12 +219,15 @@ export const daysUntil = (iso: string) => {
 
 // A cure window is short and the borrower is on the clock, so minutes and
 // seconds matter here in a way days-to-maturity never does.
-export const cureLeft = (iso: string) => {
-  const ms = new Date(iso).getTime() - Date.now();
-  if (ms <= 0) return "0s";
-  const s = Math.floor(ms / 1000);
+export const fmtDuration = (seconds: number) => {
+  const s = Math.floor(seconds);
+  if (s <= 0) return "0s";
   if (s < 60) return `${s}s`;
   const m = Math.floor(s / 60);
   if (m < 60) return `${m}m`;
-  return `${Math.floor(m / 60)}h ${m % 60}m`;
+  const h = Math.floor(m / 60);
+  return m % 60 ? `${h}h ${m % 60}m` : `${h}h`;
 };
+
+export const cureLeft = (iso: string) =>
+  fmtDuration((new Date(iso).getTime() - Date.now()) / 1000);

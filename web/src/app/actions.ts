@@ -50,21 +50,49 @@ export function requestQuotes(s: Session, t: RequestTerms) {
   );
 }
 
-/** Find a holding of `instrument` with at least `min`, preferring the tightest fit. */
-export function pickHolding(
+/** All of `owner`'s holdings in one instrument, largest first. */
+const bucket = (
   holdings: Contract<Holding>[],
   owner: string,
   instrument: string,
-  min: number,
-): Contract<Holding> | undefined {
-  return holdings
+) =>
+  holdings
     .filter(
-      (h) =>
-        h.payload.owner === owner &&
-        h.payload.instrument === instrument &&
-        num(h.payload.amount) >= min,
+      (h) => h.payload.owner === owner && h.payload.instrument === instrument,
     )
-    .sort((a, b) => num(a.payload.amount) - num(b.payload.amount))[0];
+    .sort((a, b) => num(b.payload.amount) - num(a.payload.amount));
+
+/**
+ * Return one holding worth at least `min`, merging holdings together until one
+ * is. Trades leave change behind, so a party's balance fragments as they use
+ * the desk — without this, someone holding 20 + 20 could not pledge 25, and
+ * the balance on screen would be a number they cannot spend.
+ */
+export async function consolidate(
+  s: Session,
+  owner: string,
+  instrument: string,
+  min: number,
+): Promise<string> {
+  let mine = bucket(deskState(await s.read()).holdings, owner, instrument);
+  const total = mine.reduce((n, h) => n + num(h.payload.amount), 0);
+  if (total < min) {
+    throw new Error(
+      `Not enough ${instrument}: ${total} against ${min} needed.`,
+    );
+  }
+
+  // Each merge archives both inputs and creates one holding, so the ids move
+  // under us and every round has to re-read. In practice this is one or two.
+  while (num(mine[0].payload.amount) < min) {
+    await s.submit([
+      exercise(TPL.Holding, mine[0].contractId, "Merge", {
+        otherCid: mine[1].contractId,
+      }),
+    ]);
+    mine = bucket(deskState(await s.read()).holdings, owner, instrument);
+  }
+  return mine[0].contractId;
 }
 
 /**
@@ -83,16 +111,10 @@ export async function sendQuote(
   rate: number,
   validSeconds: number,
 ) {
-  const before = deskState(await s.read());
-  const cash = pickHolding(before.holdings, s.party, cashInstrument, cashAmount);
-  if (!cash) {
-    throw new Error(
-      `No ${cashInstrument} holding of at least ${cashAmount} to fund this quote.`,
-    );
-  }
+  const cashCid = await consolidate(s, s.party, cashInstrument, cashAmount);
 
   await s.submit([
-    exercise(TPL.Holding, cash.contractId, "SetViewers", {
+    exercise(TPL.Holding, cashCid, "SetViewers", {
       newViewers: [borrower],
     }),
   ]);
@@ -103,7 +125,7 @@ export async function sendQuote(
     (h) =>
       h.payload.owner === s.party &&
       h.payload.instrument === cashInstrument &&
-      num(h.payload.amount) === num(cash.payload.amount) &&
+      num(h.payload.amount) >= cashAmount &&
       h.payload.viewers.includes(borrower),
   );
   if (!escrowed) throw new Error("Escrowed holding did not come back.");
@@ -126,11 +148,18 @@ export function withdrawRequest(s: Session, requestCid: string) {
 }
 
 /** Acceptance IS settlement: collateral and cash move in the same transaction. */
-export function acceptQuote(
+export async function acceptQuote(
   s: Session,
   quoteCid: string,
-  collateralCid: string,
+  collateralInstrument: string,
+  collateralAmount: number,
 ) {
+  const collateralCid = await consolidate(
+    s,
+    s.party,
+    collateralInstrument,
+    collateralAmount,
+  );
   return s.submit([
     exercise(TPL.RepoQuote, quoteCid, "AcceptQuote", { collateralCid }),
   ]);
@@ -150,13 +179,14 @@ export function issueMarginCall(
   ]);
 }
 
-export function topUp(
+export async function topUp(
   s: Session,
   positionCid: string,
-  extraCid: string,
+  instrument: string,
   extraQty: number,
   feedCid: string,
 ) {
+  const extraCid = await consolidate(s, s.party, instrument, extraQty);
   return s.submit([
     exercise(TPL.RepoPosition, positionCid, "TopUpCollateral", {
       extraCid,
@@ -179,14 +209,10 @@ export async function proposeSubstitution(
   newQty: number,
   newFeedCid: string,
 ) {
-  const before = deskState(await s.read());
-  const holding = pickHolding(before.holdings, s.party, newInstrument, newQty);
-  if (!holding) {
-    throw new Error(`No ${newInstrument} holding of at least ${newQty}.`);
-  }
+  const holdingCid = await consolidate(s, s.party, newInstrument, newQty);
 
   await s.submit([
-    exercise(TPL.Holding, holding.contractId, "SetViewers", {
+    exercise(TPL.Holding, holdingCid, "SetViewers", {
       newViewers: [dealer],
     }),
   ]);
@@ -196,7 +222,7 @@ export async function proposeSubstitution(
     (h) =>
       h.payload.owner === s.party &&
       h.payload.instrument === newInstrument &&
-      num(h.payload.amount) === num(holding.payload.amount) &&
+      num(h.payload.amount) >= newQty &&
       h.payload.viewers.includes(dealer),
   );
   if (!shown) throw new Error("Escrowed holding did not come back.");
@@ -226,7 +252,13 @@ export function rejectSubstitution(s: Session, proposalCid: string) {
   ]);
 }
 
-export function repay(s: Session, positionCid: string, cashCid: string) {
+export async function repay(
+  s: Session,
+  positionCid: string,
+  cashInstrument: string,
+  repurchasePrice: number,
+) {
+  const cashCid = await consolidate(s, s.party, cashInstrument, repurchasePrice);
   return s.submit([
     exercise(TPL.RepoPosition, positionCid, "Repurchase", { cashCid }),
   ]);
