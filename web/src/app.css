@@ -1,0 +1,512 @@
+/* The desk. Same world as the site — parchment, ink, gold for money — but
+   denser, because this is a tool rather than an argument. */
+
+.connect {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 32px 20px;
+  background: var(--parchment) url("/brand/grain.png");
+  background-size: 640px;
+  background-blend-mode: soft-light;
+}
+
+.connect-card {
+  width: min(440px, 100%);
+  background: #f9f2de;
+  border: 1px solid var(--hairline);
+  padding: 36px 32px 30px;
+  text-align: center;
+}
+
+.connect-card h1 {
+  font-family: "Marcellus", serif;
+  font-weight: 400;
+  font-size: 1.85rem;
+  margin-top: 18px;
+}
+
+.connect-card img {
+  margin-inline: auto;
+}
+
+.connect-lede {
+  margin-top: 12px;
+  font-size: 0.94rem;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+
+.seal.wide {
+  display: block;
+  width: 100%;
+  margin-top: 24px;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.wallet-list {
+  list-style: none;
+  margin-top: 14px;
+  border-top: 1px solid var(--hairline);
+}
+
+.wallet-list li {
+  border-bottom: 1px solid var(--hairline);
+}
+
+.wallet-list button {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 13px 4px;
+  background: none;
+  border: none;
+  font: inherit;
+  font-size: 0.95rem;
+  color: var(--ink-warm);
+  cursor: pointer;
+  text-align: left;
+}
+
+.wallet-list button:hover:not(:disabled) {
+  color: var(--terracotta);
+}
+
+.wallet-list button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.rule-label {
+  margin-top: 26px;
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.net-note {
+  margin-top: 14px;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+
+.net-note code,
+code {
+  font-family: "Courier Prime", monospace;
+  font-size: 0.92em;
+}
+
+.back {
+  display: inline-block;
+  margin-top: 26px;
+  font-size: 0.88rem;
+}
+
+/* ---------------------------------------------------------------- shell */
+
+.desk {
+  min-height: 100dvh;
+  background: var(--parchment) url("/brand/grain.png");
+  background-size: 640px;
+  background-blend-mode: soft-light;
+}
+
+.desk-head {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+  padding: 14px clamp(16px, 4vw, 40px);
+  border-bottom: 1px solid var(--hairline);
+  background: rgba(249, 242, 222, 0.9);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  backdrop-filter: blur(6px);
+}
+
+.desk-head .brand img {
+  width: 24px;
+  height: 24px;
+}
+
+.desk-head .brand span {
+  font-size: 0.92rem;
+}
+
+.desk-tabs {
+  display: flex;
+  gap: 4px;
+  margin-right: auto;
+}
+
+.desk-tabs button {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 6px 10px;
+  font: inherit;
+  font-size: 0.92rem;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.desk-tabs button.on {
+  color: var(--ink-warm);
+  border-bottom-color: var(--gold);
+}
+
+.who {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.88rem;
+}
+
+.who-label {
+  font-weight: 600;
+}
+
+.desk-body {
+  max-width: 940px;
+  margin-inline: auto;
+  padding: clamp(20px, 4vw, 40px) clamp(16px, 4vw, 40px) 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* --------------------------------------------------------------- panels */
+
+.panel {
+  background: #f9f2de;
+  border: 1px solid var(--hairline);
+  padding: 24px;
+}
+
+.panel h2 {
+  font-family: "Marcellus", serif;
+  font-weight: 400;
+  font-size: 1.3rem;
+  border: none;
+  padding: 0;
+}
+
+.panel-lede {
+  margin-top: 8px;
+  max-width: 52ch;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+
+.balances {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.bal {
+  border: 1px solid var(--hairline);
+  padding: 10px 14px;
+  min-width: 130px;
+}
+
+.bal-sym {
+  display: block;
+  font-size: 0.74rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.bal-amt {
+  font-family: "Courier Prime", monospace;
+  font-size: 1.05rem;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.form-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.form-grid input,
+.form-grid select,
+.quote-form input,
+.qty {
+  font: inherit;
+  font-family: "Courier Prime", monospace;
+  font-size: 0.95rem;
+  padding: 9px 10px;
+  border: 1px solid var(--hairline);
+  background: var(--parchment);
+  color: var(--ink-warm);
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.form-grid input:focus,
+.quote-form input:focus,
+.qty:focus {
+  outline: 2px solid var(--gold);
+  outline-offset: -1px;
+}
+
+.dealer-picks {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.chk {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.92rem;
+  color: var(--ink-warm);
+  cursor: pointer;
+}
+
+.panel > .seal {
+  margin-top: 18px;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.seal.sm,
+.ghost.sm {
+  padding: 8px 14px;
+  font-size: 0.86rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.seal.sm {
+  background: var(--ink-warm);
+  color: var(--gold);
+  border: 1px solid var(--ink-warm);
+  font-weight: 600;
+}
+
+.ghost.sm {
+  background: none;
+  border: 1px solid var(--hairline);
+  color: var(--ink-warm);
+}
+
+.ghost.sm:hover:not(:disabled) {
+  border-color: var(--ink-warm);
+}
+
+.ghost.sm.danger:hover:not(:disabled) {
+  border-color: var(--terracotta);
+  color: var(--terracotta);
+}
+
+button:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+
+/* ----------------------------------------------------------------- rows */
+
+.rows {
+  margin-top: 16px;
+  border-top: 1px solid var(--hairline);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.row > :first-child {
+  flex: 1 1 220px;
+}
+
+.row.best {
+  box-shadow: inset 3px 0 0 var(--gold);
+  padding-left: 12px;
+}
+
+.tag {
+  margin-left: 8px;
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gold);
+  border: 1px solid var(--hairline-gold);
+  padding: 1px 6px;
+}
+
+.rate {
+  font-family: "Courier Prime", monospace;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--gold);
+}
+
+.acts {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.acts.wrap {
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.quote-form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.quote-form input,
+.qty {
+  width: 120px;
+}
+
+/* ------------------------------------------------------------ positions */
+
+.position {
+  border: 1px solid var(--hairline);
+  padding: 20px;
+  margin-top: 16px;
+}
+
+.position header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.pos-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.health {
+  margin-top: 16px;
+}
+
+.health-track {
+  position: relative;
+  height: 8px;
+  background: rgba(34, 28, 25, 0.1);
+}
+
+.health-fill {
+  height: 100%;
+  transition: width 0.5s var(--ease);
+}
+
+.health-fill.ok {
+  background: var(--gold);
+}
+
+.health-fill.bad {
+  background: var(--terracotta);
+}
+
+.health-fill.unknown {
+  background: var(--ink-soft);
+}
+
+.health-mark {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 1px;
+  background: var(--ink-warm);
+}
+
+.health-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 7px;
+  font-size: 0.82rem;
+}
+
+.terms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px;
+  margin-top: 16px;
+}
+
+.terms dt {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.terms dd {
+  font-family: "Courier Prime", monospace;
+  font-size: 0.95rem;
+  margin-top: 2px;
+}
+
+/* ---------------------------------------------------------------- notes */
+
+.muted {
+  color: var(--ink-soft);
+}
+
+.sm {
+  font-size: 0.84rem;
+}
+
+.pad {
+  padding: 12px 4px;
+}
+
+.ok {
+  color: #6b6410;
+  font-size: 0.88rem;
+  margin-top: 12px;
+}
+
+.warn,
+.err {
+  color: var(--terracotta);
+  font-size: 0.88rem;
+  margin-top: 12px;
+}
+
+.warn {
+  margin-top: 2px;
+}
