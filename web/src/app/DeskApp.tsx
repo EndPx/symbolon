@@ -10,6 +10,8 @@ import type { Contract } from "../ledger/api";
 import {
   browseSession,
   canTrade,
+  connectSandbox,
+  listSandboxParties,
   connectWallet,
   listWalletOptions,
   publicReadParty,
@@ -112,6 +114,10 @@ function ConnectScreen({
   const [wallets, setWallets] = useState<WalletOption[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Local parties, dev builds only. The shipped picker offers wallets and
+  // nothing else; this exists so the lifecycle can still be driven end to end
+  // on a machine with a sandbox, and it is compiled out of production.
+  const [parties, setParties] = useState<string[]>([]);
 
   useEffect(() => {
     void (async () => {
@@ -122,6 +128,13 @@ function ConnectScreen({
         setError((e as Error).message);
       }
     })();
+  }, []);
+
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    void listSandboxParties()
+      .then(setParties)
+      .catch(() => setParties([]));
   }, []);
 
   const pickWallet = async (id?: string) => {
@@ -197,6 +210,27 @@ function ConnectScreen({
             <li className="muted pad">No Canton wallet in this browser.</li>
           )}
         </ul>
+
+        {import.meta.env.DEV && parties.length > 0 && (
+          <>
+            <div className="rule-label">local sandbox - dev only</div>
+            <ul className="wallet-list">
+              {parties.map((party) => (
+                <li key={party}>
+                  <button
+                    className="wallet-row"
+                    onClick={() => onSession(connectSandbox(party))}
+                  >
+                    <span className="wallet-mark mono">
+                      {partyLabel(party).slice(0, 2)}
+                    </span>
+                    <span className="wallet-name">{partyLabel(party)}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
 
         {error && <p className="err">{error}</p>}
         <p className="net-note">
@@ -403,9 +437,20 @@ function BorrowPanel({
     setBorrow((b) => Math.min(b, Math.floor(maxBorrow * 100) / 100));
   }, [maxBorrow]);
 
+  // Who counts as a dealer changes under us: while browsing nobody is "you",
+  // so a default picked before connecting can include the borrower's own
+  // party and send them an RFQ addressed to themselves. Reconcile whenever
+  // the roster changes, and hand back the same array when nothing did, or
+  // the new identity would re-trigger this on every poll.
+  const dealerKey = dealers.join("|");
   useEffect(() => {
-    if (picked.length === 0 && dealers.length) setPicked(dealers);
-  }, [dealers, picked.length]);
+    setPicked((p) => {
+      const valid = p.filter((d) => dealers.includes(d));
+      if (!valid.length) return dealers;
+      return valid.length === p.length ? p : valid;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dealerKey]);
 
   const myRequests = st.requests.filter((r) => r.payload.borrower === s.party);
   const myQuotes = st.quotes.filter((q) => q.payload.borrower === s.party);
@@ -418,6 +463,85 @@ function BorrowPanel({
         <Balances st={st} party={s.party} />
       </section>
 
+      <section className="panel">
+        <h2>Quotes received</h2>
+        {myQuotes.length === 0 && (
+          <p className="muted">
+            {myRequests.length
+              ? `${myRequests.length} request(s) out, no replies yet.`
+              : "Nothing outstanding."}
+          </p>
+        )}
+        <div className="rows">
+          {myQuotes
+            .slice()
+            .sort((a, b) => num(a.payload.rate) - num(b.payload.rate))
+            .map((q, i) => {
+              const need = num(q.payload.collateralAmount);
+              const coll =
+                balanceOf(
+                  st.holdings,
+                  s.party,
+                  q.payload.collateralInstrument,
+                ) >= need;
+              const expired = new Date(q.payload.validUntil) < new Date();
+              return (
+                <div
+                  className={`row quote${i === 0 ? " best" : ""}`}
+                  key={q.contractId}
+                >
+                  <div>
+                    <strong>{partyLabel(q.payload.dealer)}</strong>
+                    {i === 0 && <span className="tag">best</span>}
+                    <div className="muted sm">
+                      {fmtAmount(q.payload.collateralAmount, 4)}{" "}
+                      {q.payload.collateralInstrument} for{" "}
+                      {fmtAmount(q.payload.cashAmount)} CUSD ·{" "}
+                      {q.payload.termDays}d
+                    </div>
+                  </div>
+                  <div className="rate">
+                    {(num(q.payload.rate) * 100).toFixed(2)}%
+                  </div>
+                  <div className="acts">
+                    <button
+                      className="seal sm"
+                      disabled={busy || expired || !coll}
+                      title={
+                        expired
+                          ? "This quote has expired"
+                          : !coll
+                            ? "Not enough collateral"
+                            : ""
+                      }
+                      onClick={() =>
+                        run("Struck", () =>
+                          act.acceptQuote(
+                            s,
+                            q.contractId,
+                            q.payload.collateralInstrument,
+                            need,
+                          ),
+                        )
+                      }
+                    >
+                      {expired ? "Expired" : "Accept"}
+                    </button>
+                    <button
+                      className="ghost sm"
+                      disabled={busy}
+                      onClick={() =>
+                        run("Declined", () => act.rejectQuote(s, q.contractId))
+                      }
+                    >
+                      Pass
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+        </div>
+      </section>
       <section className="panel">
         <h2>Ask for a rate</h2>
 
@@ -600,85 +724,6 @@ function BorrowPanel({
         {note && <p className={note.ok ? "ok" : "err"}>{note.text}</p>}
       </section>
 
-      <section className="panel">
-        <h2>Quotes received</h2>
-        {myQuotes.length === 0 && (
-          <p className="muted">
-            {myRequests.length
-              ? `${myRequests.length} request(s) out, no replies yet.`
-              : "Nothing outstanding."}
-          </p>
-        )}
-        <div className="rows">
-          {myQuotes
-            .slice()
-            .sort((a, b) => num(a.payload.rate) - num(b.payload.rate))
-            .map((q, i) => {
-              const need = num(q.payload.collateralAmount);
-              const coll =
-                balanceOf(
-                  st.holdings,
-                  s.party,
-                  q.payload.collateralInstrument,
-                ) >= need;
-              const expired = new Date(q.payload.validUntil) < new Date();
-              return (
-                <div
-                  className={`row quote${i === 0 ? " best" : ""}`}
-                  key={q.contractId}
-                >
-                  <div>
-                    <strong>{partyLabel(q.payload.dealer)}</strong>
-                    {i === 0 && <span className="tag">best</span>}
-                    <div className="muted sm">
-                      {fmtAmount(q.payload.collateralAmount, 4)}{" "}
-                      {q.payload.collateralInstrument} for{" "}
-                      {fmtAmount(q.payload.cashAmount)} CUSD ·{" "}
-                      {q.payload.termDays}d
-                    </div>
-                  </div>
-                  <div className="rate">
-                    {(num(q.payload.rate) * 100).toFixed(2)}%
-                  </div>
-                  <div className="acts">
-                    <button
-                      className="seal sm"
-                      disabled={busy || expired || !coll}
-                      title={
-                        expired
-                          ? "This quote has expired"
-                          : !coll
-                            ? "Not enough collateral"
-                            : ""
-                      }
-                      onClick={() =>
-                        run("Struck", () =>
-                          act.acceptQuote(
-                            s,
-                            q.contractId,
-                            q.payload.collateralInstrument,
-                            need,
-                          ),
-                        )
-                      }
-                    >
-                      {expired ? "Expired" : "Accept"}
-                    </button>
-                    <button
-                      className="ghost sm"
-                      disabled={busy}
-                      onClick={() =>
-                        run("Declined", () => act.rejectQuote(s, q.contractId))
-                      }
-                    >
-                      Pass
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-        </div>
-      </section>
     </>
   );
 }
@@ -1177,9 +1222,7 @@ export default function DeskApp() {
 
   const isOracle =
     !browsing && !!state?.feeds.some((f) => f.payload.oracle === session.party);
-  const tabs: Tab[] = isOracle
-    ? ["oracle", "positions"]
-    : ["borrow", "lend", "positions"];
+  const tabs: Tab[] = isOracle ? ["oracle"] : ["borrow", "lend"];
   const active = tabs.includes(tab) ? tab : tabs[0];
 
   return (
@@ -1228,20 +1271,26 @@ export default function DeskApp() {
         </header>
 
         <main className="desk-body">
-          {browsing && <BrowseNotice st={state} />}
+          <BrowseNotice st={state} />
           {error && <p className="err">{error}</p>}
           {!state && !browsing && <p className="muted">Reading the ledger…</p>}
-          {state && active === "borrow" && (
-            <BorrowPanel s={session} st={state} refresh={refresh} />
-          )}
-          {state && active === "lend" && (
-            <LendPanel s={session} st={state} refresh={refresh} />
-          )}
-          {state && active === "positions" && (
-            <PositionsPanel s={session} st={state} refresh={refresh} />
-          )}
-          {state && active === "oracle" && (
-            <OraclePanel s={session} st={state} refresh={refresh} />
+
+          <div className="board">
+            {state && active === "borrow" && (
+              <BorrowPanel s={session} st={state} refresh={refresh} />
+            )}
+            {state && active === "lend" && (
+              <LendPanel s={session} st={state} refresh={refresh} />
+            )}
+            {state && active === "oracle" && (
+              <OraclePanel s={session} st={state} refresh={refresh} />
+            )}
+          </div>
+
+          {state && (
+            <div className="board-foot">
+              <PositionsPanel s={session} st={state} refresh={refresh} />
+            </div>
           )}
         </main>
       </div>

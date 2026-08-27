@@ -946,3 +946,50 @@ button.back:hover {
   font-size: 0.92rem;
   color: var(--antique-gold);
 }
+
+/* -------------------------------------------------------------- the board */
+
+/* Three columns, the way a desk is actually read: what you hold on the left,
+   what is moving in the middle, what you are about to do on the right. The
+   open book sits underneath, full width, because it outlives any one ticket. */
+.board {
+  display: grid;
+  grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.board > .panel {
+  margin: 0;
+  min-width: 0;
+}
+
+.board-foot {
+  margin-top: 18px;
+}
+
+.board-foot > .panel {
+  margin: 0 0 18px;
+}
+
+@media (max-width: 1180px) {
+  .board {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  /* The form is the reason the screen is open; give it the full width once
+     there is no third column to hold it. */
+  .board > .panel:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 760px) {
+  .board {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .board > .panel:last-child {
+    grid-column: auto;
+  }
+}
