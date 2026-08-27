@@ -1,10 +1,11 @@
 // Who you are on the ledger, and how your commands get there.
 //
-// Two ways in, one shape out. A real user connects a Canton wallet — Loop,
+// Three ways in, one shape out. A real user connects a Canton wallet — Loop,
 // Console, Cantor8, whatever they have — and the wallet holds the keys and
 // makes the calls. A developer against a local sandbox picks a party from the
-// ones the setup script allocated, and the browser talks through the dev proxy.
-// The app above never learns which is in play.
+// ones the setup script allocated. A visitor who has connected nothing gets a
+// browse session: it can read what the ledger shows the public, and it cannot
+// write at all. The app above never learns which is in play.
 
 import {
   LedgerApi,
@@ -15,7 +16,12 @@ import {
 import { partyLabel } from "./symbolon";
 
 export interface Session {
-  readonly kind: "sandbox" | "wallet";
+  readonly kind: "browse" | "sandbox" | "wallet";
+  /**
+   * The party whose book this session owns. Empty while browsing — a visitor
+   * owns nothing, and every "is this mine?" test in the app is a comparison
+   * against this, so an empty value correctly matches nothing.
+   */
   readonly party: string;
   readonly label: string;
   /** Wallet name when connected through one. */
@@ -26,6 +32,56 @@ export interface Session {
 }
 
 const STORE_KEY = "symbolon.session";
+
+/** Thrown instead of submitting when nothing is connected to sign with. */
+export class WalletRequired extends Error {
+  constructor() {
+    super("Connect a wallet to sign this.");
+    this.name = "WalletRequired";
+  }
+}
+
+/** Can this session actually put a command on the ledger? */
+export const canTrade = (s: Session | null): boolean =>
+  s !== null && s.kind !== "browse";
+
+// ----------------------------------------------------------------- browse
+
+/**
+ * Read-only, no keys, nothing signed.
+ *
+ * Canton scopes every read to a party, so there is no such thing as querying
+ * "the ledger" — a visitor is not entitled to anyone's contracts and the API
+ * will not invent a view for them. What a browser gets is the public tape: the
+ * oracle's price feeds, which everyone prices against by design. Their own
+ * book stays empty until they connect, because that is the ledger's answer,
+ * not a screen we are withholding.
+ */
+export function browseSession(readParty?: string): Session {
+  const api = sandboxApi();
+  return {
+    kind: "browse",
+    party: "",
+    label: "Browsing",
+    read: async () => (readParty ? api.activeContracts(readParty) : []),
+    submit: () => Promise.reject(new WalletRequired()),
+    async disconnect() {},
+  };
+}
+
+/**
+ * A party whose reads show only public data. The oracle publishes the marks
+ * and holds no book of its own, which makes it exactly the right lens for
+ * someone who has connected nothing.
+ */
+export async function publicReadParty(): Promise<string | undefined> {
+  try {
+    const all = await sandboxApi().parties();
+    return all.find((p) => p.startsWith("oracle"));
+  } catch {
+    return undefined;
+  }
+}
 
 // ---------------------------------------------------------------- sandbox
 
@@ -58,7 +114,15 @@ export function connectSandbox(party: string): Session {
 // ----------------------------------------------------------------- wallet
 
 type PartyLayerClient = {
-  listWallets(): Promise<{ id: string; name: string; installed?: boolean }[]>;
+  listWallets(): Promise<
+    {
+      id: string;
+      name: string;
+      installed?: boolean;
+      icon?: string;
+      icons?: Record<string, string>;
+    }[]
+  >;
   connect(opts?: unknown): Promise<{ partyId: string; walletId: string }>;
   disconnect(): Promise<void>;
   ledgerApi(p: {
@@ -73,6 +137,14 @@ let client: PartyLayerClient | null = null;
 /**
  * PartyLayer pulls in every wallet adapter, so it is loaded on demand — a
  * visitor who never opens the wallet picker never downloads it.
+ *
+ * Console is registered explicitly. The SDK dropped it from the defaults on
+ * the assumption that the extension announces itself over CIP-0103 and the
+ * registry fills in the rest; both of those are someone else's uptime, and a
+ * judge whose Console does not appear in the list has simply been told our
+ * app does not support their wallet. Registering the adapter makes it appear
+ * whether or not the registry answers, and an announced Console still maps
+ * onto this same adapter rather than showing up twice.
  */
 async function partyLayer(network: string): Promise<PartyLayerClient> {
   if (client) return client;
@@ -80,6 +152,7 @@ async function partyLayer(network: string): Promise<PartyLayerClient> {
   client = mod.createPartyLayer({
     network: network as never,
     app: { name: "Symbolon" },
+    adapters: [...mod.getBuiltinAdapters(), new mod.ConsoleAdapter()],
   } as never) as unknown as PartyLayerClient;
   return client;
 }
@@ -88,17 +161,33 @@ export interface WalletOption {
   id: string;
   name: string;
   installed: boolean;
+  /** The wallet's own mark, when it ships one. */
+  icon?: string;
 }
+
+/**
+ * The wallets this desk supports. A picker is a promise: every row on it is
+ * a route we have thought about. Listing whatever a registry happens to
+ * return makes that promise on behalf of wallets nobody here has tried.
+ */
+const SUPPORTED = ["console", "loop", "send"];
+
+const supported = (w: { id: string; name: string }) => {
+  const hay = `${w.id} ${w.name}`.toLowerCase();
+  return SUPPORTED.some((k) => hay.includes(k));
+};
 
 export async function listWalletOptions(
   network = walletNetwork(),
 ): Promise<WalletOption[]> {
   const c = await partyLayer(network);
-  const ws = await c.listWallets();
+  const ws = (await c.listWallets()).filter(supported);
   return ws.map((w) => ({
     id: w.id,
     name: w.name,
     installed: w.installed !== false,
+    // Registries carry the mark under either key, at whatever size they had.
+    icon: w.icon ?? Object.values(w.icons ?? {})[0],
   }));
 }
 

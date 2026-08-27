@@ -287,9 +287,6 @@ export default function App() {
           <a className="link keep app-link" href="/app">
             Open app
           </a>
-          <a className="link keep" href={GITHUB} target="_blank" rel="noreferrer">
-            GitHub ↗
-          </a>
         </div>
       </nav>
 

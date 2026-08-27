@@ -1,11 +1,18 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import type { Contract } from "../ledger/api";
 import {
-  connectSandbox,
+  browseSession,
+  canTrade,
   connectWallet,
-  listSandboxParties,
   listWalletOptions,
-  sandboxAvailable,
+  publicReadParty,
   walletNetwork,
   type Session,
   type WalletOption,
@@ -53,12 +60,27 @@ function useDesk(session: Session | null) {
   return { state, error, refresh };
 }
 
+/**
+ * Asks the shell to open the wallet picker. Every panel needs it and none of
+ * them owns it, which is what context is for.
+ */
+const AskConnect = createContext<() => void>(() => {});
+
 /** Runs an action, surfaces whatever the ledger says, then refreshes. */
-function useRunner(refresh: () => Promise<void>) {
+function useRunner(refresh: () => Promise<void>, s: Session) {
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null);
+  const askConnect = useContext(AskConnect);
 
   const run = async (what: string, fn: () => Promise<unknown>) => {
+    // Browsing has no keys, so stop before the action reads anything and
+    // fails somewhere less obvious. Every write in the app comes through
+    // here, which is why this one check is enough to hold the whole line.
+    if (!canTrade(s)) {
+      setNote({ ok: false, text: "Connect a wallet to trade." });
+      askConnect();
+      return;
+    }
     setBusy(true);
     setNote(null);
     try {
@@ -75,34 +97,32 @@ function useRunner(refresh: () => Promise<void>) {
   return { busy, note, run };
 }
 
-function ConnectScreen({ onSession }: { onSession: (s: Session) => void }) {
+/**
+ * The wallet picker. No preamble: someone opening a Canton dApp already knows
+ * what connecting a wallet is for, and a paragraph explaining it reads as
+ * doubt about who is here. Wallets load on open so the list IS the screen.
+ */
+function ConnectScreen({
+  onSession,
+  onCancel,
+}: {
+  onSession: (s: Session) => void;
+  onCancel?: () => void;
+}) {
   const [wallets, setWallets] = useState<WalletOption[] | null>(null);
-  const [parties, setParties] = useState<string[]>([]);
-  const [hasSandbox, setHasSandbox] = useState<boolean | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     void (async () => {
-      const ok = await sandboxAvailable();
-      setHasSandbox(ok);
-      if (ok) setParties(await listSandboxParties());
+      try {
+        setWallets(await listWalletOptions());
+      } catch (e) {
+        setWallets([]);
+        setError((e as Error).message);
+      }
     })();
   }, []);
-
-  const loadWallets = async () => {
-    setBusy("wallets");
-    setError(null);
-    try {
-      setWallets(await listWalletOptions());
-    } catch (e) {
-      setError(
-        `Wallet discovery failed: ${(e as Error).message}. The sandbox route below still works.`,
-      );
-    } finally {
-      setBusy(null);
-    }
-  };
 
   const pickWallet = async (id?: string) => {
     setBusy(id ?? "any");
@@ -117,75 +137,135 @@ function ConnectScreen({ onSession }: { onSession: (s: Session) => void }) {
   };
 
   return (
-    <div className="connect">
+    <div className="connect" role="dialog" aria-label="Connect wallet">
       <div className="connect-card">
-        <img src="/brand/logo-mark.png" alt="" width={44} height={44} />
-        <h1>Open the app</h1>
-        <p className="connect-lede">
-          Your Canton wallet holds your keys and signs every command. Symbolon
-          never takes custody and never sees another party's book.
-        </p>
+        <div className="connect-top">
+          <h1>Connect wallet</h1>
+          {onCancel && (
+            <button className="x" onClick={onCancel} aria-label="Close">
+              <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+                <path
+                  d="M3 3l10 10M13 3L3 13"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  fill="none"
+                />
+              </svg>
+            </button>
+          )}
+        </div>
 
-        <button
-          className="seal wide"
-          onClick={() => (wallets ? pickWallet() : loadWallets())}
-          disabled={busy !== null}
-        >
-          {busy ? "Connecting…" : wallets ? "Connect a wallet" : "Connect wallet"}
-        </button>
-
-        {wallets && (
-          <ul className="wallet-list">
-            {wallets.map((w) => (
-              <li key={w.id}>
-                <button onClick={() => pickWallet(w.id)} disabled={busy !== null}>
-                  <span>{w.name}</span>
-                  <span className="muted">
-                    {w.installed ? "detected" : "not installed"}
-                  </span>
-                </button>
+        <ul className="wallet-list">
+          {wallets === null &&
+            [0, 1, 2].map((i) => (
+              <li key={i} className="wallet-row skeleton">
+                <span className="wallet-mark" />
+                <span className="sk-line" />
               </li>
             ))}
-            {wallets.length === 0 && (
-              <li className="muted pad">
-                No Canton wallet found in this browser.
-              </li>
-            )}
-          </ul>
-        )}
-
-        <p className="net-note">
-          Wallet network: <code>{walletNetwork()}</code>
-        </p>
-
-        {hasSandbox && (
-          <>
-            <div className="rule-label">or use the local sandbox</div>
-            <ul className="wallet-list">
-              {parties.map((p) => (
-                <li key={p}>
-                  <button onClick={() => onSession(connectSandbox(p))}>
-                    <span>{partyLabel(p)}</span>
-                    <span className="muted">local party</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
-
-        {hasSandbox === false && !wallets && (
-          <p className="net-note">
-            Connect a wallet to trade. Symbolon holds no balances of its own —
-            everything you see is read from your own party on the ledger.
-          </p>
-        )}
+          {wallets?.map((w) => (
+            <li key={w.id}>
+              <button
+                className="wallet-row"
+                onClick={() => pickWallet(w.id)}
+                disabled={busy !== null}
+              >
+                <WalletMark wallet={w} />
+                <span className="wallet-name">{w.name}</span>
+                {busy === w.id && (
+                  <span className="wallet-note">connecting</span>
+                )}
+              </button>
+            </li>
+          ))}
+          {wallets?.length === 0 && (
+            <li className="muted pad">No Canton wallet in this browser.</li>
+          )}
+        </ul>
 
         {error && <p className="err">{error}</p>}
-        <a className="quiet back" href="/">
-          ← Back to the site
-        </a>
+        <p className="net-note">
+          network <code>{walletNetwork()}</code>
+        </p>
       </div>
+    </div>
+  );
+}
+
+/**
+ * A wallet's own mark when it ships one, and a monogram in our own hand when
+ * it does not - so the list never has a ragged hole where a logo should be.
+ */
+function WalletMark({ wallet }: { wallet: WalletOption }) {
+  const [broken, setBroken] = useState(false);
+  if (wallet.icon && !broken) {
+    return (
+      <img
+        className="wallet-mark"
+        src={wallet.icon}
+        alt=""
+        width={28}
+        height={28}
+        onError={() => setBroken(true)}
+      />
+    );
+  }
+  return <span className="wallet-mark mono">{wallet.name.slice(0, 2)}</span>;
+}
+
+/** The cash leg. One instrument today, named once so it reads as a decision. */
+const CASH = "CUSD";
+
+/** Section label inside a panel. Not a heading — it names one control group. */
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return <div className="field-label">{children}</div>;
+}
+
+/**
+ * A choice between a few named options. Presets instead of a number field:
+ * the desk has house terms, and typing 1.05 is not a decision anyone enjoys
+ * making from scratch.
+ */
+function ChipRow<T extends number>({
+  value,
+  onChange,
+  options,
+}: {
+  value: T;
+  onChange: (v: T) => void;
+  options: { value: T; label: string; note?: string }[];
+}) {
+  return (
+    <div className="chip-row">
+      {options.map((o) => (
+        <button
+          key={o.value}
+          className={`chip${o.value === value ? " on" : ""}`}
+          aria-pressed={o.value === value}
+          onClick={() => onChange(o.value)}
+        >
+          {o.label}
+          {o.note && <span className="chip-note">{o.note}</span>}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** One line of a term sheet: what it is called, and what it comes to. */
+function TicketRow({
+  label,
+  gold,
+  children,
+}: {
+  label: string;
+  gold?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="ticket-row">
+      <span>{label}</span>
+      <span className={gold ? "tr-val gold" : "tr-val"}>{children}</span>
     </div>
   );
 }
@@ -219,7 +299,10 @@ function HealthBar({ pos, st }: { pos: RepoPosition; st: DeskState }) {
   return (
     <div className="health">
       <div className="health-track">
-        <div className={`health-fill ${tone}`} style={{ width: `${pct * 100}%` }} />
+        <div
+          className={`health-fill ${tone}`}
+          style={{ transform: `scaleX(${pct})` }}
+        />
         <div className="health-mark" style={{ left: `${(1 / 1.6) * 100}%` }} />
       </div>
       <div className="health-row">
@@ -244,7 +327,7 @@ function BorrowPanel({
   st: DeskState;
   refresh: () => Promise<void>;
 }) {
-  const { busy, note, run } = useRunner(refresh);
+  const { busy, note, run } = useRunner(refresh, s);
   const instruments = useMemo(
     () => [...new Set(st.feeds.map((f) => f.payload.instrument))],
     [st.feeds],
@@ -255,15 +338,55 @@ function BorrowPanel({
   );
   const oracle = st.feeds[0]?.payload.oracle ?? "";
 
-  const [collateral, setCollateral] = useState("CETH");
-  const [collAmt, setCollAmt] = useState("15");
-  const [cashAmt, setCashAmt] = useState("1000");
-  const [term, setTerm] = useState("30");
-  const [threshold, setThreshold] = useState("1.05");
+  const [collateral, setCollateral] = useState("");
+  const [borrow, setBorrow] = useState(0);
+  // Cushion, tenor and the rest are chosen from named presets rather than
+  // typed. The borrower is deciding how much risk to carry, not filling in a
+  // form, and a number field asks them to know the answer before they start.
+  const [cushion, setCushion] = useState(1.5);
+  const [term, setTerm] = useState(30);
+  const [advanced, setAdvanced] = useState(false);
+  const [threshold, setThreshold] = useState(1.05);
   // How long the borrower gets to cure a call before the lender may seize.
-  // A real negotiated term, not a constant — an hour is only the usual answer.
-  const [cure, setCure] = useState("60");
+  // A real negotiated term, not a constant - an hour is only the usual answer.
+  const [cure, setCure] = useState(60);
   const [picked, setPicked] = useState<string[]>([]);
+
+  // Only assets they actually hold, and only ones the oracle marks - you
+  // cannot pledge what has no agreed price.
+  const pledgeable = useMemo(
+    () =>
+      instruments
+        .filter((i) => i !== CASH)
+        .map((i) => ({
+          instrument: i,
+          balance: balanceOf(st.holdings, s.party, i),
+          price: priceOf(st.feeds, i),
+        }))
+        .filter((a) => a.price !== undefined),
+    [instruments, st.holdings, st.feeds, s.party],
+  );
+
+  const chosen = pledgeable.find((a) => a.instrument === collateral);
+  const price = chosen?.price ?? 0;
+  const maxBorrow = chosen ? (chosen.balance * price) / cushion : 0;
+  const pledge = price ? (borrow * cushion) / price : 0;
+  const calledAt = borrow * threshold;
+
+  useEffect(() => {
+    if (!collateral && pledgeable.length) {
+      const best = [...pledgeable].sort(
+        (a, b) => b.balance * (b.price ?? 0) - a.balance * (a.price ?? 0),
+      )[0];
+      setCollateral(best.instrument);
+    }
+  }, [collateral, pledgeable]);
+
+  // Changing asset or cushion moves the ceiling; an amount above it would be
+  // a request no dealer could fund.
+  useEffect(() => {
+    setBorrow((b) => Math.min(b, Math.floor(maxBorrow * 100) / 100));
+  }, [maxBorrow]);
 
   useEffect(() => {
     if (picked.length === 0 && dealers.length) setPicked(dealers);
@@ -271,6 +394,7 @@ function BorrowPanel({
 
   const myRequests = st.requests.filter((r) => r.payload.borrower === s.party);
   const myQuotes = st.quotes.filter((q) => q.payload.borrower === s.party);
+  const ready = borrow > 0 && pledge > 0 && picked.length > 0;
 
   return (
     <>
@@ -281,84 +405,182 @@ function BorrowPanel({
 
       <section className="panel">
         <h2>Ask for a rate</h2>
-        <p className="panel-lede">
-          Each lender receives a separate, private request. They cannot see who
-          else you asked, or what anyone else quoted.
-        </p>
-        <div className="form-grid">
-          <label>
-            Collateral
-            <select
-              value={collateral}
-              onChange={(e) => setCollateral(e.target.value)}
-            >
-              {instruments.map((i) => (
-                <option key={i}>{i}</option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Amount
-            <input value={collAmt} onChange={(e) => setCollAmt(e.target.value)} />
-          </label>
-          <label>
-            Borrow (CUSD)
-            <input value={cashAmt} onChange={(e) => setCashAmt(e.target.value)} />
-          </label>
-          <label>
-            Days
-            <input value={term} onChange={(e) => setTerm(e.target.value)} />
-          </label>
-          <label>
-            Margin threshold
+
+        <FieldLabel>Pledge</FieldLabel>
+        {pledgeable.length === 0 ? (
+          <p className="muted">Nothing here the oracle marks a price for.</p>
+        ) : (
+          <div className="asset-tiles">
+            {pledgeable.map((a) => (
+              <button
+                key={a.instrument}
+                className={`asset-tile${a.instrument === collateral ? " on" : ""}`}
+                onClick={() => setCollateral(a.instrument)}
+                aria-pressed={a.instrument === collateral}
+              >
+                <span className="asset-sym">{a.instrument}</span>
+                <span className="asset-bal">{fmtAmount(a.balance, 4)}</span>
+                <span className="asset-mark">
+                  {fmtAmount(a.price ?? 0)} {CASH}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        <FieldLabel>Borrow</FieldLabel>
+        <div className="dial">
+          <div className="dial-head">
             <input
-              value={threshold}
-              onChange={(e) => setThreshold(e.target.value)}
+              className="dial-amt"
+              inputMode="decimal"
+              value={borrow ? String(borrow) : ""}
+              placeholder="0"
+              onChange={(e) => {
+                const v = Number(e.target.value.replace(/[^0-9.]/g, ""));
+                setBorrow(Number.isFinite(v) ? Math.min(v, maxBorrow) : 0);
+              }}
             />
-          </label>
-          <label>
-            Cure window (min)
-            <input value={cure} onChange={(e) => setCure(e.target.value)} />
-          </label>
+            <span className="dial-unit">{CASH}</span>
+            <div className="dial-chips">
+              {[0.25, 0.5, 1].map((f) => (
+                <button
+                  key={f}
+                  className="chip sm"
+                  onClick={() => setBorrow(Math.floor(maxBorrow * f * 100) / 100)}
+                >
+                  {f === 1 ? "Max" : `${f * 100}%`}
+                </button>
+              ))}
+            </div>
+          </div>
+          <input
+            className="dial-range"
+            type="range"
+            min={0}
+            max={Math.max(1, Math.floor(maxBorrow * 100) / 100)}
+            step={Math.max(0.01, Math.round(maxBorrow / 200))}
+            value={borrow}
+            onChange={(e) => setBorrow(Number(e.target.value))}
+            aria-label={`Amount to borrow in ${CASH}`}
+          />
+          <div className="dial-foot">
+            <span>0</span>
+            <span>
+              {fmtAmount(maxBorrow)} max at {(cushion * 100).toFixed(0)}% cover
+            </span>
+          </div>
         </div>
 
-        <div className="dealer-picks">
+        <FieldLabel>Cushion</FieldLabel>
+        <ChipRow
+          value={cushion}
+          onChange={setCushion}
+          options={[
+            { value: 2, label: "Safe", note: "200%" },
+            { value: 1.5, label: "Balanced", note: "150%" },
+            { value: 1.2, label: "Tight", note: "120%" },
+          ]}
+        />
+
+        <FieldLabel>Tenor</FieldLabel>
+        <ChipRow
+          value={term}
+          onChange={setTerm}
+          options={[
+            { value: 7, label: "7 days" },
+            { value: 30, label: "30 days" },
+            { value: 90, label: "90 days" },
+          ]}
+        />
+
+        <div className="ticket-preview">
+          <TicketRow label="You pledge">
+            {fmtAmount(pledge, 4)} {collateral}
+          </TicketRow>
+          <TicketRow label="You receive" gold>
+            {fmtAmount(borrow)} {CASH}
+          </TicketRow>
+          <TicketRow label="Called below">
+            {(threshold * 100).toFixed(0)}% - {fmtAmount(calledAt)} {CASH}
+          </TicketRow>
+          <TicketRow label="Cure window">{fmtDuration(cure * 60)}</TicketRow>
+        </div>
+
+        <button
+          className="disclose"
+          onClick={() => setAdvanced((a) => !a)}
+          aria-expanded={advanced}
+        >
+          {advanced ? "Hide" : "Show"} advanced terms
+        </button>
+        {advanced && (
+          <div className="advanced">
+            <FieldLabel>Margin threshold</FieldLabel>
+            <ChipRow
+              value={threshold}
+              onChange={setThreshold}
+              options={[
+                { value: 1.05, label: "105%" },
+                { value: 1.1, label: "110%" },
+                { value: 1.2, label: "120%" },
+              ]}
+            />
+            <FieldLabel>Cure window</FieldLabel>
+            <ChipRow
+              value={cure}
+              onChange={setCure}
+              options={[
+                { value: 1, label: "1 min" },
+                { value: 60, label: "1 hour" },
+                { value: 1440, label: "24 hours" },
+              ]}
+            />
+          </div>
+        )}
+
+        <FieldLabel>Send to</FieldLabel>
+        <div className="chip-row">
           {dealers.map((d) => (
-            <label key={d} className="chk">
-              <input
-                type="checkbox"
-                checked={picked.includes(d)}
-                onChange={(e) =>
-                  setPicked((p) =>
-                    e.target.checked ? [...p, d] : p.filter((x) => x !== d),
-                  )
-                }
-              />
+            <button
+              key={d}
+              className={`chip${picked.includes(d) ? " on" : ""}`}
+              aria-pressed={picked.includes(d)}
+              onClick={() =>
+                setPicked((p) =>
+                  p.includes(d) ? p.filter((x) => x !== d) : [...p, d],
+                )
+              }
+            >
               {partyLabel(d)}
-            </label>
+            </button>
           ))}
         </div>
 
         <button
           className="seal"
-          disabled={busy || picked.length === 0}
+          disabled={busy || !ready}
           onClick={() =>
             run(`Sent to ${picked.length} lender(s)`, () =>
               act.requestQuotes(s, {
                 dealers: picked,
                 oracle,
                 collateralInstrument: collateral,
-                collateralAmount: Number(collAmt),
-                cashInstrument: "CUSD",
-                cashAmount: Number(cashAmt),
-                termDays: Number(term),
-                marginThresholdPct: Number(threshold),
-                cureSeconds: Math.max(1, Math.round(Number(cure) * 60)),
+                collateralAmount: Number(pledge.toFixed(4)),
+                cashInstrument: CASH,
+                cashAmount: Number(borrow.toFixed(2)),
+                termDays: term,
+                marginThresholdPct: threshold,
+                cureSeconds: Math.max(1, Math.round(cure * 60)),
               }),
             )
           }
         >
-          {busy ? "Sending…" : "Request rates"}
+          {busy
+            ? "Sending..."
+            : picked.length
+              ? `Ask ${picked.length} dealer${picked.length > 1 ? "s" : ""} for a rate`
+              : "Pick a dealer"}
         </button>
         {note && <p className={note.ok ? "ok" : "err"}>{note.text}</p>}
       </section>
@@ -455,7 +677,7 @@ function LendPanel({
   st: DeskState;
   refresh: () => Promise<void>;
 }) {
-  const { busy, note, run } = useRunner(refresh);
+  const { busy, note, run } = useRunner(refresh, s);
   const [rates, setRates] = useState<Record<string, string>>({});
   const incoming = st.requests.filter((r) => r.payload.dealer === s.party);
   const sent = st.quotes.filter((q) => q.payload.dealer === s.party);
@@ -571,7 +793,7 @@ function PositionsPanel({
   st: DeskState;
   refresh: () => Promise<void>;
 }) {
-  const { busy, note, run } = useRunner(refresh);
+  const { busy, note, run } = useRunner(refresh, s);
   const [topUps, setTopUps] = useState<Record<string, string>>({});
   const mine = st.positions.filter(
     (p) => p.payload.borrower === s.party || p.payload.dealer === s.party,
@@ -853,17 +1075,13 @@ function OraclePanel({
   st: DeskState;
   refresh: () => Promise<void>;
 }) {
-  const { busy, note, run } = useRunner(refresh);
+  const { busy, note, run } = useRunner(refresh, s);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const mine = st.feeds.filter((f) => f.payload.oracle === s.party);
 
   return (
     <section className="panel">
       <h2>Marks</h2>
-      <p className="panel-lede">
-        Every margin check prices against these marks. Move one and the
-        positions react — that is the whole risk engine, in public.
-      </p>
       {mine.length === 0 && <p className="muted">This party publishes no feeds.</p>}
       <div className="rows">
         {mine.map((f: Contract<PriceFeed>) => (
@@ -905,72 +1123,140 @@ function OraclePanel({
 type Tab = "borrow" | "lend" | "positions" | "oracle";
 
 export default function DeskApp() {
-  const [session, setSession] = useState<Session | null>(null);
+  // Browsing is the default. Nobody should have to hand over a wallet to find
+  // out what this is — the app opens, the marks load, and the connect step
+  // arrives when there is finally something to sign.
+  const [session, setSession] = useState<Session>(() => browseSession());
+  const [connecting, setConnecting] = useState(false);
   const [tab, setTab] = useState<Tab>("borrow");
   const { state, error, refresh } = useDesk(session);
+  const browsing = !canTrade(session);
 
-  if (!session) return <ConnectScreen onSession={setSession} />;
+  // The public tape needs a party to read as, and finding one is a round trip.
+  // Until it lands the app is already up and simply has no marks yet.
+  useEffect(() => {
+    let live = true;
+    void (async () => {
+      const p = await publicReadParty();
+      if (live && p) {
+        setSession((cur) => (canTrade(cur) ? cur : browseSession(p)));
+      }
+    })();
+    return () => {
+      live = false;
+    };
+  }, []);
 
-  const isOracle = !!state?.feeds.some((f) => f.payload.oracle === session.party);
+  const askConnect = useCallback(() => setConnecting(true), []);
+
+  const onSession = (s: Session) => {
+    setSession(s);
+    setConnecting(false);
+  };
+
+  const disconnect = () => {
+    void session.disconnect().then(async () => {
+      setSession(browseSession(await publicReadParty()));
+    });
+  };
+
+  const isOracle =
+    !browsing && !!state?.feeds.some((f) => f.payload.oracle === session.party);
   const tabs: Tab[] = isOracle
     ? ["oracle", "positions"]
     : ["borrow", "lend", "positions"];
   const active = tabs.includes(tab) ? tab : tabs[0];
 
   return (
-    <div className="desk">
-      <header className="desk-head">
-        <a className="brand" href="/">
-          <img src="/brand/logo-mark.png" alt="" />
-          <span>SYMBOLON</span>
-        </a>
-        <nav className="desk-tabs">
-          {tabs.map((t) => (
-            <button
-              key={t}
-              className={t === active ? "on" : ""}
-              onClick={() => setTab(t)}
-            >
-              {t === "borrow"
-                ? "Borrow"
-                : t === "lend"
-                  ? "Lend"
-                  : t === "oracle"
-                    ? "Marks"
-                    : "Positions"}
-            </button>
-          ))}
-        </nav>
-        <div className="who">
-          <span className="who-label">{session.label}</span>
-          <span className="muted sm">
-            {session.kind === "wallet" ? session.wallet : "sandbox"}
-          </span>
-          <button
-            className="ghost sm"
-            onClick={() => void session.disconnect().then(() => setSession(null))}
-          >
-            Disconnect
-          </button>
-        </div>
-      </header>
+    <AskConnect.Provider value={askConnect}>
+      <div className="desk">
+        <header className="desk-head">
+          <a className="brand" href="/">
+            <img src="/brand/logo-mark.png" alt="" />
+            <span>SYMBOLON</span>
+          </a>
+          <nav className="desk-tabs">
+            {tabs.map((t) => (
+              <button
+                key={t}
+                className={t === active ? "on" : ""}
+                onClick={() => setTab(t)}
+              >
+                {t === "borrow"
+                  ? "Borrow"
+                  : t === "lend"
+                    ? "Lend"
+                    : t === "oracle"
+                      ? "Marks"
+                      : "Positions"}
+              </button>
+            ))}
+          </nav>
+          {browsing ? (
+            <div className="who">
+              <span className="muted sm">Read-only</span>
+              <button className="seal sm" onClick={askConnect}>
+                Connect wallet
+              </button>
+            </div>
+          ) : (
+            <div className="who">
+              <span className="who-label">{session.label}</span>
+              <span className="muted sm">
+                {session.kind === "wallet" ? session.wallet : "sandbox"}
+              </span>
+              <button className="ghost sm" onClick={disconnect}>
+                Disconnect
+              </button>
+            </div>
+          )}
+        </header>
 
-      <main className="desk-body">
-        {error && <p className="err">{error}</p>}
-        {!state && <p className="muted">Reading the ledger…</p>}
-        {state && active === "borrow" && (
-          <BorrowPanel s={session} st={state} refresh={refresh} />
-        )}
-        {state && active === "lend" && (
-          <LendPanel s={session} st={state} refresh={refresh} />
-        )}
-        {state && active === "positions" && (
-          <PositionsPanel s={session} st={state} refresh={refresh} />
-        )}
-        {state && active === "oracle" && (
-          <OraclePanel s={session} st={state} refresh={refresh} />
-        )}
-      </main>
-    </div>
+        <main className="desk-body">
+          {browsing && <BrowseNotice st={state} />}
+          {error && <p className="err">{error}</p>}
+          {!state && !browsing && <p className="muted">Reading the ledger…</p>}
+          {state && active === "borrow" && (
+            <BorrowPanel s={session} st={state} refresh={refresh} />
+          )}
+          {state && active === "lend" && (
+            <LendPanel s={session} st={state} refresh={refresh} />
+          )}
+          {state && active === "positions" && (
+            <PositionsPanel s={session} st={state} refresh={refresh} />
+          )}
+          {state && active === "oracle" && (
+            <OraclePanel s={session} st={state} refresh={refresh} />
+          )}
+        </main>
+      </div>
+
+      {connecting && (
+        <ConnectScreen
+          onSession={onSession}
+          onCancel={() => setConnecting(false)}
+        />
+      )}
+    </AskConnect.Provider>
+  );
+}
+
+/**
+ * What a visitor is entitled to see, and why the rest is blank. The marks are
+ * public because every margin check prices against them; the books are not,
+ * and that is the ledger refusing, not the page hiding.
+ */
+function BrowseNotice({ st }: { st: DeskState | null }) {
+  if (!st || st.feeds.length === 0) return null;
+  return (
+    <section className="marks-strip">
+      <span className="marks-tag">Marks</span>
+      {st.feeds.map((f) => (
+        <span className="mark" key={f.contractId}>
+          <span className="mark-sym">{f.payload.instrument}</span>
+          <span className="mark-px">{fmtAmount(f.payload.price)}</span>
+        </span>
+      ))}
+    </section>
   );
 }

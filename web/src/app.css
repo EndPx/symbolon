@@ -352,8 +352,8 @@ button:disabled {
 }
 
 .row.best {
-  box-shadow: inset 3px 0 0 var(--gold);
-  padding-left: 12px;
+  background: rgba(201, 162, 39, 0.07);
+  border-color: rgba(201, 162, 39, 0.45);
 }
 
 .tag {
@@ -429,7 +429,9 @@ button:disabled {
 
 .health-fill {
   height: 100%;
-  transition: width 0.5s var(--ease);
+  width: 100%;
+  transform-origin: left center;
+  transition: transform 0.5s var(--ease);
 }
 
 .health-fill.ok {
@@ -509,4 +511,445 @@ button:disabled {
 
 .warn {
   margin-top: 2px;
+}
+
+/* ---------------------------------------------------------------- browse */
+
+/* The connect card doubles as a modal once the app is already on screen, so
+   it has to sit above the desk instead of replacing it. */
+.desk + .connect {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: color-mix(in srgb, var(--parchment) 88%, transparent);
+  backdrop-filter: blur(3px);
+}
+
+button.back {
+  background: none;
+  border: none;
+  font: inherit;
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+button.back:hover {
+  color: var(--terracotta);
+}
+
+
+/* ------------------------------------------------------- picker + controls */
+
+.connect-card {
+  text-align: left;
+}
+
+.connect-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.connect-card h1 {
+  margin-top: 0;
+  font-size: 1.35rem;
+}
+
+.x {
+  background: none;
+  border: none;
+  padding: 4px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  line-height: 0;
+}
+
+.x:hover {
+  color: var(--ink-warm);
+}
+
+.wallet-list {
+  margin-top: 18px;
+}
+
+.wallet-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 10px;
+  background: none;
+  border: 1px solid transparent;
+  font: inherit;
+  color: var(--ink-warm);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease;
+}
+
+.wallet-row:hover:not(:disabled) {
+  background: rgba(34, 28, 25, 0.05);
+  border-color: var(--hairline);
+}
+
+.wallet-row:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.wallet-mark {
+  width: 28px;
+  height: 28px;
+  flex: none;
+  object-fit: contain;
+  background: rgba(34, 28, 25, 0.06);
+}
+
+.wallet-mark.mono {
+  display: grid;
+  place-items: center;
+  font-family: "Courier Prime", monospace;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.wallet-name {
+  flex: 1;
+  font-size: 0.98rem;
+}
+
+.wallet-note {
+  font-family: "Courier Prime", monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.wallet-row.skeleton {
+  cursor: default;
+}
+
+.sk-line {
+  height: 10px;
+  flex: 1;
+  background: rgba(34, 28, 25, 0.09);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.rule-label {
+  margin-top: 22px;
+  padding-top: 14px;
+  border-top: 1px solid var(--hairline);
+  font-family: "Courier Prime", monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.net-note {
+  margin-top: 18px;
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* ---------------------------------------------------------- ticket builder */
+
+.field-label {
+  margin-top: 26px;
+  margin-bottom: 10px;
+  font-family: "Courier Prime", monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.asset-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+  gap: 10px;
+}
+
+.asset-tile {
+  display: block;
+  text-align: left;
+  padding: 14px 16px;
+  background: none;
+  border: 1px solid var(--hairline);
+  font: inherit;
+  color: var(--ink-warm);
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+
+.asset-tile:hover {
+  border-color: rgba(34, 28, 25, 0.5);
+}
+
+.asset-tile.on {
+  border-color: var(--ink-warm);
+  background: rgba(34, 28, 25, 0.05);
+  box-shadow: inset 0 0 0 1px var(--ink-warm);
+}
+
+.asset-sym {
+  display: block;
+  font-family: "Courier Prime", monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  color: var(--ink-soft);
+}
+
+.asset-bal {
+  display: block;
+  margin-top: 6px;
+  font-family: "Courier Prime", monospace;
+  font-size: 1.05rem;
+}
+
+.asset-mark {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+}
+
+.dial {
+  border: 1px solid var(--hairline);
+  padding: 16px 18px 14px;
+}
+
+.dial-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.dial-amt {
+  flex: 1;
+  min-width: 120px;
+  border: none;
+  background: none;
+  padding: 0;
+  font-family: "Courier Prime", monospace;
+  font-size: 2rem;
+  color: var(--ink-warm);
+}
+
+.dial-amt:focus {
+  outline: none;
+}
+
+.dial-amt::placeholder {
+  color: rgba(74, 58, 38, 0.45);
+}
+
+.dial-unit {
+  font-family: "Courier Prime", monospace;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+}
+
+.dial-chips {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.dial-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  margin-top: 16px;
+  height: 2px;
+  background: var(--hairline);
+  cursor: pointer;
+}
+
+.dial-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 18px;
+  background: var(--ink-warm);
+  border: none;
+  cursor: grab;
+}
+
+.dial-range::-moz-range-thumb {
+  width: 14px;
+  height: 18px;
+  background: var(--ink-warm);
+  border: none;
+  border-radius: 0;
+  cursor: grab;
+}
+
+.dial-range:active::-webkit-slider-thumb {
+  background: var(--antique-gold);
+}
+
+.dial-foot {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+  font-family: "Courier Prime", monospace;
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  padding: 9px 14px;
+  background: none;
+  border: 1px solid var(--hairline);
+  font: inherit;
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    color 160ms ease,
+    background-color 160ms ease;
+}
+
+.chip:hover {
+  border-color: rgba(34, 28, 25, 0.5);
+  color: var(--ink-warm);
+}
+
+.chip.on {
+  background: var(--ink-warm);
+  border-color: var(--ink-warm);
+  color: var(--parchment);
+}
+
+.chip.sm {
+  padding: 5px 9px;
+  font-family: "Courier Prime", monospace;
+  font-size: 0.72rem;
+}
+
+.chip-note {
+  margin-left: 7px;
+  font-family: "Courier Prime", monospace;
+  font-size: 0.72rem;
+  opacity: 0.7;
+}
+
+.ticket-preview {
+  margin-top: 26px;
+  background: var(--ink-navy);
+  padding: 6px 20px;
+}
+
+.ticket-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  padding: 11px 0;
+  border-bottom: 1px solid rgba(201, 162, 39, 0.24);
+  font-size: 0.88rem;
+  color: var(--parchment-dim);
+}
+
+.ticket-row:last-child {
+  border-bottom: none;
+}
+
+.tr-val {
+  font-family: "Courier Prime", monospace;
+  font-size: 0.95rem;
+  color: var(--parchment);
+  text-align: right;
+}
+
+.tr-val.gold {
+  color: var(--antique-gold);
+  font-weight: 700;
+}
+
+.disclose {
+  margin-top: 18px;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.disclose:hover {
+  color: var(--terracotta);
+}
+
+.advanced {
+  margin-top: 4px;
+  padding-left: 14px;
+  border-left: 1px solid var(--hairline);
+}
+
+/* A ticker of the public marks — the one thing a visitor is entitled to see. */
+.marks-strip {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 22px;
+  padding: 12px 18px;
+  margin-bottom: 22px;
+  background: var(--ink-navy);
+}
+
+.marks-tag {
+  font-family: "Courier Prime", monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--parchment-dim);
+}
+
+.mark {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.mark-sym {
+  font-family: "Courier Prime", monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  color: var(--parchment-dim);
+}
+
+.mark-px {
+  font-family: "Courier Prime", monospace;
+  font-size: 0.92rem;
+  color: var(--antique-gold);
 }
