@@ -247,22 +247,38 @@ export default function App() {
         aria-hidden={heroReady}
       >
         <svg viewBox="0 0 100 100" aria-hidden="true">
-          <circle cx="50" cy="50" r="42" fill="#c9a227" />
-          <circle
-            cx="50"
-            cy="50"
-            r="31"
-            fill="none"
-            stroke="#f4e9ce"
-            strokeWidth="2.5"
-            opacity="0.75"
-          />
-          <polyline
-            points="55,4 44,31 58,52 45,74 51,97"
-            fill="none"
-            stroke="#f4e9ce"
-            strokeWidth="7"
-          />
+          <defs>
+            <clipPath id="veil-left">
+              <path d="M55,4 L44,31 L58,52 L45,74 L51,97 L-20,97 L-20,4 Z" />
+            </clipPath>
+            <clipPath id="veil-right">
+              <path d="M55,4 L44,31 L58,52 L45,74 L51,97 L120,97 L120,4 Z" />
+            </clipPath>
+          </defs>
+          <g className="veil-half veil-l" clipPath="url(#veil-left)">
+            <circle cx="50" cy="50" r="42" fill="#c9a227" />
+            <circle
+              cx="50"
+              cy="50"
+              r="31"
+              fill="none"
+              stroke="#f4e9ce"
+              strokeWidth="2.5"
+              opacity="0.75"
+            />
+          </g>
+          <g className="veil-half veil-r" clipPath="url(#veil-right)">
+            <circle cx="50" cy="50" r="42" fill="#c9a227" />
+            <circle
+              cx="50"
+              cy="50"
+              r="31"
+              fill="none"
+              stroke="#f4e9ce"
+              strokeWidth="2.5"
+              opacity="0.75"
+            />
+          </g>
         </svg>
       </div>
 
@@ -297,7 +313,7 @@ export default function App() {
           alt="Two merchants on a marble quay at dusk sealing a deal over a split gold coin, beneath a cracked gold sun above an Aegean harbor city."
         />
         <div className="hero-scrim" aria-hidden="true" />
-        <div className="hero-content">
+        <div className={heroReady ? "hero-content lift" : "hero-content"}>
           <div className="shell">
             <div className="hero-inner">
               <h1>
