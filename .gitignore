@@ -9,3 +9,6 @@
 # js
 node_modules/
 dist/
+
+# Local agent tooling state, not project source.
+.omc/
