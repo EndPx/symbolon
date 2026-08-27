@@ -138,13 +138,13 @@ let client: PartyLayerClient | null = null;
  * PartyLayer pulls in every wallet adapter, so it is loaded on demand — a
  * visitor who never opens the wallet picker never downloads it.
  *
- * Console is registered explicitly. The SDK dropped it from the defaults on
- * the assumption that the extension announces itself over CIP-0103 and the
- * registry fills in the rest; both of those are someone else's uptime, and a
- * judge whose Console does not appear in the list has simply been told our
- * app does not support their wallet. Registering the adapter makes it appear
- * whether or not the registry answers, and an announced Console still maps
- * onto this same adapter rather than showing up twice.
+ * Console and Send are deliberately NOT registered as adapters here. The SDK
+ * serves both over the generic CIP-0103 announce path, where the extension
+ * introduces itself and the transport is built from that handshake. Passing
+ * `new ConsoleAdapter()` instead binds the id to the bespoke adapter, whose
+ * detection looks for the extension directly and reports "not installed" on
+ * a browser that plainly has it. Letting discovery do its job is both less
+ * code and the only version that connects.
  */
 async function partyLayer(network: string): Promise<PartyLayerClient> {
   if (client) return client;
@@ -152,7 +152,6 @@ async function partyLayer(network: string): Promise<PartyLayerClient> {
   client = mod.createPartyLayer({
     network: network as never,
     app: { name: "Symbolon" },
-    adapters: [...mod.getBuiltinAdapters(), new mod.ConsoleAdapter()],
   } as never) as unknown as PartyLayerClient;
   return client;
 }
