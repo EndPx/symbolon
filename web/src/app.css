@@ -993,3 +993,23 @@ button.back:hover {
     grid-column: auto;
   }
 }
+
+/* The app before anything is connected: one door, centred, no lecture. */
+.open-desk {
+  display: grid;
+  justify-items: center;
+  gap: 18px;
+  padding: clamp(56px, 12vh, 110px) 20px;
+  text-align: center;
+}
+
+.open-desk h2 {
+  font-family: "Marcellus", serif;
+  font-weight: 400;
+  font-size: 1.5rem;
+}
+
+.open-desk .seal {
+  cursor: pointer;
+  border: none;
+}

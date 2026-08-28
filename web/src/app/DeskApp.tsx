@@ -10,8 +10,6 @@ import type { Contract } from "../ledger/api";
 import {
   browseSession,
   canTrade,
-  connectSandbox,
-  listSandboxParties,
   connectWallet,
   listWalletOptions,
   publicReadParty,
@@ -114,10 +112,6 @@ function ConnectScreen({
   const [wallets, setWallets] = useState<WalletOption[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  // Local parties, dev builds only. The shipped picker offers wallets and
-  // nothing else; this exists so the lifecycle can still be driven end to end
-  // on a machine with a sandbox, and it is compiled out of production.
-  const [parties, setParties] = useState<string[]>([]);
 
   useEffect(() => {
     void (async () => {
@@ -128,13 +122,6 @@ function ConnectScreen({
         setError((e as Error).message);
       }
     })();
-  }, []);
-
-  useEffect(() => {
-    if (!import.meta.env.DEV) return;
-    void listSandboxParties()
-      .then(setParties)
-      .catch(() => setParties([]));
   }, []);
 
   const pickWallet = async (id?: string) => {
@@ -210,27 +197,6 @@ function ConnectScreen({
             <li className="muted pad">No Canton wallet in this browser.</li>
           )}
         </ul>
-
-        {import.meta.env.DEV && parties.length > 0 && (
-          <>
-            <div className="rule-label">local sandbox - dev only</div>
-            <ul className="wallet-list">
-              {parties.map((party) => (
-                <li key={party}>
-                  <button
-                    className="wallet-row"
-                    onClick={() => onSession(connectSandbox(party))}
-                  >
-                    <span className="wallet-mark mono">
-                      {partyLabel(party).slice(0, 2)}
-                    </span>
-                    <span className="wallet-name">{partyLabel(party)}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
 
         {error && <p className="err">{error}</p>}
         <p className="net-note">
@@ -1220,6 +1186,10 @@ export default function DeskApp() {
     });
   };
 
+  // Nothing connected and nothing public to read: no marks, no book, no
+  // reason to draw an empty three-column grid at someone. One door instead.
+  const bare = browsing && (!state || state.feeds.length === 0);
+
   const isOracle =
     !browsing && !!state?.feeds.some((f) => f.payload.oracle === session.party);
   const tabs: Tab[] = isOracle ? ["oracle"] : ["borrow", "lend"];
@@ -1234,7 +1204,8 @@ export default function DeskApp() {
             <span>SYMBOLON</span>
           </a>
           <nav className="desk-tabs">
-            {tabs.map((t) => (
+            {!bare &&
+              tabs.map((t) => (
               <button
                 key={t}
                 className={t === active ? "on" : ""}
@@ -1275,6 +1246,9 @@ export default function DeskApp() {
           {error && <p className="err">{error}</p>}
           {!state && !browsing && <p className="muted">Reading the ledger…</p>}
 
+          {bare && <OpenDesk onConnect={askConnect} />}
+
+          {!bare && (
           <div className="board">
             {state && active === "borrow" && (
               <BorrowPanel s={session} st={state} refresh={refresh} />
@@ -1286,8 +1260,9 @@ export default function DeskApp() {
               <OraclePanel s={session} st={state} refresh={refresh} />
             )}
           </div>
+          )}
 
-          {state && (
+          {state && !bare && (
             <div className="board-foot">
               <PositionsPanel s={session} st={state} refresh={refresh} />
             </div>
@@ -1321,6 +1296,22 @@ function BrowseNotice({ st }: { st: DeskState | null }) {
           <span className="mark-px">{fmtAmount(f.payload.price)}</span>
         </span>
       ))}
+    </section>
+  );
+}
+
+/**
+ * The app with nothing to show yet: no wallet, and no public ledger to read
+ * marks from. One door, no lecture.
+ */
+function OpenDesk({ onConnect }: { onConnect: () => void }) {
+  return (
+    <section className="open-desk">
+      <img src="/brand/logo-mark.png" alt="" width={54} height={54} />
+      <h2>Connect to load the desk</h2>
+      <button className="seal" onClick={onConnect}>
+        Connect wallet
+      </button>
     </section>
   );
 }

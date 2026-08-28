@@ -14,7 +14,17 @@ export interface Transport {
 }
 
 /** Talks to a local `dpm sandbox` through the dev proxy in vite.config.ts. */
-export function sandboxTransport(base = "/ledger"): Transport {
+/**
+ * Where the app reads from when no wallet is connected.
+ *
+ * In dev that is the Vite proxy at /ledger. Deployed there is no proxy, so
+ * this has to name a reachable Canton JSON API or the public side of the app
+ * has nothing to show. Set VITE_LEDGER_URL to that origin.
+ */
+export const publicLedgerBase = (): string =>
+  import.meta.env.VITE_LEDGER_URL ?? "/ledger";
+
+export function sandboxTransport(base = publicLedgerBase()): Transport {
   return {
     kind: "sandbox",
     async request<T>(method: Method, resource: string, body?: unknown) {
