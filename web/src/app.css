@@ -1013,3 +1013,114 @@ button.back:hover {
   cursor: pointer;
   border: none;
 }
+
+/* ------------------------------------------------------------- RFQ ticket */
+
+/* A request to price, read the way a dealer reads one: who, how covered,
+   the terms as a schedule, then the one number they have to supply. */
+.rfq {
+  border: 1px solid var(--hairline);
+  padding: 15px 16px 14px;
+}
+
+.rfq + .rfq {
+  margin-top: 10px;
+}
+
+.rfq-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.rfq-head strong {
+  font-weight: 500;
+  font-size: 0.98rem;
+}
+
+.cover {
+  font-family: "Courier Prime", monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  padding: 3px 7px;
+}
+
+.cover.ok {
+  color: var(--ink-warm);
+  background: rgba(201, 162, 39, 0.16);
+}
+
+.cover.thin {
+  color: #7a2f1c;
+  background: rgba(122, 47, 28, 0.1);
+}
+
+.rfq-terms {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
+  gap: 12px 16px;
+  padding: 13px 0;
+}
+
+.rfq-terms dt {
+  font-family: "Courier Prime", monospace;
+  font-size: 0.66rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.rfq-terms dd {
+  margin-top: 3px;
+  font-family: "Courier Prime", monospace;
+  font-size: 0.86rem;
+  white-space: nowrap;
+}
+
+.rfq-price {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--hairline);
+}
+
+/* The rate is the dealer's whole contribution, so it gets the room. */
+.rate-field {
+  flex: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  min-width: 92px;
+  border: 1px solid var(--hairline);
+  padding: 7px 10px;
+  transition: border-color 160ms ease;
+}
+
+.rate-field:focus-within {
+  border-color: var(--ink-warm);
+}
+
+.rate-field input {
+  width: 100%;
+  min-width: 0;
+  border: none;
+  background: none;
+  padding: 0;
+  font-family: "Courier Prime", monospace;
+  font-size: 1.15rem;
+  color: var(--ink-warm);
+}
+
+.rate-field input:focus {
+  outline: none;
+}
+
+.rate-unit {
+  font-family: "Courier Prime", monospace;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}

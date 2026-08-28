@@ -726,29 +726,62 @@ function LendPanel({
                 num(r.payload.cashAmount)
               : undefined;
             return (
-              <div className="row" key={r.contractId}>
-                <div>
+              <article className="rfq" key={r.contractId}>
+                <header className="rfq-head">
                   <strong>{partyLabel(r.payload.borrower)}</strong>
-                  <div className="muted sm">
-                    wants {fmtAmount(r.payload.cashAmount)} CUSD against{" "}
-                    {fmtAmount(r.payload.collateralAmount, 4)}{" "}
-                    {r.payload.collateralInstrument} · {r.payload.termDays}d ·
-                    margin{" "}
-                    {(num(r.payload.marginThresholdPct) * 100).toFixed(0)}% ·
-                    cure {fmtDuration(num(r.payload.cureSeconds))}
-                    {cover !== undefined && (
-                      <> · cover {(cover * 100).toFixed(0)}%</>
-                    )}
+                  {cover !== undefined && (
+                    <span className={cover >= 1.2 ? "cover ok" : "cover thin"}>
+                      {(cover * 100).toFixed(0)}% cover
+                    </span>
+                  )}
+                </header>
+
+                <dl className="rfq-terms">
+                  <div>
+                    <dt>Wants</dt>
+                    <dd>
+                      {fmtAmount(r.payload.cashAmount)} {r.payload.cashInstrument}
+                    </dd>
                   </div>
-                </div>
-                <div className="quote-form">
-                  <input
-                    placeholder="rate %"
-                    value={rates[r.contractId] ?? ""}
-                    onChange={(e) =>
-                      setRates((m) => ({ ...m, [r.contractId]: e.target.value }))
-                    }
-                  />
+                  <div>
+                    <dt>Against</dt>
+                    <dd>
+                      {fmtAmount(r.payload.collateralAmount, 4)}{" "}
+                      {r.payload.collateralInstrument}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Tenor</dt>
+                    <dd>{r.payload.termDays}d</dd>
+                  </div>
+                  <div>
+                    <dt>Margin</dt>
+                    <dd>
+                      {(num(r.payload.marginThresholdPct) * 100).toFixed(0)}%
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Cure</dt>
+                    <dd>{fmtDuration(num(r.payload.cureSeconds))}</dd>
+                  </div>
+                </dl>
+
+                <div className="rfq-price">
+                  <div className="rate-field">
+                    <input
+                      inputMode="decimal"
+                      placeholder="0.00"
+                      value={rates[r.contractId] ?? ""}
+                      onChange={(e) =>
+                        setRates((m) => ({
+                          ...m,
+                          [r.contractId]: e.target.value,
+                        }))
+                      }
+                      aria-label="Rate to quote, percent"
+                    />
+                    <span className="rate-unit">%</span>
+                  </div>
                   <button
                     className="seal sm"
                     disabled={busy || !rates[r.contractId]}
@@ -778,7 +811,7 @@ function LendPanel({
                     Pass
                   </button>
                 </div>
-              </div>
+              </article>
             );
           })}
         </div>
