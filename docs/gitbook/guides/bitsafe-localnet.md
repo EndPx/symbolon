@@ -4,7 +4,9 @@ Symbolon's BitSafe integration is a Daml proposal that uses DecMan's `Governable
 
 ## What has run
 
-The `symbolon-bitsafe` DAR builds against BitSafe's pinned governance-action DAR. Its Daml Script creates a repo, checks that one confirmation cannot execute the mark, then executes with two of three confirmations. It checks that the old feed is archived, the replacement price is 60, and the dealer can issue a Symbolon margin call. The script passed both in the Daml test runner and twice against a native wall-clock Canton 3.5.6 sandbox on 29 September 2026. The latter is **single-participant local evidence**. We have not yet run these steps through the three DecMan services in BitSafe's official LocalNet.
+On **5 October 2026**, the official three-participant DecMan LocalNet passed on [revision d261376](https://github.com/EndPx/symbolon/actions/runs/37341484064). Both governed initialization and price update executed with matching committed update IDs on all three participants. A one-confirmation execution failed for the actual threshold requirement. The lower mark then drove a repo margin call, top-up and repurchase. [Public evidence](../../submission/evidence/bitsafe-localnet.json) and the CI artifact contain the closing contract and all-node audits. The earlier single-participant runs below are historical evidence; the current proof includes DecMan services and participant topology.
+
+The `symbolon-bitsafe` DAR builds against BitSafe's pinned governance-action DAR. Its Daml Script creates a repo, checks that one confirmation cannot execute the mark, then executes with two of three confirmations. It checks that the old feed is archived, the replacement price is 60, and the dealer can issue a Symbolon margin call. The script passed both in the Daml test runner and twice against a native wall-clock Canton 3.5.6 sandbox on 29 September 2026. Those September runs were **single-participant evidence**; the successful October 5 run above supplies the later three-service DecMan proof.
 
 ## Build the Symbolon action
 
@@ -23,7 +25,7 @@ daml-bitsafe/.daml/dist/symbolon-bitsafe-0.2.0.dar
 daml-bitsafe-test/.daml/dist/symbolon-bitsafe-test-0.2.0.dar
 ```
 
-The source templates are in `daml-bitsafe/Symbolon/BitSafe/PriceMarkProposal.daml`; the threshold and repo effect script is in `daml-bitsafe-test/Symbolon/BitSafe/Test/PriceMark.daml`. `symbolon-bitsafe` uses SDK 3.5.2 and successfully compiled against BitSafe's released governance DARs, which were built with SDK 3.4.11. Actual package vetting on the BitSafe starter remains to be checked.
+The source templates are in `daml-bitsafe/Symbolon/BitSafe/PriceMarkProposal.daml`; the threshold and repo effect script is in `daml-bitsafe-test/Symbolon/BitSafe/Test/PriceMark.daml`. `symbolon-bitsafe` uses SDK 3.5.2 and compiled against BitSafe's released governance DARs, which were built with SDK 3.4.11. The October 5 evidence records application-package vetting on each LocalNet participant. It does not establish vetting on shared DevNet or MainNet.
 
 For the narrower live-ledger check on Symbolon's own Canton sandbox, run:
 
@@ -52,7 +54,7 @@ git checkout 21ffdedf64366b1f2824301c434b427bf4726663
 
 `seed.sh` creates the 2-of-3 decentralized party, distributes BitSafe's governance packages, allocates one member party per participant and deploys `GovernanceRules`. Its local `hackathon/.state` records the decentralized party and member IDs. `demo.sh` proves the generic governance workflow, which has no Symbolon effect. Keep those commands as a starter health check, then perform the Symbolon-specific steps below. BitSafe's [walkthrough](https://github.com/DLC-link/decentralization-manager/blob/hackathon/hackathon/WALKTHROUGH.md) explains the three DecMan UIs and audit trail.
 
-## Symbolon-specific DecMan run to complete
+## Reproduce the Symbolon-specific DecMan run
 
 The repository now includes `scripts/bitsafe-localnet.mjs` and a GitHub Actions workflow for this run. The harness is confined to the pinned official disposable LocalNet, uses all three DecMan services, distributes and records vetting of the DARs, initializes the oracle through a governed proposal, opens a repo using demo cBTC/USDCx holdings, tests rejection at one confirmation, executes at two approvals, then completes margin top-up and repurchase. It checks that all participants see the same execution update IDs and saves `.omc/evidence/bitsafe-localnet.json`. A workflow definition is not successful execution evidence; check the run and JSON result before claiming completion.
 
@@ -71,4 +73,4 @@ The default starter checkout is `.omc/bitsafe-localnet`. The source commit must 
 4. Confirm once and attempt execution. Record the ledger rejection and show that the old price remains active. Confirm with a second distinct member, then execute using DecMan's `/governance/execute` with `governance_type: "core_domain"` and the proposal CID. The [custom-template guide](https://github.com/DLC-link/decentralization-manager/blob/hackathon/docs/CUSTOM_DAML_TEMPLATES.md) documents this package-agnostic endpoint.
 5. Show the new `PriceFeed` on the ledger and a Symbolon margin call against the active repo. Capture the DecMan audit entries and update IDs from all three nodes, then continue to top-up or the separately demonstrated post-cure liquidation branch.
 
-That full three-node run is the remaining Contribution Pool proof. A Daml Script passing on one participant does not establish DecMan peer coordination or completion of the challenge. The current Symbolon web desk does not yet expose a governance-proposal screen; the first integration run can use a documented command for proposal creation while keeping the repo workflow in the desk.
+The full three-participant run has passed and its evidence is linked above. Sponsor eligibility and awards remain separate decisions. The current web desk does not expose a governance-proposal screen: the verified integration harness submits proposals and drives the repo through the application's own ledger adapter and action builders. The browser demonstration is a separate native local Canton run.

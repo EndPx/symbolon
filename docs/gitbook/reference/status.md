@@ -2,6 +2,18 @@
 
 This page distinguishes source capabilities from operational evidence. The original browser and wall-clock Canton baseline is **23 September 2026**; the health-factor liquidation source/build update is **28 September 2026**. Development is ongoing; use the final verification output for the revision being reviewed.
 
+## Current release: 5 October 2026
+
+`symbolon-v2` v0.2.0 passed **11 core Daml scripts, two BitSafe governance scripts and 27 frontend tests**. Native Canton passed both lifecycle scripts at offsets **55 → 202**, the local BitSafe mark-to-margin script at **202 → 261**, and the actual frontend HTTP actions with **19 successful submissions** at **261 → 336**.
+
+The official BitSafe three-participant LocalNet also passed on tested revision `d261376586cf27385957f0816805ece850672498`. The [successful workflow](https://github.com/EndPx/symbolon/actions/runs/37341484064) built and tested the application on Linux, booted the pinned starter, distributed/vetted the DARs and executed the Symbolon workflow through three DecMan services. One confirmation failed with `Enough confirmations to execute action`; two approvals changed the mark. The repo reached a margin call, successful top-up and `Repurchased`. All three participants reported the same committed initialization and mark-execution update IDs, with participant-specific ledger offsets. This is **reproduced multi-participant LocalNet integration**, not DevNet/MainNet or a prize eligibility decision.
+
+Core package ID: `1d40e972b56e42c279140639d33dc362b432f2c0f608c77ec36410f0395f3e19`. [Public evidence record](https://github.com/EndPx/symbolon/blob/codex/submission-devnet/docs/submission/evidence/bitsafe-localnet.json) preserves the exact revision, failure, closing contract, application receipts and all-node execution audit. CI artifacts retain the test logs and DARs. All asset balances and prices are simulated.
+
+The shared DevNet package below remains the older baseline. Current release package upload, real cBTC/USDCx token adapters and an end-to-end shared DevNet transaction remain unverified. [Network promotion](../guides/network-promotion.md) specifies the same-artifact DevNet-first release path and the remaining MainNet gates.
+
+On **6 October 2026 WIB**, the native local browser completed the two-dealer 5.2%/5.8% comparison, opening exchange, simulated CETH price drop, margin call, 3 CETH top-up and exact full repurchase again. It returned all 18 pledged CETH and displayed `Repurchased` plus update ID `1220c496f9730965356d7593c5f0c4cacf06ffe47f387db6a3d5daf2f95e6bc5ec79`. [Browser evidence](../../submission/evidence/browser-repurchase.json) and a captioned, edited screen recording of about 2 min 26 sec are included in `docs/submission`. This is a local simulated-asset recording, separate from the BitSafe CI run.
+
 ## Recorded local verification
 
 On **23 September 2026 WIB** the PowerShell helper rebuilt all three DARs, passed **10/10 Daml IDE scripts** (nine substantive scenarios plus `setupDesk`), seeded a native **Canton 3.5.6** sandbox, and completed `liveHappyPath` and `liveLifecycle`. A repeat live verification passed both flows at ledger offsets **94 → 238**, timestamped `2026-09-23T15:16:06Z` in `.omc/demo/verification.json`.
@@ -59,8 +71,8 @@ After the Grofty integration, the frontend suite passed **22/22 tests**, includi
 | Price feed | Agreed party and timestamp checks | Live market data or manipulation resistance |
 | Privacy | Scoped contracts and party-level access tests | Secrecy from all hosting operators or asset issuers |
 | Commercial need | Defined target and validation plan | Customer traction, revenue or completed interviews |
-| GitBook | Importable documentation source | A published public site before account publication |
-| BitSafe Contribution Pool | Governable Symbolon mark proposal built; threshold-to-margin flow passed in Daml Script and on single-participant Canton | Three-node DecMan LocalNet execution, its audit trail, or award |
+| GitBook | Published basic site with 37 product, architecture, reference and operational pages | Automated Git Sync or documentation proving network execution by itself |
+| BitSafe Contribution Pool | Official three-participant DecMan LocalNet passed; all-node execution audit and Symbolon margin/top-up/repurchase effect verified | Shared DevNet/MainNet decentralized-party deployment, independent hosting, or award |
 | Grofty | Source adapter and fake-provider tests remain available | Active submission scope, installed-wallet MainNet repo execution or bounty qualification |
 
 ## Risks remaining in the prototype

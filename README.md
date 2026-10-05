@@ -23,7 +23,7 @@ This is a **working prototype using simulated assets and marks**. `Symbolon.Demo
 
 ## BitSafe Contribution Pool work
 
-`daml-bitsafe` contains a `GovernableAction` proposal that lets a 2-of-3 governance group publish a Symbolon oracle mark. Its separate Daml Script proves that one confirmation cannot execute, while two confirmations update the feed and let the dealer call an undercollateralized repo. Build and run it with `./scripts/build-bitsafe.ps1` and `./scripts/verify-bitsafe-live.ps1`; see the [BitSafe LocalNet guide](docs/gitbook/guides/bitsafe-localnet.md). This is verified on a single local Canton sandbox. The three-node DecMan LocalNet run remains outstanding.
+`daml-bitsafe` contains a `GovernableAction` proposal that lets a 2-of-3 governance group publish a Symbolon oracle mark. Its separate Daml Script proves that one confirmation cannot execute, while two confirmations update the feed and let the dealer call an undercollateralized repo. Build and run it with `./scripts/build-bitsafe.ps1` and `./scripts/verify-bitsafe-live.ps1`; see the [BitSafe LocalNet guide](docs/gitbook/guides/bitsafe-localnet.md). The official three-participant DecMan LocalNet also passed on 5 October 2026: [workflow and artifacts](https://github.com/EndPx/symbolon/actions/runs/37341484064). It completed threshold-governed mark publication, repo margin top-up and repurchase, with matching execution update IDs on all participants. [Evidence record](docs/submission/evidence/bitsafe-localnet.json).
 
 ## Run the complete demo
 
@@ -70,7 +70,7 @@ The newer liquidation browser run used a separate one-dealer 1,000 CUSD / 15 CET
 
 [Start the GitBook](docs/gitbook/README.md) · [Contents](docs/gitbook/SUMMARY.md) · [Architecture](docs/gitbook/architecture/overview.md) · [Why privacy](docs/gitbook/introduction/privacy.md) · [Contract/API reference](docs/gitbook/reference/api.md)
 
-`.gitbook.yaml` points to `docs/gitbook`. These are original GitBook-ready sources with diagrams, guides, economics, security boundaries, deployment details and pilot plans. Reference research stays local and excluded from Git; it is not part of the publication. No hosted GitBook URL is claimed until publication is verified.
+`.gitbook.yaml` points to `docs/gitbook`. [Symbolon Docs is published](https://symbolon.gitbook.io/symbolon-docs/) with original diagrams, guides, economics, security boundaries, deployment details and pilot plans. Reference research stays local and excluded from Git; it is not part of the publication.
 
 ## Wallets and deployment
 
@@ -86,4 +86,4 @@ There is no MainNet Symbolon package/asset deployment or Grofty-signed product t
 
 The repository includes a pre-existing scaffold committed on **August 28, 2026**. HackCanton delivery began September 18; disclose the baseline and describe the delivery-phase changes separately. [Submission evidence](docs/gitbook/mission/submission.md) records the required distinctions.
 
-The active challenge direction is the [BitSafe Contribution Pool LocalNet path](docs/gitbook/mission/challenges.md). The Grofty adapter remains in source but is deferred. No real cBTC, BitSafe DecMan integration, decentralized-party hosting or completed MainNet wallet flow is implied by the core demo. User validation and GTM remain [explicit hypotheses and a pilot plan](docs/gitbook/mission/validation.md), not invented traction.
+The active challenge direction is the [BitSafe Contribution Pool LocalNet path](docs/gitbook/mission/challenges.md). The Grofty adapter remains in source but is deferred. The verified DecMan integration is confined to the official LocalNet. Real cBTC/USDCx, independent hosting and a completed shared DevNet or MainNet wallet flow remain unverified. User validation and GTM remain [explicit hypotheses and a pilot plan](docs/gitbook/mission/validation.md), not invented traction.

@@ -156,9 +156,10 @@ const closed = one((await book(borrower.party)).closed, "closing receipt");
 assert.equal(closed.payload.outcome, "Repurchased");
 assert.equal(balanceOf((await book(borrower.party)).holdings, borrower.party, "cBTC-demo", issuer.party), 0.1);
 const audits = await Promise.all(dmPorts.map(port => poll(`chain audit on ${port}`, () => request(port, `/governance/chain-audit?party_id=${encodeURIComponent(party)}&limit=50&refresh=true`),
-  data => data.entries?.filter(entry => entry.event_type === "execute").length >= 2)));
+  data => new Set((data.entries ?? []).filter(entry => entry.event_type === "execute" && entry.update_id).map(entry => entry.update_id)).size >= 2)));
 // Each node must see the same committed executions, not merely local REST logs.
 const updates = audits.map(data => new Set(data.entries.filter(entry => entry.event_type === "execute").map(entry => entry.update_id)));
+assert.ok(updates.every(ids => ids.size >= 2 && ids.size === updates[0].size), "Two distinct, equally observed execution updates per participant");
 assert.ok([...updates[0]].every(id => id && updates[1].has(id) && updates[2].has(id)), "Consistent execution receipts across participants");
 const evidence = { checkedAt: new Date().toISOString(), environment: "official disposable BitSafe three-participant LocalNet",
   sourceCommit: commit, decentralizedParty: party, participantIds: pids, roles, initialized, marked, vetting, audits,

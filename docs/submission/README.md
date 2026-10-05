@@ -29,10 +29,14 @@ Symbolon is a private, bilateral fixed-rate repo desk on Canton. Borrowers recei
 
 ## Delivery files
 
+- [Pitch deck](symbolon-pitch-final.pptx)
 - [60-second pitch](pitch.md)
 - [Demo recording storyboard](demo-video.md)
+- [Recorded local UI demo, 2 min 26 sec](symbolon-local-demo.mp4)
+- [Committed browser repurchase receipt](evidence/browser-repurchase.json)
 - [Full technical documentation](../gitbook/SUMMARY.md)
 - [Network promotion procedure](../gitbook/guides/network-promotion.md)
 - [Current evidence and limits](../gitbook/reference/status.md)
+- [Verified BitSafe three-participant proof](evidence/bitsafe-localnet.json)
 
 Supply verified public URLs and the tested revision in the final hackathon form. A script or storyboard is not a published video; GitBook source is not a hosted GitBook. Final form submission remains a participant action.

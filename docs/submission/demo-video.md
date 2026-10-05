@@ -1,6 +1,8 @@
 # Three-minute demo storyboard
 
-Record the actual Canton desk at `/app` with the local environment disclosure visible. `/demo` helps explain the product but cannot replace committed ledger proof. Do not show credentials, participant administration tokens or unrelated accounts. The recording itself still needs to be produced and published.
+The [recorded local UI demo](symbolon-local-demo.mp4) is an edited, silent browser screencast with captions, about 2 min 26 sec. It shows two quotes, acceptance, a simulated price drop, margin call, top-up and repurchase through `/app`, ending with a committed update receipt. [Browser evidence](evidence/browser-repurchase.json) records the exact amounts and closing ID. Its assets are simulated CETH/CUSD on a native local Canton sandbox; the BitSafe three-participant proof is a separate CI artifact.
+
+The storyboard below is suitable for a later narrated recording. Keep the environment disclosure visible. `/demo` helps explain the product but cannot replace committed ledger proof. Do not show credentials, participant administration tokens or unrelated accounts.
 
 | Time | Screen/action | Narration |
 | --- | --- | --- |

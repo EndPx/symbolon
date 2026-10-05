@@ -4,7 +4,7 @@
   "walletNetwork": "devnet",
   "participant": null,
   "synchronizerId": null,
-  "corePackageId": null,
+  "corePackageId": "1d40e972b56e42c279140639d33dc362b432f2c0f608c77ec36410f0395f3e19",
   "tradingEnabled": false,
   "releaseEvidence": null,
   "assets": {

@@ -1,0 +1,190 @@
+{
+  "testedRevision": "d261376586cf27385957f0816805ece850672498",
+  "workflow": "https://github.com/EndPx/symbolon/actions/runs/37341484064",
+  "result": "passed",
+  "checkedAt": "2026-10-05T16:40:16.331Z",
+  "environment": "official disposable BitSafe three-participant LocalNet",
+  "bitsafeSourceCommit": "21ffdedf64366b1f2824301c434b427bf4726663",
+  "corePackageId": "1d40e972b56e42c279140639d33dc362b432f2c0f608c77ec36410f0395f3e19",
+  "participantIds": [
+    "participant::12207bbf393fcc85d8706c89bdb03819e447cc6d7d9c55732509e3b82663da310e04",
+    "participant::1220328eb1514fcc157942a09097ced967bec259ce7096b1fb3ce09159b4ed4291cb",
+    "sv::12204b13e72713ce947277cd5af247cbd72f4ea6816e5fd5ef0e23abffd4df4dc45b"
+  ],
+  "decentralizedParty": "demo-party::1220efae2694d8dc490deb8d9cba9dfb17009c1bf5828dfb5aa332fa0c3c5b121b79",
+  "ledgerOffsetBefore": 110,
+  "ledgerOffsetAfter": 167,
+  "oneConfirmationFailure": {
+    "status": 500,
+    "data": {
+      "error": "Failed to execute action: code: 'The system is not in a state required for the operation's execution', message: \"DAML_FAILURE(9,93819835): Interpretation error: Error: User failure: UNHANDLED_EXCEPTION/DA.Exception.AssertionFailed:AssertionFailed (error category 9): The requirement 'Enough confirmations to execute action' was not met.\""
+    }
+  },
+  "closedRepo": {
+    "contractId": "00f4bd2c54db0ba392837aabc33f6b9fb0ee5ce30be123a435cd224c1deeb2051aca121220ddea3941faeb0759cd06e08f0410aec32afce69fb3bed982292e9e1e2d52b008",
+    "templateId": "1d40e972b56e42c279140639d33dc362b432f2c0f608c77ec36410f0395f3e19:Symbolon.Repo:ClosedRepo",
+    "payload": {
+      "borrower": "party-f49db402-80a9-49cb-8e70-82df6e1ebc9c::12207bbf393fcc85d8706c89bdb03819e447cc6d7d9c55732509e3b82663da310e04",
+      "dealer": "party-b5418199-f76b-440d-9061-aae2061329c1::12207bbf393fcc85d8706c89bdb03819e447cc6d7d9c55732509e3b82663da310e04",
+      "collateralIssuer": "party-de581180-6e30-48a7-b805-c732117f9937::12207bbf393fcc85d8706c89bdb03819e447cc6d7d9c55732509e3b82663da310e04",
+      "collateralInstrument": "cBTC-demo",
+      "collateralAmount": "0.0300000000",
+      "cashIssuer": "party-de581180-6e30-48a7-b805-c732117f9937::12207bbf393fcc85d8706c89bdb03819e447cc6d7d9c55732509e3b82663da310e04",
+      "cashInstrument": "USDCx-demo",
+      "repurchasePrice": "1004.3333333333",
+      "outcome": "Repurchased",
+      "closedAt": "2026-10-05T16:40:15.906156Z"
+    },
+    "synchronizerId": "global-domain::12202fd680709931c29aa832fbbd7191e1ceda5853d7eb9ea39db471cd0d425ffdcf"
+  },
+  "appUpdateIds": [
+    "12207d4ccb622d8dd703e771af6439a7f8b2311bff8d2e10e46903cfc79ba5772c90",
+    "1220aaf1299893e7d19c6b16960b80154f97d0d5979b4f32decddce66f3f9085626c",
+    "12202fef9501100389308ec05cf1c9b33cdda2ff028e587f445c807e19370082c88d",
+    "12208088111b4a29f2ed562e4b594e6dcaf946341ed9b84dd1ceeda27751a4d38fb4",
+    "1220f8f5290f007bd42ffdedf16aa04e1f77c7372dfd63357d788fb2256134f96e25",
+    "1220e0fb6258935967e215741e52d59538e7073c95a54ef461c9c3a878fc2e8a9af2",
+    "122070ef40b4d974be1df79a68abc01aecb85279d58b3d2cf688b322a99cb3d76ef6",
+    "122084e3c79f4dcf58a8aed2d00c66a88273cbea7c3f34b7f85e836c664cc1b3e8c7",
+    "1220d20414ac56f9c9c9a1b5175d5d818b51cdcd818a5399e4a991ed44a4d99a23e6",
+    "1220903ba613a560c25f018a7c2d4e442a3db993f7e3db534ccd392a566fdcac5456",
+    "1220d99ada1fe38af2a85e2d07ad5c29ce539df4869561dd3033843fc347773a185d",
+    "1220840376ad5a67432e8f07a6da586157483b8ff9cfd3cde329c91f44ad2d890db2",
+    "122089031f0443e61185f7750321a267d6d71c61f3df43c24f010f16119b5f86cdbc"
+  ],
+  "audits": [
+    {
+      "entries": [
+        {
+          "event_type": "execute",
+          "update_id": "1220aafa2b69fb258ad808e566afbd070f5bec98c35c75f750f3e75e3dff8f1458ed",
+          "offset": 150,
+          "timestamp": 1791218413,
+          "acting_parties": [
+            "party-90c93b17-1185-4c0e-bd23-0c6e1cd79efc::12204b13e72713ce947277cd5af247cbd72f4ea6816e5fd5ef0e23abffd4df4dc45b"
+          ],
+          "contract_id": "000a95f64cf420d76dbb99fb6cb63aead93cfd7d64ab6fce042fa9edbc0f47e1dfca121220bb745dd5f7313cb2cc00c870930529e656c0e17a328b0634f366974c7b6c8c20"
+        },
+        {
+          "event_type": "execute",
+          "update_id": "1220aafa2b69fb258ad808e566afbd070f5bec98c35c75f750f3e75e3dff8f1458ed",
+          "offset": 150,
+          "timestamp": 1791218413,
+          "acting_parties": [
+            "demo-party::1220efae2694d8dc490deb8d9cba9dfb17009c1bf5828dfb5aa332fa0c3c5b121b79"
+          ],
+          "contract_id": "0029efae6c195f5a539410d7e277809a19cc33fe3bb00b313887e35f32be52ecf7ca1212208b519fe80a74fb32e8f33efc2294bc938d5797b517b4f3c571e1492ca0993fe3"
+        },
+        {
+          "event_type": "execute",
+          "update_id": "12206f319857a254251316a95cdb57058fad1b76a62086b4538e4ccedfded8e054be",
+          "offset": 120,
+          "timestamp": 1791218408,
+          "acting_parties": [
+            "party-90c93b17-1185-4c0e-bd23-0c6e1cd79efc::12204b13e72713ce947277cd5af247cbd72f4ea6816e5fd5ef0e23abffd4df4dc45b"
+          ],
+          "contract_id": "000a95f64cf420d76dbb99fb6cb63aead93cfd7d64ab6fce042fa9edbc0f47e1dfca121220bb745dd5f7313cb2cc00c870930529e656c0e17a328b0634f366974c7b6c8c20"
+        },
+        {
+          "event_type": "execute",
+          "update_id": "12206f319857a254251316a95cdb57058fad1b76a62086b4538e4ccedfded8e054be",
+          "offset": 120,
+          "timestamp": 1791218408,
+          "acting_parties": [
+            "demo-party::1220efae2694d8dc490deb8d9cba9dfb17009c1bf5828dfb5aa332fa0c3c5b121b79"
+          ],
+          "contract_id": "004d6020a42639118f1c36425bc85e91e02e1c435cd1ae5df11c110a38f1948fa1ca12122099e16e07a48cb6593f4d8e659df888638bd1c3de526fa2fa28be5b56f025e244"
+        }
+      ]
+    },
+    {
+      "entries": [
+        {
+          "event_type": "execute",
+          "update_id": "1220aafa2b69fb258ad808e566afbd070f5bec98c35c75f750f3e75e3dff8f1458ed",
+          "offset": 131,
+          "timestamp": 1791218413,
+          "acting_parties": [
+            "party-90c93b17-1185-4c0e-bd23-0c6e1cd79efc::12204b13e72713ce947277cd5af247cbd72f4ea6816e5fd5ef0e23abffd4df4dc45b"
+          ],
+          "contract_id": "000a95f64cf420d76dbb99fb6cb63aead93cfd7d64ab6fce042fa9edbc0f47e1dfca121220bb745dd5f7313cb2cc00c870930529e656c0e17a328b0634f366974c7b6c8c20"
+        },
+        {
+          "event_type": "execute",
+          "update_id": "1220aafa2b69fb258ad808e566afbd070f5bec98c35c75f750f3e75e3dff8f1458ed",
+          "offset": 131,
+          "timestamp": 1791218413,
+          "acting_parties": [
+            "demo-party::1220efae2694d8dc490deb8d9cba9dfb17009c1bf5828dfb5aa332fa0c3c5b121b79"
+          ],
+          "contract_id": "0029efae6c195f5a539410d7e277809a19cc33fe3bb00b313887e35f32be52ecf7ca1212208b519fe80a74fb32e8f33efc2294bc938d5797b517b4f3c571e1492ca0993fe3"
+        },
+        {
+          "event_type": "execute",
+          "update_id": "12206f319857a254251316a95cdb57058fad1b76a62086b4538e4ccedfded8e054be",
+          "offset": 117,
+          "timestamp": 1791218408,
+          "acting_parties": [
+            "party-90c93b17-1185-4c0e-bd23-0c6e1cd79efc::12204b13e72713ce947277cd5af247cbd72f4ea6816e5fd5ef0e23abffd4df4dc45b"
+          ],
+          "contract_id": "000a95f64cf420d76dbb99fb6cb63aead93cfd7d64ab6fce042fa9edbc0f47e1dfca121220bb745dd5f7313cb2cc00c870930529e656c0e17a328b0634f366974c7b6c8c20"
+        },
+        {
+          "event_type": "execute",
+          "update_id": "12206f319857a254251316a95cdb57058fad1b76a62086b4538e4ccedfded8e054be",
+          "offset": 117,
+          "timestamp": 1791218408,
+          "acting_parties": [
+            "demo-party::1220efae2694d8dc490deb8d9cba9dfb17009c1bf5828dfb5aa332fa0c3c5b121b79"
+          ],
+          "contract_id": "004d6020a42639118f1c36425bc85e91e02e1c435cd1ae5df11c110a38f1948fa1ca12122099e16e07a48cb6593f4d8e659df888638bd1c3de526fa2fa28be5b56f025e244"
+        }
+      ]
+    },
+    {
+      "entries": [
+        {
+          "event_type": "execute",
+          "update_id": "1220aafa2b69fb258ad808e566afbd070f5bec98c35c75f750f3e75e3dff8f1458ed",
+          "offset": 177,
+          "timestamp": 1791218413,
+          "acting_parties": [
+            "party-90c93b17-1185-4c0e-bd23-0c6e1cd79efc::12204b13e72713ce947277cd5af247cbd72f4ea6816e5fd5ef0e23abffd4df4dc45b"
+          ],
+          "contract_id": "000a95f64cf420d76dbb99fb6cb63aead93cfd7d64ab6fce042fa9edbc0f47e1dfca121220bb745dd5f7313cb2cc00c870930529e656c0e17a328b0634f366974c7b6c8c20"
+        },
+        {
+          "event_type": "execute",
+          "update_id": "1220aafa2b69fb258ad808e566afbd070f5bec98c35c75f750f3e75e3dff8f1458ed",
+          "offset": 177,
+          "timestamp": 1791218413,
+          "acting_parties": [
+            "demo-party::1220efae2694d8dc490deb8d9cba9dfb17009c1bf5828dfb5aa332fa0c3c5b121b79"
+          ],
+          "contract_id": "0029efae6c195f5a539410d7e277809a19cc33fe3bb00b313887e35f32be52ecf7ca1212208b519fe80a74fb32e8f33efc2294bc938d5797b517b4f3c571e1492ca0993fe3"
+        },
+        {
+          "event_type": "execute",
+          "update_id": "12206f319857a254251316a95cdb57058fad1b76a62086b4538e4ccedfded8e054be",
+          "offset": 163,
+          "timestamp": 1791218408,
+          "acting_parties": [
+            "party-90c93b17-1185-4c0e-bd23-0c6e1cd79efc::12204b13e72713ce947277cd5af247cbd72f4ea6816e5fd5ef0e23abffd4df4dc45b"
+          ],
+          "contract_id": "000a95f64cf420d76dbb99fb6cb63aead93cfd7d64ab6fce042fa9edbc0f47e1dfca121220bb745dd5f7313cb2cc00c870930529e656c0e17a328b0634f366974c7b6c8c20"
+        },
+        {
+          "event_type": "execute",
+          "update_id": "12206f319857a254251316a95cdb57058fad1b76a62086b4538e4ccedfded8e054be",
+          "offset": 163,
+          "timestamp": 1791218408,
+          "acting_parties": [
+            "demo-party::1220efae2694d8dc490deb8d9cba9dfb17009c1bf5828dfb5aa332fa0c3c5b121b79"
+          ],
+          "contract_id": "004d6020a42639118f1c36425bc85e91e02e1c435cd1ae5df11c110a38f1948fa1ca12122099e16e07a48cb6593f4d8e659df888638bd1c3de526fa2fa28be5b56f025e244"
+        }
+      ]
+    }
+  ],
+  "assets": "simulated cBTC-demo / USDCx-demo"
+}

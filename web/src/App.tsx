@@ -8,6 +8,7 @@ import {
 import { RATE_SERIES, RATE_SOURCE } from "./rates";
 
 const GITHUB = "https://github.com/EndPx/symbolon";
+const DOCS = "https://symbolon.gitbook.io/symbolon-docs/";
 
 // Load the optional 3D enhancement only when the footer mark approaches.
 // The same PNG remains available while loading, or if the library fails.
@@ -185,7 +186,7 @@ const FAQ = [
   },
   {
     q: "What happens if my collateral drops in value?",
-    a: "The dealer may issue a margin call if a current mark from the agreed oracle shows insufficient collateral value. A top-up must restore the required margin. Once the cure deadline or maturity passes, the dealer may declare default and retain the collateral already transferred at settlement.",
+    a: "The dealer may issue a margin call when a fresh agreed mark shows insufficient coverage. After the cure deadline, liquidation needs a new post-cure mark showing that the shortfall remains. Maturity default is a separate outcome, available only when the agreed maturity has been reached. This prototype releases pledged collateral to the dealer; it does not model a collateral sale or surplus accounting.",
   },
   {
     q: "What fees and risks should I review?",
@@ -322,6 +323,7 @@ export default function App() {
           <a className="link" href="#faq">
             FAQ
           </a>
+          <a className="link" href={DOCS}>Docs</a>
           <a className="link keep app-link" href="/app">
             Open app
           </a>
@@ -536,6 +538,7 @@ export default function App() {
                 <a href={GITHUB} target="_blank" rel="noreferrer">
                   GitHub ↗
                 </a>
+                {" · "}<a href={DOCS}>Documentation</a>
                 {" · "}Prototype: demo assets and simulated oracle marks.
               </span>
             </div>

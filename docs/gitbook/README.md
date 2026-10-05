@@ -32,6 +32,6 @@ The name *Symbolon* reflects the idea of two parties retaining matching evidence
 
 ## Source and documentation
 
-The [Symbolon repository](https://github.com/EndPx/symbolon) contains the application, Daml packages, scripts, and this documentation. GitBook source lives under `docs/gitbook`; `SUMMARY.md` defines the navigation. These files are ready to import or synchronize into a GitBook space. Preparing them does not publish a GitBook website or create a public documentation URL.
+The [Symbolon repository](https://github.com/EndPx/symbolon/tree/codex/submission-devnet) contains the application, Daml packages, scripts, and this documentation. GitBook source lives under `docs/gitbook`; `SUMMARY.md` defines the navigation. The [published Symbolon Docs](https://symbolon.gitbook.io/symbolon-docs/) contains the product guides, original architecture diagrams and current evidence. Publication does not prove a wallet or asset settlement on DevNet/MainNet.
 
-Documentation baseline: **23 September 2026**. Deployment and test evidence should always be read with its environment and revision, rather than assumed to apply to every network.
+Documentation updated: **5 October 2026**. Deployment and test evidence should always be read with its environment and revision, rather than assumed to apply to every network.

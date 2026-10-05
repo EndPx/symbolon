@@ -19,6 +19,7 @@ const isDemo = window.location.pathname.replace(/\/+$/, "") === "/demo";
 const rootElement = document.getElementById("root") as (HTMLElement & { symbolonRoot?: Root });
 const root = rootElement.symbolonRoot ?? createRoot(rootElement);
 rootElement.symbolonRoot = root;
+root.render(<main style={{ padding: "3rem", fontFamily: "serif" }} aria-busy="true">Opening Symbolon…</main>);
 void loadDeployment().then(() => root.render(
   <StrictMode>
     <Suspense fallback={<main style={{ padding: "3rem", fontFamily: "serif" }} aria-busy="true">Opening Symbolon…</main>}>

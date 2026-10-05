@@ -93,7 +93,7 @@ export default function GuidedDemo() {
         <dl><div><dt>Borrower</dt><dd>Compares both addressed quotes.</dd></div><div><dt>Winning dealer</dt><dd>Sees its quote and resulting repo.</dd></div><div><dt>Other dealer</dt><dd>Sees its own quote; the winning repo is absent from its party view.</dd></div></dl>
         <h2>What is proved today</h2><p>The repository contains local Canton scripts for repo settlement, margin, top-up, closeout, and a BitSafe 2-of-3 governance action that changes an oracle mark.</p>
         <p className="walkthrough-small">Party privacy is scoped to ledger views. Hosting operators and the demo issuer remain trust dependencies. A MainNet transaction and live cBTC / USDCx adapter have not been demonstrated.</p>
-        <a href="https://github.com/EndPx/symbolon/blob/main/docs/gitbook/reference/status.md">Read evidence and release limits</a>
+        <a href="https://symbolon.gitbook.io/symbolon-docs/reference/status">Read evidence and release limits</a>
       </aside>
     </div>
     <footer className="walkthrough-footer"><span>Symbolon · Private fixed-rate repo on Canton</span><a href="/">Back to product overview</a></footer>

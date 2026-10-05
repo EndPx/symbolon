@@ -10,13 +10,15 @@ Completion requires that a reviewer can start from a fresh environment and repro
 
 ## Phase 2: BitSafe Contribution Pool LocalNet
 
+**Completed technically on 5 October 2026:** the pinned three-participant starter, custom governed mark, threshold rejection and successful execution, actual repo margin/top-up/repurchase and matching all-node audit receipts passed in CI. [Evidence](../reference/status.md). Judging/award decisions remain with the sponsor.
+
 Run the pinned BitSafe LocalNet starter from a clean setup and document exact prerequisites and commands. Integrate the DecMan decentralized-party workflow with a material Symbolon operation, then show the threshold outcome in the repo lifecycle. A generic governance vote without a Symbolon effect is not sufficient evidence of app integration.
 
 The current demo is on a separate local Canton sandbox; shared DevNet only has the vetted core package. A shared-network transaction is not a prerequisite for the selected Contribution Pool path. Gold's own participant and peer-hosting work, and Grofty's MainNet wallet flow, are deferred.
 
 ## Phase 3: one real asset integration
 
-The intended pair is cBTC collateral and a USD-denominated cash asset; the exact USD instrument, issuer and supported packages remain to be verified. Implement the official asset adapters, issuer matching, restriction handling, transfer contexts and failure recovery. Review oracle sourcing, a single agreed feed lineage, closeout valuation, surplus/shortfall accounting, eligibility and legal/operational requirements before any real-value test. The current health-factor closeout uses only simulated holdings.
+The intended pair is cBTC collateral and USDCx cash. Verify each network's administrators and supported packages. Implement the official asset adapters, issuer matching, restriction handling, transfer contexts and failure recovery. Review oracle sourcing, a single agreed feed lineage, closeout valuation, surplus/shortfall accounting, eligibility and legal/operational requirements before any real-value test. The current health-factor closeout uses only simulated holdings.
 
 ## Phase 4: operator pilot
 
