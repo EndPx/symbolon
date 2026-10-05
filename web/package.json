@@ -6,10 +6,13 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "tsx --test test/*.test.ts",
+    "doctor": "react-doctor . --yes"
   },
   "dependencies": {
     "@google/model-viewer": "^4.3.1",
+    "@groftylabs/dapp-sdk": "0.2.0",
     "@partylayer/react": "^2.3.3",
     "@partylayer/sdk": "^0.18.1",
     "react": "^19.1.0",
@@ -19,6 +22,10 @@
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "@vitejs/plugin-react": "^4.5.0",
+    "react-doctor": "^0.9.14",
+    "react-grab": "^0.2.0",
+    "react-scan": "^0.5.7",
+    "tsx": "^4.23.15",
     "typescript": "~5.8.3",
     "vite": "^6.3.5"
   }

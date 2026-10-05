@@ -1,0 +1,26 @@
+{
+  "releaseStatus": "blocked",
+  "network": "canton:da-mainnet",
+  "corePackageId": null,
+  "participant": null,
+  "assets": {
+    "collateral": { "symbol": "cBTC", "adapter": null, "admin": null, "packageIds": [], "verification": null },
+    "cash": {
+      "symbol": "USDCx",
+      "adapter": null,
+      "admin": "decentralized-usdc-interchain-rep::12208115f1e168dd7e792320be9c4ca720c751a02a3053c7606e1c1cd3dad9bf60ef",
+      "packageIds": [],
+      "identitySource": "https://www.circle.com/blog/usdcx-on-canton-now-available-via-circle-xreserve",
+      "verification": null
+    }
+  },
+  "gates": {
+    "officialTokenAdapters": { "passed": false, "evidence": null },
+    "canonicalOracleLineage": { "passed": false, "evidence": null },
+    "closeoutSurplusAndShortfall": { "passed": false, "evidence": null },
+    "participantAuthenticationAndPackageVetting": { "passed": false, "evidence": null },
+    "walletEndToEnd": { "passed": false, "evidence": null },
+    "independentReview": { "passed": false, "evidence": null },
+    "operationsRecoveryAndFeeBudget": { "passed": false, "evidence": null }
+  }
+}

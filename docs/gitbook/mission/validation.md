@@ -1,0 +1,41 @@
+# User validation and pilot plan
+
+The initial customer profile is a treasury operator at a small or mid-sized digital-asset fund or tokenized-asset business, together with a dealer willing to finance an agreed collateral type. This is a targeting hypothesis. No interviews, design partners, signed pilots, user counts or willingness-to-pay findings are claimed.
+
+## Questions to test
+
+| Hypothesis | Evidence to seek | Evidence against it |
+| --- | --- | --- |
+| Temporary funding against held assets is a recurring need | Recent concrete transactions and frequency | Need is rare or assets are not financeable |
+| Coordination is a material source of friction | Time spent, handoffs, failed settlement or reconciliation work | Existing tools resolve it adequately |
+| Private dealer comparison matters | Specific information the operator cannot publish | Users prefer a public venue or have no relevant concern |
+| Post-trade workflow creates value | Actual margin, substitution and repayment pain | Those events are rare or already automated |
+| Both sides can adopt a Canton workflow | Access to parties, assets and operational approval | Counterparty or token access blocks adoption |
+
+## Discovery interviews
+
+Seek an initial group of 5–8 relevant operators across both sides of the trade. Ask about the last completed funding transaction before showing a product pitch. Request the steps, elapsed time to usable cash, teams involved, asset restrictions, documents or tools used, and the most costly exception. Do not ask respondents merely whether they like a hypothetical fixed-rate product.
+
+Show the prototype only after recording the current process. Ask the respondent to request a quote, interpret the due amount, respond to a margin call, and explain what information another dealer should see. Record observed confusion separately from suggestions and compliments.
+
+Keep an evidence log with date, respondent role, consent for attribution, anonymized workflow facts, and what changed in our hypothesis. Do not turn a friendly conversation into an implied customer commitment.
+
+## Proposed pilot
+
+1. Select one borrower, one dealer, one collateral identity and one cash identity.
+2. Confirm participant access, token transfer rules, oracle policy and operational owner.
+3. Rehearse the workflow with simulated holdings and controlled marks.
+4. Compare the prototype workflow with the team's current process using the same example.
+5. Decide whether a further authorized pilot is justified; real assets require separate integration and operating agreements.
+
+Candidate measures are completion without developer intervention, time between confirmed request and committed settlement, number of manual handoffs, correctness of the participant's understanding of payoff and deadlines, and successful recovery from stale inputs. Set target values with pilot participants rather than inventing market benchmarks.
+
+## Distribution hypothesis
+
+Start with direct outreach to treasury operators, Canton asset issuers and financing counterparties that can make both sides of a pilot possible. A usable workflow alone cannot create a dealer's balance sheet or token eligibility. Distribution needs access to those relationships as well as a frontend.
+
+Pricing remains unvalidated. Possible future models include software/service fees or usage-based workflow fees, but the current contract does not levy a Symbolon fee. Interview willingness to pay for a specific improvement only after observing the present workflow and verifying the integration costs.
+
+## Decision gates
+
+Continue if both sides identify a repeated problem, can use the same supported assets/network, and complete a rehearsal with an improvement they value. Narrow the scope if only a single post-trade action is valuable. Reconsider the initial customer profile if current tools already solve the problem or if token and counterparty access dominate the cost.

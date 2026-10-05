@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "network": "mainnet",
+  "walletNetwork": "mainnet",
+  "participant": null,
+  "synchronizerId": null,
+  "corePackageId": null,
+  "tradingEnabled": false,
+  "releaseEvidence": null,
+  "assets": {
+    "collateral": { "symbol": "cBTC", "admin": null, "adapter": "cip56", "packageIds": [] },
+    "cash": {
+      "symbol": "USDCx",
+      "admin": "decentralized-usdc-interchain-rep::12208115f1e168dd7e792320be9c4ca720c751a02a3053c7606e1c1cd3dad9bf60ef",
+      "adapter": "cip56", "packageIds": []
+    }
+  }
+}

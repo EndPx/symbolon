@@ -1,283 +1,117 @@
-// Every move a desk can make, expressed as ledger commands.
-//
-// Nothing here decides whether a move is allowed — the contracts do that, and
-// a rejection coming back from the ledger is the system working. These
-// functions only assemble what to ask for.
-
+// Assemble commands; authorization, asset locks and lifecycle rules live on ledger.
 import { create, dec, exercise, int, type Contract } from "../ledger/api";
 import type { Session } from "../ledger/session";
-import {
-  TPL,
-  deskState,
-  num,
-  type Holding,
-  type PriceFeed,
-} from "../ledger/symbolon";
+import { TPL, deskState, decimalUnits as units, type Holding, type PriceFeed, type RepoQuote, type QuoteRequest, type RepoPosition } from "../ledger/symbolon";
 
 export interface RequestTerms {
   dealers: string[];
   oracle: string;
+  collateralIssuer: string;
   collateralInstrument: string;
   collateralAmount: number;
+  cashIssuer: string;
   cashInstrument: string;
   cashAmount: number;
   termDays: number;
   marginThresholdPct: number;
   cureSeconds: number;
+  maxPriceAgeSeconds: number;
 }
 
-/**
- * One private request per dealer. They are separate contracts on purpose:
- * dealer B is not an observer of dealer A's copy, so nobody can see who else
- * was asked.
- */
 export function requestQuotes(s: Session, t: RequestTerms) {
-  return s.submit(
-    t.dealers.map((dealer) =>
-      create(TPL.QuoteRequest, {
-        borrower: s.party,
-        dealer,
-        oracle: t.oracle,
-        collateralInstrument: t.collateralInstrument,
-        collateralAmount: dec(t.collateralAmount),
-        cashInstrument: t.cashInstrument,
-        cashAmount: dec(t.cashAmount),
-        termDays: int(t.termDays),
-        marginThresholdPct: dec(t.marginThresholdPct),
-        cureSeconds: int(t.cureSeconds),
-      }),
-    ),
-  );
+  return s.submit(t.dealers.map((dealer) => create(TPL.QuoteRequest, {
+    borrower: s.party, dealer, oracle: t.oracle,
+    collateralIssuer: t.collateralIssuer, collateralInstrument: t.collateralInstrument,
+    collateralAmount: dec(t.collateralAmount), cashIssuer: t.cashIssuer,
+    cashInstrument: t.cashInstrument, cashAmount: dec(t.cashAmount),
+    termDays: int(t.termDays), marginThresholdPct: dec(t.marginThresholdPct),
+    cureSeconds: int(t.cureSeconds), maxPriceAgeSeconds: int(t.maxPriceAgeSeconds),
+  })));
 }
 
-/** All of `owner`'s holdings in one instrument, largest first. */
-const bucket = (
-  holdings: Contract<Holding>[],
-  owner: string,
-  instrument: string,
-) =>
-  holdings
-    .filter(
-      (h) => h.payload.owner === owner && h.payload.instrument === instrument,
-    )
-    .sort((a, b) => num(b.payload.amount) - num(a.payload.amount));
+const bucket = (holdings: Contract<Holding>[], owner: string, instrument: string, issuer: string) =>
+  holdings.filter(({ payload: h }) => h.owner === owner && h.instrument === instrument &&
+    h.issuer === issuer && h.lockParties?.length === 0)
+    .sort((a, b) => units(a.payload.amount) > units(b.payload.amount) ? -1 : units(a.payload.amount) < units(b.payload.amount) ? 1 : 0);
 
-/**
- * Return one holding worth at least `min`, merging holdings together until one
- * is. Trades leave change behind, so a party's balance fragments as they use
- * the desk — without this, someone holding 20 + 20 could not pledge 25, and
- * the balance on screen would be a number they cannot spend.
- */
-export async function consolidate(
-  s: Session,
-  owner: string,
-  instrument: string,
-  min: number,
-): Promise<string> {
-  let mine = bucket(deskState(await s.read()).holdings, owner, instrument);
-  const total = mine.reduce((n, h) => n + num(h.payload.amount), 0);
-  if (total < min) {
-    throw new Error(
-      `Not enough ${instrument}: ${total} against ${min} needed.`,
-    );
+/** Consolidation and change happen privately before a bilateral transaction. */
+export async function exactHolding(s: Session, instrument: string, issuer: string, amount: number | string): Promise<string> {
+  const needed = units(amount);
+  if (needed <= 0n) throw new Error("Enter a positive amount.");
+  let mine = bucket(deskState(await s.read()).holdings, s.party, instrument, issuer);
+  if (mine.reduce((total, h) => total + units(h.payload.amount), 0n) < needed) {
+    throw new Error(`Not enough available ${instrument} from the agreed issuer. Locked holdings cannot be used.`);
   }
-
-  // Each merge archives both inputs and creates one holding, so the ids move
-  // under us and every round has to re-read. In practice this is one or two.
-  while (num(mine[0].payload.amount) < min) {
-    await s.submit([
-      exercise(TPL.Holding, mine[0].contractId, "Merge", {
-        otherCid: mine[1].contractId,
-      }),
-    ]);
-    mine = bucket(deskState(await s.read()).holdings, owner, instrument);
+  while (units(mine[0].payload.amount) < needed) {
+    await s.submit([exercise(TPL.Holding, mine[0].contractId, "Merge", { otherCid: mine[1].contractId })]);
+    mine = bucket(deskState(await s.read()).holdings, s.party, instrument, issuer);
   }
-  return mine[0].contractId;
+  const exact = mine.find((h) => units(h.payload.amount) === needed);
+  if (exact) return exact.contractId;
+  const before = new Set(mine.map((h) => h.contractId));
+  await s.submit([exercise(TPL.Holding, mine[0].contractId, "Transfer", {
+    to: s.party, qty: dec(amount), newViewers: [],
+  })]);
+  const split = bucket(deskState(await s.read()).holdings, s.party, instrument, issuer)
+    .find((h) => !before.has(h.contractId) && units(h.payload.amount) === needed);
+  if (!split) throw new Error("The exact holding is not visible yet. Refresh the ledger before retrying.");
+  return split.contractId;
 }
 
-/**
- * Quoting is two ledger writes, and the order matters: the dealer first makes
- * the funding holding visible to the borrower, because the borrower cannot
- * accept a quote backed by cash they are not allowed to see. The second write
- * points the quote at the escrowed holding, which is why a Symbolon quote is
- * provably funded rather than merely asserted.
- */
-export async function sendQuote(
-  s: Session,
-  requestCid: string,
-  borrower: string,
-  cashInstrument: string,
-  cashAmount: number,
-  rate: number,
-  validSeconds: number,
-) {
-  const cashCid = await consolidate(s, s.party, cashInstrument, cashAmount);
-
-  await s.submit([
-    exercise(TPL.Holding, cashCid, "SetViewers", {
-      newViewers: [borrower],
-    }),
-  ]);
-
-  // SetViewers archives and recreates, so the escrowed holding has a new id.
-  const after = deskState(await s.read());
-  const escrowed = after.holdings.find(
-    (h) =>
-      h.payload.owner === s.party &&
-      h.payload.instrument === cashInstrument &&
-      num(h.payload.amount) >= cashAmount &&
-      h.payload.viewers.includes(borrower),
-  );
-  if (!escrowed) throw new Error("Escrowed holding did not come back.");
-
-  return s.submit([
-    exercise(TPL.QuoteRequest, requestCid, "SubmitQuote", {
-      rate: dec(rate),
-      validSeconds: int(validSeconds),
-      cashCid: escrowed.contractId,
-    }),
-  ]);
+export async function sendQuote(s: Session, request: Contract<QuoteRequest>, rate: number, validSeconds: number) {
+  const r = request.payload;
+  const cashCid = await exactHolding(s, r.cashInstrument, r.cashIssuer, r.cashAmount);
+  return s.submit([exercise(TPL.QuoteRequest, request.contractId, "SubmitQuote", {
+    rate: dec(rate), validSeconds: int(validSeconds), cashCid,
+  })]);
 }
 
-export function passRequest(s: Session, requestCid: string) {
-  return s.submit([exercise(TPL.QuoteRequest, requestCid, "PassRequest")]);
+export const passRequest = (s: Session, cid: string) => s.submit([exercise(TPL.QuoteRequest, cid, "PassRequest")]);
+export const withdrawRequest = (s: Session, cid: string) => s.submit([exercise(TPL.QuoteRequest, cid, "WithdrawRequest")]);
+
+export async function acceptQuote(s: Session, quote: Contract<RepoQuote>, feedCid: string) {
+  const q = quote.payload;
+  const collateralCid = await exactHolding(s, q.collateralInstrument, q.collateralIssuer, q.collateralAmount);
+  return s.submit([exercise(TPL.RepoQuote, quote.contractId, "AcceptQuote", { collateralCid, feedCid })]);
 }
 
-export function withdrawRequest(s: Session, requestCid: string) {
-  return s.submit([exercise(TPL.QuoteRequest, requestCid, "WithdrawRequest")]);
+export const rejectQuote = (s: Session, cid: string) => s.submit([exercise(TPL.RepoQuote, cid, "RejectQuote")]);
+export const revokeQuote = (s: Session, cid: string) => s.submit([exercise(TPL.RepoQuote, cid, "RevokeQuote")]);
+export const issueMarginCall = (s: Session, cid: string, feedCid: string) =>
+  s.submit([exercise(TPL.RepoPosition, cid, "IssueMarginCall", { feedCid })]);
+export const resolveMarginCall = (s: Session, cid: string, feedCid: string) =>
+  s.submit([exercise(TPL.RepoPosition, cid, "ResolveMarginCall", { feedCid })]);
+
+export async function topUp(s: Session, position: Contract<RepoPosition>, extraQty: number, feedCid: string) {
+  const p = position.payload;
+  const extraCid = await exactHolding(s, p.collateralInstrument, p.collateralIssuer, extraQty);
+  return s.submit([exercise(TPL.RepoPosition, position.contractId, "TopUpCollateral", { extraCid, extraQty: dec(extraQty), feedCid })]);
 }
 
-/** Acceptance IS settlement: collateral and cash move in the same transaction. */
-export async function acceptQuote(
-  s: Session,
-  quoteCid: string,
-  collateralInstrument: string,
-  collateralAmount: number,
-) {
-  const collateralCid = await consolidate(
-    s,
-    s.party,
-    collateralInstrument,
-    collateralAmount,
-  );
-  return s.submit([
-    exercise(TPL.RepoQuote, quoteCid, "AcceptQuote", { collateralCid }),
-  ]);
+export async function proposeSubstitution(s: Session, positionCid: string, feed: Contract<PriceFeed>, newQty: number) {
+  const f = feed.payload;
+  const newHoldingCid = await exactHolding(s, f.instrument, f.instrumentIssuer, newQty);
+  return s.submit([exercise(TPL.RepoPosition, positionCid, "ProposeSubstitution", {
+    newIssuer: f.instrumentIssuer, newInstrument: f.instrument, newQty: dec(newQty),
+    newHoldingCid, newFeedCid: feed.contractId,
+  })]);
 }
 
-export function rejectQuote(s: Session, quoteCid: string) {
-  return s.submit([exercise(TPL.RepoQuote, quoteCid, "RejectQuote")]);
+export const acceptSubstitution = (s: Session, cid: string) =>
+  s.submit([exercise(TPL.SubstitutionProposal, cid, "AcceptSubstitution")]);
+export const rejectSubstitution = (s: Session, cid: string) =>
+  s.submit([exercise(TPL.SubstitutionProposal, cid, "RejectSubstitution")]);
+export const withdrawSubstitution = (s: Session, cid: string) =>
+  s.submit([exercise(TPL.SubstitutionProposal, cid, "WithdrawSubstitution")]);
+
+export async function repay(s: Session, position: Contract<RepoPosition>) {
+  const p = position.payload;
+  const cashCid = await exactHolding(s, p.cashInstrument, p.cashIssuer, p.repurchasePrice);
+  return s.submit([exercise(TPL.RepoPosition, position.contractId, "Repurchase", { cashCid })]);
 }
 
-export function issueMarginCall(
-  s: Session,
-  positionCid: string,
-  feedCid: string,
-) {
-  return s.submit([
-    exercise(TPL.RepoPosition, positionCid, "IssueMarginCall", { feedCid }),
-  ]);
-}
-
-export async function topUp(
-  s: Session,
-  positionCid: string,
-  instrument: string,
-  extraQty: number,
-  feedCid: string,
-) {
-  const extraCid = await consolidate(s, s.party, instrument, extraQty);
-  return s.submit([
-    exercise(TPL.RepoPosition, positionCid, "TopUpCollateral", {
-      extraCid,
-      extraQty: dec(extraQty),
-      feedCid,
-    }),
-  ]);
-}
-
-/**
- * Substitution needs both signatures, so the borrower proposes and the dealer
- * accepts. The proposal carries the replacement holding, escrowed into the
- * dealer's view first for the same reason a quote is.
- */
-export async function proposeSubstitution(
-  s: Session,
-  positionCid: string,
-  dealer: string,
-  newInstrument: string,
-  newQty: number,
-  newFeedCid: string,
-) {
-  const holdingCid = await consolidate(s, s.party, newInstrument, newQty);
-
-  await s.submit([
-    exercise(TPL.Holding, holdingCid, "SetViewers", {
-      newViewers: [dealer],
-    }),
-  ]);
-
-  const after = deskState(await s.read());
-  const shown = after.holdings.find(
-    (h) =>
-      h.payload.owner === s.party &&
-      h.payload.instrument === newInstrument &&
-      num(h.payload.amount) >= newQty &&
-      h.payload.viewers.includes(dealer),
-  );
-  if (!shown) throw new Error("Escrowed holding did not come back.");
-
-  return s.submit([
-    create(TPL.SubstitutionProposal, {
-      borrower: s.party,
-      dealer,
-      posCid: positionCid,
-      newInstrument,
-      newQty: dec(newQty),
-      newHoldingCid: shown.contractId,
-      newFeedCid,
-    }),
-  ]);
-}
-
-export function acceptSubstitution(s: Session, proposalCid: string) {
-  return s.submit([
-    exercise(TPL.SubstitutionProposal, proposalCid, "AcceptSubstitution"),
-  ]);
-}
-
-export function rejectSubstitution(s: Session, proposalCid: string) {
-  return s.submit([
-    exercise(TPL.SubstitutionProposal, proposalCid, "RejectSubstitution"),
-  ]);
-}
-
-export async function repay(
-  s: Session,
-  positionCid: string,
-  cashInstrument: string,
-  repurchasePrice: number,
-) {
-  const cashCid = await consolidate(s, s.party, cashInstrument, repurchasePrice);
-  return s.submit([
-    exercise(TPL.RepoPosition, positionCid, "Repurchase", { cashCid }),
-  ]);
-}
-
-export function declareDefault(s: Session, positionCid: string) {
-  return s.submit([exercise(TPL.RepoPosition, positionCid, "DeclareDefault")]);
-}
-
-/** Oracle only. The demo's way of moving the market. */
-export function setPrice(
-  s: Session,
-  feed: Contract<PriceFeed>,
-  newPrice: number,
-) {
-  return s.submit([
-    exercise(TPL.PriceFeed, feed.contractId, "SetPrice", {
-      newPrice: dec(newPrice),
-      at: new Date().toISOString(),
-    }),
-  ]);
-}
+export const declareDefault = (s: Session, cid: string) => s.submit([exercise(TPL.RepoPosition, cid, "DeclareDefault")]);
+export const liquidate = (s: Session, cid: string, feedCid: string) =>
+  s.submit([exercise(TPL.RepoPosition, cid, "Liquidate", { feedCid })]);
+export const setPrice = (s: Session, feed: Contract<PriceFeed>, newPrice: number) =>
+  s.submit([exercise(TPL.PriceFeed, feed.contractId, "SetPrice", { newPrice: dec(newPrice), at: new Date().toISOString() })]);

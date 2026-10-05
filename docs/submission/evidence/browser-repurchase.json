@@ -1,0 +1,26 @@
+{
+  "checkedAt": "2026-10-05T17:20:34.549Z",
+  "environment": "native local Canton, browser /app",
+  "corePackageId": "1d40e972b56e42c279140639d33dc362b432f2c0f608c77ec36410f0395f3e19",
+  "assets": "simulated CETH / CUSD",
+  "quotes": [
+    "0.052",
+    "0.058"
+  ],
+  "selectedRate": "0.052",
+  "principal": "1000",
+  "repurchasePrice": "1004.3333333333",
+  "collateralOpened": "15",
+  "collateralAfterTopUp": "18",
+  "healthFactorsDisplayed": [
+    "1.43",
+    "0.86",
+    "1.03"
+  ],
+  "outcome": "Repurchased",
+  "updateId": "1220c496f9730965356d7593c5f0c4cacf06ffe47f387db6a3d5daf2f95e6bc5ec79",
+  "video": "../symbolon-local-demo.mp4",
+  "capture": "edited browser screencast; frame durations condensed; silent with captions",
+  "frameCount": 69,
+  "durationSeconds": 145.96
+}

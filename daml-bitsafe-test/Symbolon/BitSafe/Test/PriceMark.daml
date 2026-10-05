@@ -1,0 +1,144 @@
+module Symbolon.BitSafe.Test.PriceMark where
+
+import DA.Assert ((===))
+import DA.Date (Month (Jan), date)
+import DA.Set as Set
+import DA.Time
+import Daml.Script
+import Governance.Action (GovernableAction)
+import Governance.Rules
+import Symbolon.BitSafe.PriceMarkProposal
+import Symbolon.DemoAsset
+import Symbolon.Repo
+
+-- Member submissions read the decentralized party's governance contracts,
+-- matching the LocalNet topology described by the DecMan test harness.
+memberContext member governanceParty = actAs member <> readAs governanceParty
+
+initializeMarkThroughGovernance : Script ()
+initializeMarkThroughGovernance = do
+  now <- getTime
+  let epoch = time (date 1970 Jan 1) 0 0 0
+      salt = show (convertRelTimeToMicroseconds (subTime now epoch))
+      alloc name = allocateParty (name <> "-" <> salt)
+  governanceParty <- alloc "bootstrap-oracle"
+  proposer <- alloc "bootstrap-proposer"
+  confirmer <- alloc "bootstrap-confirmer"
+  executor <- alloc "bootstrap-executor"
+  issuer <- alloc "bootstrap-issuer"
+  rulesCid <- submit governanceParty $ createCmd GovernanceRules with
+    governanceParty
+    members = Set.fromList [proposer, confirmer, executor]
+    threshold = 2
+    actionConfirmationTimeout = minutes 30
+    additionalProposers = None
+  proposalCid <- submit proposer $ createCmd InitializePriceFeedProposal with
+    governanceParty; proposer; instrumentIssuer = issuer; instrument = "cBTC-demo"
+    cashIssuer = issuer; cashInstrument = "USDCx-demo"; initialPrice = 60000.0
+    readers = [proposer]
+  let actionCid = toInterfaceContractId @GovernableAction proposalCid
+  first <- submit (memberContext proposer governanceParty) $
+    exerciseCmd rulesCid GovernanceRules_ConfirmAction with
+      confirmer = proposer; actionProposalCid = actionCid
+  submitMustFail (memberContext executor governanceParty) $
+    exerciseCmd rulesCid GovernanceRules_ExecuteConfirmedAction with
+      executor; actionProposalCid = actionCid; confirmations = [first.confirmationCid]
+  query @PriceFeed governanceParty >>= (=== [])
+  second <- submit (memberContext confirmer governanceParty) $
+    exerciseCmd rulesCid GovernanceRules_ConfirmAction with
+      confirmer; actionProposalCid = actionCid
+  _ <- submit (memberContext executor governanceParty) $
+    exerciseCmd rulesCid GovernanceRules_ExecuteConfirmedAction with
+      executor; actionProposalCid = actionCid
+      confirmations = [first.confirmationCid, second.confirmationCid]
+  [(_, feed)] <- query @PriceFeed governanceParty
+  feed.oracle === governanceParty
+  feed.price === 60000.0
+
+thresholdControlsSymbolonMark : Script ()
+thresholdControlsSymbolonMark = do
+  now <- getTime
+  let epoch = time (date 1970 Jan 1) 0 0 0
+      salt = show (convertRelTimeToMicroseconds (subTime now epoch))
+      alloc name = allocateParty (name <> "-" <> salt)
+  governanceParty <- alloc "symbolon-oracle"
+  proposer <- alloc "mark-proposer"
+  confirmer <- alloc "mark-confirmer"
+  executor <- alloc "mark-executor"
+  issuer <- alloc "demo-issuer"
+  borrower <- alloc "demo-borrower"
+  dealer <- alloc "demo-dealer"
+
+  feedCid <- submit governanceParty $ createCmd PriceFeed with
+    oracle = governanceParty
+    instrumentIssuer = issuer
+    instrument = "CETH"
+    cashIssuer = issuer
+    cashInstrument = "CUSD"
+    price = 100.0
+    asOf = now
+    readers = [borrower, dealer]
+  collateralCid <- submit issuer $ createCmd Holding with
+    issuer; owner = borrower; instrument = "CETH"; amount = 15.0
+    viewers = []; lockParties = []
+  cashCid <- submit issuer $ createCmd Holding with
+    issuer; owner = dealer; instrument = "CUSD"; amount = 1000.0
+    viewers = []; lockParties = []
+  requestCid <- submit borrower $ createCmd QuoteRequest with
+    borrower; dealer; oracle = governanceParty
+    collateralIssuer = issuer; collateralInstrument = "CETH"; collateralAmount = 15.0
+    cashIssuer = issuer; cashInstrument = "CUSD"; cashAmount = 1000.0
+    termDays = 30; marginThresholdPct = 1.05; cureSeconds = 60; maxPriceAgeSeconds = 3600
+  quoteCid <- submit dealer $ exerciseCmd requestCid SubmitQuote with
+    rate = 0.052; validSeconds = 3600; cashCid
+  positionCid <- submit borrower $ exerciseCmd quoteCid AcceptQuote with
+    collateralCid; feedCid
+  rulesCid <- submit governanceParty $ createCmd GovernanceRules with
+    governanceParty
+    members = Set.fromList [proposer, confirmer, executor]
+    threshold = 2
+    actionConfirmationTimeout = minutes 30
+    additionalProposers = None
+  proposalCid <- submit proposer $ createCmd PriceMarkProposal with
+    governanceParty
+    proposer
+    feedCid
+    newPrice = 60.0
+  let actionCid = toInterfaceContractId @GovernableAction proposalCid
+
+  first <- submit (memberContext proposer governanceParty) $
+    exerciseCmd rulesCid GovernanceRules_ConfirmAction with
+      confirmer = proposer
+      actionProposalCid = actionCid
+  submitMustFail (memberContext executor governanceParty) $
+    exerciseCmd rulesCid GovernanceRules_ExecuteConfirmedAction with
+      executor
+      actionProposalCid = actionCid
+      confirmations = [first.confirmationCid]
+  Some stillOld <- queryContractId governanceParty feedCid
+  stillOld.price === 100.0
+  submitMustFail dealer $ exerciseCmd positionCid IssueMarginCall with feedCid
+
+  second <- submit (memberContext confirmer governanceParty) $
+    exerciseCmd rulesCid GovernanceRules_ConfirmAction with
+      confirmer
+      actionProposalCid = actionCid
+  executed <- submit (memberContext executor governanceParty) $
+    exerciseCmd rulesCid GovernanceRules_ExecuteConfirmedAction with
+      executor
+      actionProposalCid = actionCid
+      confirmations = [first.confirmationCid, second.confirmationCid]
+  queryContractId governanceParty feedCid >>= (=== None)
+  activeFeeds <- query @PriceFeed governanceParty
+  let [(updatedCid, updated)] = activeFeeds
+  updated.price === 60.0
+  (healthFactor 15.0 updated.price 1000.0 1.05 < 1.0) === True
+  calledCid <- submit dealer $ exerciseCmd positionCid IssueMarginCall with
+    feedCid = updatedCid
+  Some called <- queryContractId borrower calledCid
+  case called.status of
+    UnderCall _ -> pure ()
+    Active -> abort "approved mark did not trigger Symbolon margin call"
+  Some receipt <- queryContractId governanceParty executed.executionResultCid
+  receipt.actionLabel === "SetSymbolonMark"
+  length receipt.confirmers === 2

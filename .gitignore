@@ -12,3 +12,11 @@ dist/
 
 # Local agent tooling state, not project source.
 .omc/
+
+# External reference research is local only.
+/docs/references/
+
+# Hosting metadata and local presentation drafts.
+.vercel/
+/docs/submission/symbolon-pitch.pptx
+/docs/submission/symbolon-pitch-v2.pptx
