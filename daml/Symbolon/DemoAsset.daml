@@ -1,15 +1,7 @@
--- Symbolon.DemoAsset — a deliberately small stand-in for CIP-56 holdings.
---
--- The repo lifecycle needs assets that can change owner atomically inside
--- another template's choice. The real thing (Splice token standard) does this
--- through registry factories and off-ledger choice contexts — pure wiring,
--- already proven out elsewhere. Carrying that weight here would bury the part
--- that is actually new (the repo lifecycle), so the demo asset keeps only the
--- properties that matter: title transfer under the owner's authority, and
--- explicit visibility. A counterparty can only spend-from or verify a holding
--- it can SEE — the owner grants that with `viewers`, which is exactly how a
--- dealer proves a quote is funded before the borrower accepts it.
-
+-- Demonstration assets, NOT CIP-56 / Splice tokens.
+-- The issuer is trusted to mint and archive its assets. A lock party must
+-- authorize every owner-controlled mutation, preventing unilateral spending
+-- of quote funding or repo collateral. This is not a production custody model.
 module Symbolon.DemoAsset where
 
 template Holding
@@ -18,53 +10,65 @@ template Holding
     owner : Party
     instrument : Text
     amount : Decimal
-    viewers : [Party]   -- extra observers, e.g. the counterparty of a trade
+    viewers : [Party]
+    lockParties : [Party]
   where
     signatory issuer
-    observer owner, viewers
-    ensure amount > 0.0
+    observer owner, viewers, lockParties
+    ensure amount > 0.0 && instrument /= "" && all (/= owner) lockParties
 
-    -- Owner-controlled transfer with change, like breaking a banknote. The
-    -- recipient needs no consent (the issuer already signs every holding) —
-    -- fine for a demo asset, wrong for production; CIP-56 does offer/accept.
-    -- The change deliberately DROPS viewers: what remains after a trade leg
-    -- is the owner's business again.
+    -- Split excess in an OWNER-ONLY transaction before passing an exact-sized
+    -- holding into a bilateral choice. This keeps the original balance and
+    -- change out of the counterparty's transaction view.
     choice Transfer : (ContractId Holding, Optional (ContractId Holding))
       with
         to : Party
         qty : Decimal
         newViewers : [Party]
-      controller owner
+      controller owner, lockParties
       do
         assertMsg "transfer amount must be positive" (qty > 0.0)
         assertMsg "insufficient holding" (qty <= amount)
-        sent <- create this with owner = to, amount = qty, viewers = newViewers
-        change <-
-          if qty < amount
-            then Some <$> create this with amount = amount - qty, viewers = []
-            else pure None
+        sent <- create this with owner = to, amount = qty, viewers = newViewers, lockParties = []
+        change <- if qty < amount
+          then Some <$> create this with amount = amount - qty, viewers = if null lockParties then [] else viewers
+          else pure None
         pure (sent, change)
 
-    -- Show (or re-hide) this holding to chosen parties — the escrow move a
-    -- dealer makes right before quoting, so the borrower can verify funding.
+    -- Existing locks authorize replacement; change keeps existing locks.
+    choice Reserve : (ContractId Holding, Optional (ContractId Holding))
+      with
+        to : Party
+        qty : Decimal
+        lockParty : Party
+      controller owner, lockParties
+      do
+        assertMsg "reservation amount must be positive" (qty > 0.0)
+        assertMsg "insufficient holding" (qty <= amount)
+        assertMsg "lock party must differ from owner" (lockParty /= to)
+        sent <- create this with owner = to, amount = qty, viewers = [], lockParties = [lockParty]
+        change <- if qty < amount
+          then Some <$> create this with amount = amount - qty, viewers = if null lockParties then [] else viewers
+          else pure None
+        pure (sent, change)
+
     choice SetViewers : ContractId Holding
       with
         newViewers : [Party]
-      controller owner
+      controller owner, lockParties
       do create this with viewers = newViewers
 
-    -- Trading breaks holdings into change, and a choice can only spend one at
-    -- a time. Without this, a party with enough of an asset spread across two
-    -- holdings cannot pledge it — the balance is there and unusable.
     choice Merge : ContractId Holding
       with
         otherCid : ContractId Holding
-      controller owner
+      controller owner, lockParties
       do
         assertMsg "cannot merge a holding with itself" (otherCid /= self)
+        assertMsg "reserved holdings cannot be merged" (null lockParties)
         other <- fetch otherCid
+        assertMsg "reserved holdings cannot be merged" (null other.lockParties)
         assertMsg "holdings must share issuer, owner and instrument"
           (other.issuer == issuer && other.owner == owner
-             && other.instrument == instrument)
+            && other.instrument == instrument)
         archive otherCid
         create this with amount = amount + other.amount, viewers = []

@@ -850,10 +850,15 @@ h2 {
   margin-inline: auto;
 }
 
-.name-block img {
-  width: 58px;
-  height: 58px;
+.name-mark,
+.name-mark img {
+  width: 210px;
+  height: 210px;
   margin-inline: auto;
+}
+
+.name-mark img {
+  object-fit: contain;
 }
 
 /* the artifact itself, turning slowly — museum piece before the finale */

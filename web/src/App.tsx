@@ -9,11 +9,36 @@ import { RATE_SERIES, RATE_SOURCE } from "./rates";
 
 const GITHUB = "https://github.com/EndPx/symbolon";
 
-// <model-viewer> is a custom element; createElement sidesteps JSX typings.
-// The library itself (three.js inside) lazy-loads after first paint, so the
-// main bundle stays lean and the PNG poster covers the wait.
-function ModelViewer(props: Record<string, unknown>) {
-  return createElement("model-viewer", props);
+// Load the optional 3D enhancement only when the footer mark approaches.
+// The same PNG remains available while loading, or if the library fails.
+function DeferredMark({ reducedMotion }: { reducedMotion: boolean }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || !("IntersectionObserver" in window)) return;
+    let active = true;
+    const io = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return;
+      io.disconnect();
+      void import("@google/model-viewer")
+        .then(() => { if (active) setReady(true); })
+        .catch(() => { /* The static mark is the fallback for this enhancement. */ });
+    }, { rootMargin: "400px" });
+    io.observe(el);
+    return () => { active = false; io.disconnect(); };
+  }, []);
+  return <div className="name-mark" ref={ref}>
+    {ready ? createElement("model-viewer", {
+      src: "/brand/logo.glb",
+      poster: "/brand/logo-mark.png",
+      alt: "The Symbolon mark: a gold coin broken in two.",
+      ...(reducedMotion ? {} : { "auto-rotate": true, "rotation-per-second": "24deg" }),
+      "interaction-prompt": "none",
+      "disable-zoom": true,
+      "shadow-intensity": "0",
+    }) : <img src="/brand/logo-mark.png" alt="The Symbolon mark: a gold coin broken in two." width="210" height="210" loading="lazy" />}
+  </div>;
 }
 
 // A pool of lamplight follows the cursor across a grid of cards. One listener
@@ -92,22 +117,22 @@ const WHY = [
   {
     mark: "private",
     title: "Your position stays private",
-    body: "Nobody can see how much you borrowed, at what rate, or that you borrowed at all. On every public chain, your whole position is readable by anyone.",
+    body: "Each dealer receives its own request. A dealer whose quote you do not accept cannot read your position or the rate you agreed with another dealer.",
   },
   {
     mark: "fixed",
     title: "Your rate never moves",
-    body: "It's fixed the moment you borrow. On variable-rate protocols your interest can double overnight while the market sits still.",
+    body: "Your annualized rate and repurchase price are fixed when the repo settles. Interest uses actual days over a 360-day year.",
   },
   {
     mark: "date",
     title: "You choose the end date",
-    body: "Borrow for 23 days or 6 months — any date you and your lender agree on. No standard monthly buckets, no auto-rollover you didn't ask for.",
+    body: "Choose a tenor from 1 to 365 days and request a dealer quote. Maturity starts at settlement, with no automatic rollover.",
   },
   {
     mark: "swap",
     title: "Swap collateral without closing",
-    body: "Need that exact token back mid-loan? Replace it with another asset of equal value. Your loan keeps running, same rate, same end date.",
+    body: "Propose replacement collateral before a deadline. If the dealer accepts and the agreed margin is met, the assets swap while the repo keeps its rate and maturity.",
   },
 ];
 
@@ -118,53 +143,53 @@ const STEPS = [
   {
     img: "/brand/step-1.jpg",
     alt: "Two pairs of hands lowering a sealed clay amphora into a marble niche",
-    title: "Deposit collateral",
-    body: "Put up the asset you want to borrow against — cETH, cBTC, a tokenised bond. Only you and your lender can see it.",
+    title: "Choose your collateral",
+    body: "Select an available holding and an agreed oracle feed. This prototype uses demo assets and manually published prices.",
   },
   {
     img: "/brand/step-2.jpg",
     alt: "Hands over a marble table — one sliding a stack of gold coins across, the other holding a gold coin split in two",
     title: "Borrow at a fixed rate",
-    body: "Ask a few lenders for a rate, privately and separately. Take the best one. Your rate and end date lock the moment you accept.",
+    body: "Request quotes from dealers separately. Review the repurchase price, then accept to transfer collateral and receive cash in one transaction.",
   },
   {
     img: "/brand/step-3.jpg",
     alt: "A bronze balance scale weighing the sealed amphora against a heap of gold coins, a storm gathering over the sea behind",
     title: "Monitor your position",
-    body: "If your collateral falls in value, your lender asks you to top up and you get a set window to do it. A healthy position can't be touched.",
+    body: "A dealer can issue a margin call when a fresh mark from the agreed oracle shows a shortfall. Top up within the agreed cure window.",
   },
   {
     img: "/brand/step-4.jpg",
     alt: "A merchant carrying the sealed amphora away from a now-empty marble niche, a whole gold coin glowing above",
-    title: "Repay and get it back",
-    body: "On the end date, repay exactly what you agreed at the start — not a cent more — and your collateral returns to you.",
+    title: "Repurchase and close",
+    body: "Pay the full agreed repurchase price before maturity and before any cure deadline expires to receive your collateral back. Early closing does not reduce the interest.",
   },
 ];
 
 const FAQ = [
   {
     q: "What is Symbolon?",
-    a: "Symbolon is the fixed-rate credit layer for Canton. You post collateral, agree a rate and an end date directly with a lender, and settle on-chain — with nobody else able to see the size, the rate, or that the loan happened.",
+    a: "Symbolon is a confidential bilateral repo desk on Canton. You sell collateral to a dealer for a purchase price and agree to repurchase it for a fixed amount. The desk covers quotes, settlement, margin calls, collateral substitution and closure.",
   },
   {
     q: "How does privacy work on Symbolon?",
-    a: "Canton doesn't broadcast transactions to everyone; it delivers them only to the parties involved. So a lender you asked but didn't borrow from receives nothing at all — not an encrypted copy, not a hidden entry. There is no public explorer where your position can be looked up.",
+    a: "Canton distributes contract data according to party authorization. RFQs are separate for each dealer, and repo positions belong to their two counterparties. In the current demo asset model, the asset issuer also sees asset movements; that is a separate boundary from repo terms.",
   },
   {
     q: "What can I borrow against?",
-    a: "Any asset issued on Canton that you and your lender both accept — cBTC, cETH, tokenised treasuries and funds. Because every loan is agreed one-to-one, you're not limited to a preset list of markets.",
+    a: "The current prototype trades Symbolon demo holdings from an agreed issuer, with an oracle feed for the collateral and cash pair. Real CIP-56 and Splice token integration is still pending; token names in the demo do not represent real deposited assets.",
   },
   {
     q: "How do I get started?",
-    a: "Connect a Canton wallet, deposit the asset you want to borrow against, and request rates from lenders. There is no signup, no account to fund first, and no deposit held by us — Symbolon never takes custody of your assets.",
+    a: "Connect a supported Canton wallet with access to the participant hosting Symbolon. Your party needs provisioned demo holdings and readable oracle feeds. Then enter your dealer party IDs and request quotes. The local development demo also provides seeded parties for exploring each role.",
   },
   {
     q: "What happens if my collateral drops in value?",
-    a: "Your lender can ask you to top up, and you get an agreed window to do it. The contract checks the price itself against a feed you both signed up to, so a healthy position cannot be called and a top-up that doesn't fix the shortfall is rejected.",
+    a: "The dealer may issue a margin call if a current mark from the agreed oracle shows insufficient collateral value. A top-up must restore the required margin. Once the cure deadline or maturity passes, the dealer may declare default and retain the collateral already transferred at settlement.",
   },
   {
     q: "What fees and risks should I review?",
-    a: "Symbolon charges no protocol fee today. The real risks are the ordinary ones: your collateral can fall in value and require a top-up, and if you don't repay by the end date the lender keeps the collateral. Rates are fixed, so interest-rate risk is the one thing you don't carry.",
+    a: "The prototype has no Symbolon protocol fee. Its repo rate is annualized using ACT/360, and the full repurchase price is due even on an early close. Collateral value, oracle accuracy, counterparty performance and contract defects remain risks. Demo assets and simulated marks are not a live market offering.",
   },
   {
     q: "Where can I follow Symbolon's progress?",
@@ -175,7 +200,7 @@ const FAQ = [
 
 // The variable line is a real year of Aave V3 USDC rates (see rates.ts and
 // scripts/fetch-rates.ps1). The flat line sits at that year's average, which
-// is the fairest stand-in for a rate someone would have fixed on day one.
+// is an illustration only; it is not an executable Symbolon quote.
 const CHART = { w: 640, h: 300, padL: 46, padR: 20, padT: 24, padB: 34, top: 14 };
 
 function chartY(rate: number) {
@@ -203,10 +228,6 @@ export default function App() {
     typeof window !== "undefined" &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  useEffect(() => {
-    import("@google/model-viewer");
-  }, []);
-
   // Hold a parchment veil until the hero painting has actually decoded, so
   // the first thing anyone sees is never a half-rendered PNG. The timeout is
   // the escape hatch: a slow network gets the page anyway, progressively.
@@ -217,6 +238,7 @@ export default function App() {
       if (alive) setHeroReady(true);
     };
     const img = new Image();
+    img.fetchPriority = "high";
     img.src = "/brand/hero.png";
     img.decode().then(done).catch(done);
     const t = window.setTimeout(done, 3500);
@@ -284,20 +306,20 @@ export default function App() {
 
       <nav className="nav" aria-label="Main">
         <div className="shell">
-          <a className="brand" href="/">
+          <a className="brand" href="/" aria-label="Symbolon home">
             <img src="/brand/logo-mark.png" alt="" />
             <span>SYMBOLON</span>
           </a>
           <a className="link" href="#why">
             Why Symbolon
           </a>
-          <a className="link" href="#how">
+          <a className="link keep" href="#how">
             How it works
           </a>
           <a className="link" href="#rates">
             Rates
           </a>
-          <a className="link keep" href="#faq">
+          <a className="link" href="#faq">
             FAQ
           </a>
           <a className="link keep app-link" href="/app">
@@ -310,6 +332,9 @@ export default function App() {
         <img
           className="hero-art"
           src="/brand/hero.png"
+          fetchPriority="high"
+          width="1672"
+          height="941"
           alt="Two merchants on a marble quay at dusk sealing a deal over a split gold coin, beneath a cracked gold sun above an Aegean harbor city."
         />
         <div className="hero-scrim" aria-hidden="true" />
@@ -322,15 +347,15 @@ export default function App() {
                 <span className="accent">Symbolon</span> deals.
               </h1>
               <p>
-                Fixed-rate borrowing and lending on Canton. Your rate, your
-                size, and your position stay private.
+                Private repo agreements on Canton. A fixed repurchase price,
+                atomic settlement, and the full collateral lifecycle.
               </p>
               <div className="cta-row">
-                <a className="seal" href="#why">
-                  See how it works
+                <a className="seal" href="/app">
+                  Open the desk
                 </a>
-                <a className="quiet" href={GITHUB} target="_blank" rel="noreferrer">
-                  Read the source ↗
+                <a className="quiet" href="/demo">
+                  Try the guided walkthrough
                 </a>
               </div>
             </div>
@@ -343,8 +368,8 @@ export default function App() {
           <div className="shell">
             <h2>Borrowing, the way it should feel</h2>
             <p className="lede">
-              Private, predictable, and done in minutes — on rails built for
-              institutions.
+              Negotiate privately. Know the repurchase price before accepting.
+              Manage the collateral through maturity.
             </p>
             <div className="card-grid" ref={whyRef}>
               {WHY.map((c) => (
@@ -362,7 +387,7 @@ export default function App() {
           <div className="shell">
             <h2>How it works</h2>
             <p className="lede">
-              Four steps, start to finish. No order books, no waiting rooms.
+              Four steps, from a private request to a closed repo.
             </p>
             <div className="step-grid" ref={stepRef}>
               {STEPS.map((s, i) => (
@@ -385,10 +410,9 @@ export default function App() {
           <div className="shell">
             <h2>Why a fixed rate?</h2>
             <p className="lede">
-              On most lending protocols your rate is recalculated constantly
-              from how much of the pool is borrowed. Here is what that actually
-              looked like on USDC — the largest, calmest market in DeFi — over
-              the past year.
+              A floating rate can change throughout a position. This historical
+              Aave USDC lending-rate series illustrates that variability;
+              the flat line is an example, not a Symbolon quote.
             </p>
             <div className="chart-wrap" ref={chartRef}>
               <svg
@@ -416,7 +440,7 @@ export default function App() {
               </svg>
               <div className="chart-legend">
                 <span className="key key-fixed">
-                  A rate fixed on day one — flat for the whole term
+                  Illustrative fixed rate — not a Symbolon quote
                 </span>
                 <span className="key key-float">
                   {RATE_SOURCE.label} — the variable lending rate, as it happened
@@ -438,8 +462,8 @@ export default function App() {
                 It ranged from <strong>{RATE_SOURCE.min}%</strong> to{" "}
                 <strong>{RATE_SOURCE.max}%</strong>, and once moved{" "}
                 <strong>{RATE_SOURCE.biggestDailyMove} points in a single day</strong>{" "}
-                ({RATE_SOURCE.biggestMoveDate}). If you were borrowing that week,
-                your interest bill quadrupled while you slept.
+                ({RATE_SOURCE.biggestMoveDate}). These are historical lending
+                yields, not borrowing costs or available Symbolon rates.
               </p>
             </div>
           </div>
@@ -472,17 +496,7 @@ export default function App() {
         <section className="band">
           <div className="shell">
             <div className="name-block">
-              <ModelViewer
-                src="/brand/logo.glb"
-                poster="/brand/logo-mark.png"
-                alt="The Symbolon mark: a gold coin broken in two, slowly turning."
-                {...(reducedMotion
-                  ? {}
-                  : { "auto-rotate": true, "rotation-per-second": "24deg" })}
-                interaction-prompt="none"
-                disable-zoom={true}
-                shadow-intensity="0"
-              />
+              <DeferredMark reducedMotion={reducedMotion} />
               <p>
                 A <strong>symbolon</strong> was a contract token broken in two —
                 each party kept a half, and only the matching halves proved the
@@ -497,6 +511,9 @@ export default function App() {
           <img
             className="closing-art"
             src="/brand/closing.png"
+            loading="lazy"
+            width="1672"
+            height="941"
             alt="Two sculpted hands reach up from the dark toward the glowing split gold coin of the Symbolon mark."
           />
           <div className="closing-content">
@@ -508,8 +525,8 @@ export default function App() {
                 Settled by <span className="accent">Symbolon</span>.
               </span>
             </h2>
-            <a className="seal" href={GITHUB} target="_blank" rel="noreferrer">
-              Read the source ↗
+            <a className="seal" href="/app">
+              Open the desk
             </a>
           </div>
           <footer className="closing-footer">
@@ -519,7 +536,7 @@ export default function App() {
                 <a href={GITHUB} target="_blank" rel="noreferrer">
                   GitHub ↗
                 </a>
-                {" · "}All market figures on this page are simulated.
+                {" · "}Prototype: demo assets and simulated oracle marks.
               </span>
             </div>
           </footer>

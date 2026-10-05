@@ -1,6 +1,6 @@
 sdk-version: 3.5.2
-name: symbolon
-version: 0.1.0
+name: symbolon-v2
+version: 0.2.0
 source: .
 dependencies:
   - daml-prim

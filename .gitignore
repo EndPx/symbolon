@@ -12,3 +12,6 @@ dist/
 
 # Local agent tooling state, not project source.
 .omc/
+
+# External reference research is local only.
+/docs/references/

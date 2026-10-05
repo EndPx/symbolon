@@ -1,0 +1,13 @@
+sdk-version: 3.5.2
+name: symbolon-bitsafe-test
+version: 0.2.0
+source: .
+dependencies:
+  - daml-prim
+  - daml-stdlib
+  - daml-script
+data-dependencies:
+  - ../daml/.daml/dist/symbolon-v2-0.2.0.dar
+  - ../daml-bitsafe/.daml/dist/symbolon-bitsafe-0.2.0.dar
+  - ../.omc/research/bitsafe/governance-action-v1-0.1.0.dar
+  - ../.omc/research/bitsafe/governance-core-v1-0.1.0.dar

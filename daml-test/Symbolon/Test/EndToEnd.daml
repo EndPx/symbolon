@@ -1,21 +1,9 @@
--- Symbolon.Test.EndToEnd — the full life of a repo, adversarial checks included.
---
--- Two top-level scripts, each a complete end-to-end run on a fresh ledger:
---
---   repoLifecycle  RFQ to two dealers → privacy assertions (the losing dealer
---                  sees nothing) → atomic settlement → margin call → cure →
---                  collateral substitution → second breach → default.
---   repoHappyPath  strike → atomic settlement → early repurchase; every
---                  balance checked against the fixed repurchase price.
---
--- The privacy assertions are the point: `query @T party` returns exactly what
--- that party's node would hold, so `dealerB sees []` is not a mock — it is
--- the Daml ledger model saying the data was never theirs to see.
-
+-- Deterministic lifecycle, isolated rejection cases, and privacy/asset locks.
 module Symbolon.Test.EndToEnd where
 
 import DA.Assert ((===))
 import DA.Date (Month (Jan), date)
+import DA.Foldable (forA_)
 import DA.Time
 import Daml.Script
 import Symbolon.DemoAsset
@@ -27,12 +15,8 @@ data Desk = Desk with
   borrower : Party
   dealerA : Party
   dealerB : Party
-  mallory : Party
+  outsider : Party
 
--- Party hints are salted with the ledger clock so the same script can run
--- twice against one persistent ledger (a live sandbox) without "party
--- already exists". On the IDE ledger the salt is constant — and irrelevant,
--- since every test gets a fresh ledger anyway.
 setupDesk : Script Desk
 setupDesk = do
   now <- getTime
@@ -42,237 +26,394 @@ setupDesk = do
   issuer <- alloc "issuer"
   oracle <- alloc "oracle"
   borrower <- alloc "borrower"
-  dealerA <- alloc "dealerA"
-  dealerB <- alloc "dealerB"
-  mallory <- alloc "mallory"
-  pure Desk with issuer; oracle; borrower; dealerA; dealerB; mallory
+  dealerA <- alloc "dealer-a"
+  dealerB <- alloc "dealer-b"
+  outsider <- alloc "outsider"
+  pure Desk with issuer; oracle; borrower; dealerA; dealerB; outsider
 
 mint : Party -> Party -> Text -> Decimal -> Script (ContractId Holding)
-mint issuer owner instrument amount =
-  submit issuer $ createCmd Holding with
-    issuer; owner; instrument; amount; viewers = []
+mint issuer owner instrument amount = submit issuer $ createCmd Holding with
+  issuer; owner; instrument; amount; viewers = []; lockParties = []
+
+-- Deliberately separate from the bilateral transaction, like the web adapter.
+split : Party -> ContractId Holding -> Decimal -> Script (ContractId Holding)
+split owner cid qty = do
+  (exact, _) <- submit owner $ exerciseCmd cid Transfer with to = owner, qty, newViewers = []
+  pure exact
 
 balanceOf : Party -> Text -> Script Decimal
 balanceOf p inst = do
   hs <- query @Holding p
   pure $ sum [h.amount | (_, h) <- hs, h.owner == p, h.instrument == inst]
 
--- | RFQ → quote → settle → margin call → cure → substitute → default.
--- Parameterized over how time passes, so the SAME flow runs on the IDE
--- ledger (passTime) and on a live wall-clock Canton (sleep) unchanged.
+available : Desk -> Party -> Text -> Decimal -> Script (ContractId Holding)
+available d owner instrument amount = do
+  hs <- queryFilter @Holding owner (\h -> h.owner == owner && h.issuer == d.issuer
+    && h.instrument == instrument && null h.lockParties && h.amount >= amount)
+  case hs of
+    (cid, _) :: _ -> split owner cid amount
+    _ -> abort "no available holding"
+
+request : Desk -> Party -> QuoteRequest
+request d dealer = QuoteRequest with
+  borrower = d.borrower; dealer; oracle = d.oracle
+  collateralIssuer = d.issuer; collateralInstrument = "CETH"; collateralAmount = 15.0
+  cashIssuer = d.issuer; cashInstrument = "CUSD"; cashAmount = 1000.0
+  termDays = 30; marginThresholdPct = 1.05; cureSeconds = 15; maxPriceAgeSeconds = 3600
+
+feedValue : Desk -> Text -> Decimal -> Time -> PriceFeed
+feedValue d instrument price asOf = PriceFeed with
+  oracle = d.oracle; instrumentIssuer = d.issuer; instrument
+  cashIssuer = d.issuer; cashInstrument = "CUSD"; price; asOf
+  readers = [d.borrower, d.dealerA, d.dealerB]
+
+mark : Desk -> Text -> Decimal -> Script (ContractId PriceFeed)
+mark d instrument price = do
+  now <- getTime
+  submit d.oracle $ createCmd (feedValue d instrument price now)
+
+fundedQuote : Desk -> Party -> Int -> Script (ContractId RepoQuote)
+fundedQuote d dealer validSeconds = do
+  cash <- mint d.issuer dealer "CUSD" 100000.0
+  exact <- split dealer cash 1000.0
+  req <- submit d.borrower $ createCmd (request d dealer)
+  submit dealer $ exerciseCmd req SubmitQuote with rate = 0.052, validSeconds, cashCid = exact
+
+position : Desk -> Script (ContractId RepoPosition, ContractId PriceFeed)
+position d = do
+  coll <- mint d.issuer d.borrower "CETH" 20.0
+  exact <- split d.borrower coll 15.0
+  feed <- mark d "CETH" 100.0
+  quote <- fundedQuote d d.dealerA 3600
+  pos <- submit d.borrower $ exerciseCmd quote AcceptQuote with collateralCid = exact, feedCid = feed
+  pure (pos, feed)
+
 lifecycleWith : (Int -> Script ()) -> Script ()
 lifecycleWith wait = do
-  desk <- setupDesk
-  let issuer = desk.issuer
-      oracle = desk.oracle
-      borrower = desk.borrower
-      dealerA = desk.dealerA
-      dealerB = desk.dealerB
-      mallory = desk.mallory
-
-  -- funding
-  cethB <- mint issuer borrower "CETH" 20.0
-  cashA <- mint issuer dealerA "CUSD" 100000.0
-  cashB <- mint issuer dealerB "CUSD" 100000.0
-
-  -- oracle marks CETH at 100
-  now0 <- getTime
-  feed1 <- submit oracle $ createCmd PriceFeed with
-    oracle; instrument = "CETH"; price = 100.0; asOf = now0
-    readers = [borrower, dealerA, dealerB]
-
-  -- RFQ: one private request per dealer — neither dealer can see the other's
-  let mkRequest dealer = createCmd QuoteRequest with
-        borrower; dealer; oracle
-        collateralInstrument = "CETH"; collateralAmount = 15.0
-        cashInstrument = "CUSD"; cashAmount = 1000.0
-        termDays = 30; marginThresholdPct = 1.05; cureSeconds = 5
-  reqA <- submit borrower $ mkRequest dealerA
-  reqB <- submit borrower $ mkRequest dealerB
-
-  -- each dealer escrows funding into the borrower's view, then prices in
-  -- private — the borrower can verify a quote is real before accepting it
-  escrowA <- submit dealerA $ exerciseCmd cashA SetViewers with
-    newViewers = [borrower]
-  escrowB <- submit dealerB $ exerciseCmd cashB SetViewers with
-    newViewers = [borrower]
-  quoteA <- submit dealerA $ exerciseCmd reqA SubmitQuote with
-    rate = 0.052, validSeconds = 3600, cashCid = escrowA
-  quoteB <- submit dealerB $ exerciseCmd reqB SubmitQuote with
-    rate = 0.056, validSeconds = 2, cashCid = escrowB
-
-  -- ===== privacy: the whole point =====
-  aQuotes <- query @RepoQuote dealerA
-  bQuotes <- query @RepoQuote dealerB
-  map (\(_, q) -> q.rate) aQuotes === [0.052]   -- A sees only A's rate
-  map (\(_, q) -> q.rate) bQuotes === [0.056]   -- B sees only B's rate
-  borrowerQuotes <- query @RepoQuote borrower
-  length borrowerQuotes === 2                    -- only the borrower compares
-  malloryQuotes <- query @RepoQuote mallory
-  malloryQuotes === []                           -- outsiders get nothing
-
-  -- borrower hits dealer A's 5.2% — acceptance settles atomically
-  posCid1 <- submit borrower $ exerciseCmd quoteA AcceptQuote with
-    collateralCid = cethB
-
-  -- money moved, title moved
-  bCash <- balanceOf borrower "CUSD"
-  bCash === 1000.0
-  bColl <- balanceOf borrower "CETH"
-  bColl === 5.0
-  aColl <- balanceOf dealerA "CETH"
-  aColl === 15.0
-  aCash <- balanceOf dealerA "CUSD"
-  aCash === 99000.0
-
-  -- the losing dealer learned nothing: no position, no rate, no trade
-  bPositions <- query @RepoPosition dealerB
-  bPositions === []
-
-  -- repurchase price was fixed the moment the quote was struck
-  Some pos1 <- queryContractId borrower posCid1
-  pos1.repurchasePrice === 1000.0 + 1000.0 * 0.052 * intToDecimal 30 / 360.0
-
-  -- dealer B's unaccepted quote expires; the ledger itself enforces it
+  d <- setupDesk
+  coll <- mint d.issuer d.borrower "CETH" 20.0
+  exact <- split d.borrower coll 15.0
+  feed1 <- mark d "CETH" 100.0
+  quoteA <- fundedQuote d d.dealerA 3600
+  quoteB <- fundedQuote d d.dealerB 2
+  aQuotes <- query @RepoQuote d.dealerA
+  bQuotes <- query @RepoQuote d.dealerB
+  length aQuotes === 1
+  length bQuotes === 1
+  borrowerQuotes <- query @RepoQuote d.borrower
+  length borrowerQuotes === 2
+  query @RepoQuote d.outsider >>= (=== [])
+  -- Counterparty sees only each reserved 1000, not either 99000 change.
+  visibleFunding <- queryFilter @Holding d.borrower (\h -> h.owner == d.dealerA || h.owner == d.dealerB)
+  map (\(_, h) -> h.amount) visibleFunding === [1000.0, 1000.0]
+  pos1 <- submit d.borrower $ exerciseCmd quoteA AcceptQuote with collateralCid = exact, feedCid = feed1
+  balanceOf d.borrower "CUSD" >>= (=== 1000.0)
+  balanceOf d.borrower "CETH" >>= (=== 5.0)
+  balanceOf d.dealerA "CETH" >>= (=== 15.0)
+  balanceOf d.dealerA "CUSD" >>= (=== 99000.0)
+  query @RepoPosition d.dealerB >>= (=== [])
+  query @RepoPosition d.outsider >>= (=== [])
+  Some p1 <- queryContractId d.borrower pos1
+  p1.repurchasePrice === 1000.0 + 1000.0 * 0.052 * 30.0 / 360.0
+  -- Expiry is the ONLY failing condition: new exact collateral and fresh mark.
+  expiryColl <- mint d.issuer d.borrower "CETH" 15.0
   wait 3
-  bCethNow <- queryFilter @Holding borrower
-    (\h -> h.owner == borrower && h.instrument == "CETH")
-  let [(bCethCid, _)] = bCethNow
-  submitMustFail borrower $ exerciseCmd quoteB AcceptQuote with
-    collateralCid = bCethCid
-  submit borrower $ exerciseCmd quoteB RejectQuote
-
-  -- a healthy position rejects a margin call — even from the real dealer
-  submitMustFail dealerA $ exerciseCmd posCid1 IssueMarginCall with
-    feedCid = feed1
-  -- and an outsider cannot touch the position at all
-  submitMustFail mallory $ exerciseCmd posCid1 IssueMarginCall with
-    feedCid = feed1
-
-  -- ===== the market moves: CETH 100 → 63 =====
+  submitMustFail d.borrower $ exerciseCmd quoteB AcceptQuote with collateralCid = expiryColl, feedCid = feed1
+  Some _ <- queryContractId d.borrower expiryColl
+  submit d.borrower $ exerciseCmd quoteB RejectQuote
+  submitMustFail d.dealerA $ exerciseCmd pos1 IssueMarginCall with feedCid = feed1
+  submitMustFail d.outsider $ exerciseCmd pos1 IssueMarginCall with feedCid = feed1
   now1 <- getTime
-  feed2 <- submit oracle $ exerciseCmd feed1 SetPrice with
-    newPrice = 63.0, at = now1
-  -- 15 × 63 = 945 < 1000 × 1.05 = 1050 → breach
-
-  posCid2 <- submit dealerA $ exerciseCmd posCid1 IssueMarginCall with
-    feedCid = feed2
-
-  -- borrower cures inside the window: +3 CETH → 18 × 63 = 1134 ≥ 1050
-  bCeth2s <- queryFilter @Holding borrower
-    (\h -> h.owner == borrower && h.instrument == "CETH")
-  let [(bCeth2, _)] = bCeth2s
-  posCid3 <- submit borrower $ exerciseCmd posCid2 TopUpCollateral with
-    extraCid = bCeth2, extraQty = 3.0, feedCid = feed2
-
-  Some pos3 <- queryContractId borrower posCid3
-  pos3.collateralAmount === 18.0
-  pos3.status === Active
-
-  -- ===== substitution: the borrower needs that CETH back mid-term =====
-  tbill <- mint issuer borrower "TBILL" 1200.0
+  feed2 <- submit d.oracle $ exerciseCmd feed1 SetPrice with newPrice = 63.0, at = now1
+  pos2 <- submit d.dealerA $ exerciseCmd pos1 IssueMarginCall with feedCid = feed2
+  extra <- available d d.borrower "CETH" 3.0
+  pos3 <- submit d.borrower $ exerciseCmd pos2 TopUpCollateral with extraCid = extra, extraQty = 3.0, feedCid = feed2
+  Some p3 <- queryContractId d.borrower pos3
+  p3.collateralAmount === 18.0
+  p3.status === Active
+  tbill <- mint d.issuer d.borrower "TBILL" 1200.0
+  feedT <- mark d "TBILL" 1.0
+  proposal <- submit d.borrower $ exerciseCmd pos3 ProposeSubstitution with
+    newIssuer = d.issuer, newInstrument = "TBILL", newQty = 1200.0, newHoldingCid = tbill, newFeedCid = feedT
+  pos4 <- submit d.dealerA $ exerciseCmd proposal AcceptSubstitution
+  balanceOf d.borrower "CETH" >>= (=== 35.0)
+  balanceOf d.dealerA "TBILL" >>= (=== 1200.0)
   now2 <- getTime
-  feedT <- submit oracle $ createCmd PriceFeed with
-    oracle; instrument = "TBILL"; price = 1.0; asOf = now2
-    readers = [borrower, dealerA, dealerB]
+  feedT2 <- submit d.oracle $ exerciseCmd feedT SetPrice with newPrice = 0.5, at = now2
+  pos5 <- submit d.dealerA $ exerciseCmd pos4 IssueMarginCall with feedCid = feedT2
+  submitMustFail d.dealerA $ exerciseCmd pos5 Liquidate with feedCid = feedT2
+  wait 16
+  submitMustFail d.dealerA $ exerciseCmd pos5 DeclareDefault
+  submitMustFail d.dealerA $ exerciseCmd pos5 Liquidate with feedCid = feedT2
+  closeoutAt <- getTime
+  closeoutFeed <- submit d.oracle $ exerciseCmd feedT2 SetPrice with newPrice = 0.5, at = closeoutAt
+  closed <- submit d.dealerA $ exerciseCmd pos5 Liquidate with feedCid = closeoutFeed
+  Some receipt <- queryContractId d.dealerA closed
+  receipt.outcome === Liquidated
+  receipt.closeoutPrice === Some 0.5
+  case receipt.closeoutHealthFactor of
+    Some factor -> (factor < 1.0) === True
+    None -> abort "missing liquidation health factor"
+  query @ClosedRepo d.dealerB >>= (=== [])
+  query @ClosedRepo d.outsider >>= (=== [])
+  hs <- queryFilter @Holding d.dealerA (\h -> h.owner == d.dealerA && h.instrument == "TBILL")
+  map (\(_, h) -> h.lockParties) hs === [[]]
+  balanceOf d.dealerA "TBILL" >>= (=== 1200.0)
+  debug "repoLifecycle: private RFQ, exact reservation, settlement, cure, substitution, liquidation PASS"
 
-  -- the borrower shows the substitute to the dealer — same escrow move,
-  -- mirrored: the dealer verifies the TBILL exists before accepting the swap
-  tbillShown <- submit borrower $ exerciseCmd tbill SetViewers with
-    newViewers = [dealerA]
-  subProp <- submit borrower $ createCmd SubstitutionProposal with
-    borrower; dealer = dealerA; posCid = posCid3
-    newInstrument = "TBILL"; newQty = 1200.0
-    newHoldingCid = tbillShown; newFeedCid = feedT
-  posCid4 <- submit dealerA $ exerciseCmd subProp AcceptSubstitution
-
-  -- every CETH came home, and the trade never broke
-  collHome <- balanceOf borrower "CETH"
-  collHome === 20.0
-  aTbill <- balanceOf dealerA "TBILL"
-  aTbill === 1200.0
-  Some pos4 <- queryContractId borrower posCid4
-  pos4.collateralInstrument === "TBILL"
-
-  -- ===== second breach, no cure → default =====
-  now3 <- getTime
-  feedT2 <- submit oracle $ exerciseCmd feedT SetPrice with
-    newPrice = 0.5, at = now3
-  -- 1200 × 0.5 = 600 < 1050 → breach
-  posCid5 <- submit dealerA $ exerciseCmd posCid4 IssueMarginCall with
-    feedCid = feedT2
-
-  -- the cure window is still open — default must wait for it
-  submitMustFail dealerA $ exerciseCmd posCid5 DeclareDefault
-
-  wait 6
-  closedCid <- submit dealerA $ exerciseCmd posCid5 DeclareDefault
-
-  Some closed <- queryContractId dealerA closedCid
-  closed.outcome === Defaulted
-
-  -- nothing to liquidate: title had already transferred at settlement
-  aTbillAfter <- balanceOf dealerA "TBILL"
-  aTbillAfter === 1200.0
-  bCashAfter <- balanceOf borrower "CUSD"
-  bCashAfter === 1000.0
-
-  debug "repoLifecycle: privacy, atomic settlement, margin call, cure, substitution, default - all proven"
-
--- | The IDE-ledger run: simulated time.
 repoLifecycle : Script ()
 repoLifecycle = lifecycleWith $ \s -> passTime (seconds s)
 
--- | Strike → settle → early repurchase. The dealer earns exactly the fixed
--- rate; all collateral goes home.
 repoHappyPath : Script ()
 repoHappyPath = do
-  desk <- setupDesk
-  let issuer = desk.issuer
-      oracle = desk.oracle
-      borrower = desk.borrower
-      dealerA = desk.dealerA
+  d <- setupDesk
+  (pos, _) <- position d
+  _ <- mint d.issuer d.borrower "CUSD" 1050.0
+  Some p <- queryContractId d.borrower pos
+  payment <- available d d.borrower "CUSD" p.repurchasePrice
+  closed <- submit d.borrower $ exerciseCmd pos Repurchase with cashCid = payment
+  Some receipt <- queryContractId d.borrower closed
+  receipt.outcome === Repurchased
+  balanceOf d.borrower "CETH" >>= (=== 20.0)
+  balanceOf d.borrower "CUSD" >>= (=== 2050.0 - p.repurchasePrice)
+  balanceOf d.dealerA "CUSD" >>= (=== 99000.0 + p.repurchasePrice)
+  balanceOf d.dealerA "CETH" >>= (=== 0.0)
+  hs <- queryFilter @Holding d.borrower (\h -> h.owner == d.borrower)
+  all (\(_, h) -> null h.lockParties) hs === True
+  debug "repoHappyPath: full fixed price, both legs settle, collateral unlocked PASS"
 
-  cethB <- mint issuer borrower "CETH" 20.0
-  _ <- mint issuer borrower "CUSD" 1050.0    -- to fund the repurchase leg
-  cashA <- mint issuer dealerA "CUSD" 100000.0
+termsAndQuoteValidation : Script ()
+termsAndQuoteValidation = do
+  d <- setupDesk
+  let r = request d d.dealerA
+  forA_ [(r with cashAmount = 0.0), (r with collateralAmount = 0.0),
+         (r with termDays = 0), (r with termDays = 366),
+         (r with cureSeconds = 0), (r with cureSeconds = 604801),
+         (r with marginThresholdPct = 0.99), (r with marginThresholdPct = 2.01),
+         (r with maxPriceAgeSeconds = 0), (r with maxPriceAgeSeconds = 86401),
+         (r with dealer = d.borrower), (r with collateralInstrument = "")] $ \bad ->
+    submitMustFail d.borrower $ createCmd bad
+  req <- submit d.borrower $ createCmd r
+  exact <- mint d.issuer d.dealerA "CUSD" 1000.0
+  forA_ [-0.01, 1.01] $ \rate ->
+    submitMustFail d.dealerA $ exerciseCmd req SubmitQuote with rate, validSeconds = 60, cashCid = exact
+  forA_ [0, -1, 86401] $ \validSeconds ->
+    submitMustFail d.dealerA $ exerciseCmd req SubmitQuote with rate = 0.05, validSeconds, cashCid = exact
+  forged <- mint d.outsider d.dealerA "CUSD" 1000.0
+  oversized <- mint d.issuer d.dealerA "CUSD" 1001.0
+  undersized <- mint d.issuer d.dealerA "CUSD" 999.0
+  wrongInstrument <- mint d.issuer d.dealerA "CEUR" 1000.0
+  forA_ [forged, oversized, undersized, wrongInstrument] $ \cashCid ->
+    submitMustFail d.dealerA $ exerciseCmd req SubmitQuote with rate = 0.05, validSeconds = 60, cashCid
+  -- Same valid fixture succeeds after all isolated invalid mutations.
+  quote <- submit d.dealerA $ exerciseCmd req SubmitQuote with rate = 0.0, validSeconds = 60, cashCid = exact
+  submit d.dealerA $ exerciseCmd quote RevokeQuote
 
-  now0 <- getTime
-  _ <- submit oracle $ createCmd PriceFeed with
-    oracle; instrument = "CETH"; price = 100.0; asOf = now0
-    readers = [borrower, dealerA]
+reservationAndPrivacyGuards : Script ()
+reservationAndPrivacyGuards = do
+  d <- setupDesk
+  quote <- fundedQuote d d.dealerA 3600
+  Some q <- queryContractId d.dealerA quote
+  hs <- queryFilter @Holding d.dealerA (\h -> h.owner == d.dealerA && null h.lockParties)
+  let [(change, changeH)] = hs
+  changeH.amount === 99000.0
+  queryContractId d.borrower change >>= (=== None)
+  query @Holding d.outsider >>= (=== [])
+  submitMustFail d.dealerA $ exerciseCmd q.cashCid Transfer with to = d.dealerA, qty = 1000.0, newViewers = []
+  submitMustFail d.borrower $ exerciseCmd q.cashCid Transfer with to = d.borrower, qty = 1000.0, newViewers = []
+  submitMustFail d.dealerA $ exerciseCmd q.cashCid SetViewers with newViewers = []
+  submitMustFail d.dealerA $ exerciseCmd q.cashCid Reserve with to = d.dealerA, qty = 1000.0, lockParty = d.outsider
+  submitMustFail d.dealerA $ exerciseCmd change Merge with otherCid = q.cashCid
+  req2 <- submit d.borrower $ createCmd (request d d.dealerA)
+  submitMustFail d.dealerA $ exerciseCmd req2 SubmitQuote with rate = 0.05, validSeconds = 60, cashCid = q.cashCid
+  submit d.dealerA $ exerciseCmd quote RevokeQuote
+  cash2 <- available d d.dealerA "CUSD" 1000.0
+  quote2 <- submit d.dealerA $ exerciseCmd req2 SubmitQuote with rate = 0.05, validSeconds = 60, cashCid = cash2
+  submit d.borrower $ exerciseCmd quote2 RejectQuote
+  holdings <- queryFilter @Holding d.dealerA (\h -> h.owner == d.dealerA)
+  all (\(_, h) -> null h.lockParties) holdings === True
+  balanceOf d.dealerA "CUSD" >>= (=== 100000.0)
 
-  reqA <- submit borrower $ createCmd QuoteRequest with
-    borrower; dealer = dealerA; oracle
-    collateralInstrument = "CETH"; collateralAmount = 15.0
-    cashInstrument = "CUSD"; cashAmount = 1000.0
-    termDays = 30; marginThresholdPct = 1.05; cureSeconds = 3600
-  escrowA <- submit dealerA $ exerciseCmd cashA SetViewers with
-    newViewers = [borrower]
-  quoteA <- submit dealerA $ exerciseCmd reqA SubmitQuote with
-    rate = 0.052, validSeconds = 3600, cashCid = escrowA
-  posCid <- submit borrower $ exerciseCmd quoteA AcceptQuote with
-    collateralCid = cethB
+priceAndSettlementGuards : Script ()
+priceAndSettlementGuards = do
+  d <- setupDesk
+  quote <- fundedQuote d d.dealerA 3600
+  coll <- mint d.issuer d.borrower "CETH" 15.0
+  now <- getTime
+  good <- mark d "CETH" 100.0
+  let f = feedValue d "CETH" 100.0 now
+  submitMustFail d.oracle $ createCmd (f with price = 0.0)
+  submitMustFail d.oracle $ exerciseCmd good SetPrice with newPrice = 100.0, at = addRelTime now (seconds 1)
+  submitMustFail d.oracle $ exerciseCmd good SetPrice with newPrice = 100.0, at = addRelTime now (seconds (-1))
+  badFeeds <- mapA (\bad -> submit d.oracle $ createCmd bad)
+                  [(f with asOf = addRelTime now (seconds 1)),
+                   (f with asOf = addRelTime now (seconds (-3601))),
+                   (f with cashInstrument = "CEUR"), (f with cashIssuer = d.outsider),
+                   (f with instrumentIssuer = d.outsider), (f with instrument = "TBILL"),
+                   (f with price = 50.0)]
+  foreign <- submit d.outsider $ createCmd (f with oracle = d.outsider)
+  forA_ (foreign :: badFeeds) $ \feedCid ->
+    submitMustFail d.borrower $ exerciseCmd quote AcceptQuote with collateralCid = coll, feedCid
+  forged <- mint d.outsider d.borrower "CETH" 15.0
+  small <- mint d.issuer d.borrower "CETH" 14.0
+  large <- mint d.issuer d.borrower "CETH" 16.0
+  forA_ [forged, small, large] $ \collateralCid ->
+    submitMustFail d.borrower $ exerciseCmd quote AcceptQuote with collateralCid, feedCid = good
+  pos <- submit d.borrower $ exerciseCmd quote AcceptQuote with collateralCid = coll, feedCid = good
+  Some p <- queryContractId d.borrower pos
+  let [pledged] = p.pledgedCids
+  submitMustFail d.dealerA $ exerciseCmd pledged Transfer with to = d.dealerA, qty = 15.0, newViewers = []
+  submitMustFail d.dealerA $ exerciseCmd pledged SetViewers with newViewers = []
+  submitMustFail d.dealerA $ exerciseCmd pledged Reserve with to = d.dealerA, qty = 15.0, lockParty = d.outsider
+  Some locked <- queryContractId d.borrower pledged
+  locked.lockParties === [d.borrower]
+  query @RepoPosition d.dealerB >>= (=== [])
 
-  let expectedPrice = 1000.0 + 1000.0 * 0.052 * intToDecimal 30 / 360.0
+postTradeGuards : Script ()
+postTradeGuards = do
+  d <- setupDesk
+  (pos, healthy) <- position d
+  submitMustFail d.dealerA $ exerciseCmd pos IssueMarginCall with feedCid = healthy
+  submitMustFail d.dealerA $ exerciseCmd pos Liquidate with feedCid = healthy
+  now <- getTime
+  let low = feedValue d "CETH" 63.0 now
+  stale <- submit d.oracle $ createCmd (low with asOf = addRelTime now (seconds (-3601)))
+  future <- submit d.oracle $ createCmd (low with asOf = addRelTime now (seconds 1))
+  foreign <- submit d.outsider $ createCmd (low with oracle = d.outsider)
+  forA_ [stale, future, foreign] $ \feedCid ->
+    submitMustFail d.dealerA $ exerciseCmd pos IssueMarginCall with feedCid
+  lowCid <- submit d.oracle $ createCmd low
+  called <- submit d.dealerA $ exerciseCmd pos IssueMarginCall with feedCid = lowCid
+  submitMustFail d.dealerA $ exerciseCmd called IssueMarginCall with feedCid = lowCid
+  submitMustFail d.dealerA $ exerciseCmd called DeclareDefault
+  submitMustFail d.dealerA $ exerciseCmd called Liquidate with feedCid = lowCid
+  one <- mint d.issuer d.borrower "CETH" 1.0
+  submitMustFail d.borrower $ exerciseCmd called TopUpCollateral with extraCid = one, extraQty = 1.0, feedCid = lowCid
+  three <- mint d.issuer d.borrower "CETH" 3.0
+  submitMustFail d.borrower $ exerciseCmd called TopUpCollateral with extraCid = three, extraQty = 0.0, feedCid = lowCid
+  forged <- mint d.outsider d.borrower "CETH" 3.0
+  submitMustFail d.borrower $ exerciseCmd called TopUpCollateral with extraCid = forged, extraQty = 3.0, feedCid = lowCid
+  Some p <- queryContractId d.borrower called
+  fakeCash <- mint d.outsider d.borrower "CUSD" p.repurchasePrice
+  submitMustFail d.borrower $ exerciseCmd called Repurchase with cashCid = fakeCash
+  wrongCash <- mint d.issuer d.borrower "CEUR" p.repurchasePrice
+  submitMustFail d.borrower $ exerciseCmd called Repurchase with cashCid = wrongCash
+  cured <- submit d.borrower $ exerciseCmd called TopUpCollateral with extraCid = three, extraQty = 3.0, feedCid = lowCid
+  Some p2 <- queryContractId d.borrower cured
+  p2.status === Active
+  p2.collateralAmount === 18.0
 
-  -- early close: pay the fixed repurchase price, collateral comes home
-  paySrc <- queryFilter @Holding borrower
-    (\h -> h.owner == borrower && h.instrument == "CUSD" && h.amount >= expectedPrice)
-  let [(payCid, _)] = paySrc
-  closedCid <- submit borrower $ exerciseCmd posCid Repurchase with
-    cashCid = payCid
+substitutionGuards : Script ()
+substitutionGuards = do
+  d <- setupDesk
+  (pos, _) <- position d
+  feed <- mark d "TBILL" 1.0
+  forged <- mint d.outsider d.borrower "TBILL" 1200.0
+  submitMustFail d.borrower $ exerciseCmd pos ProposeSubstitution with
+    newIssuer = d.issuer, newInstrument = "TBILL", newQty = 1200.0, newHoldingCid = forged, newFeedCid = feed
+  -- Naming the forged issuer cannot borrow the legitimate asset's mark.
+  submitMustFail d.borrower $ exerciseCmd pos ProposeSubstitution with
+    newIssuer = d.outsider, newInstrument = "TBILL", newQty = 1200.0, newHoldingCid = forged, newFeedCid = feed
+  insufficient <- mint d.issuer d.borrower "TBILL" 1000.0
+  submitMustFail d.borrower $ exerciseCmd pos ProposeSubstitution with
+    newIssuer = d.issuer, newInstrument = "TBILL", newQty = 1000.0, newHoldingCid = insufficient, newFeedCid = feed
+  tbill <- mint d.issuer d.borrower "TBILL" 1200.0
+  prop <- submit d.borrower $ exerciseCmd pos ProposeSubstitution with
+    newIssuer = d.issuer, newInstrument = "TBILL", newQty = 1200.0, newHoldingCid = tbill, newFeedCid = feed
+  Some s <- queryContractId d.borrower prop
+  submitMustFail d.borrower $ exerciseCmd s.newHoldingCid Transfer with to = d.borrower, qty = 1200.0, newViewers = []
+  submitMustFail d.borrower $ exerciseCmd s.newHoldingCid SetViewers with newViewers = []
+  submitMustFail d.outsider $ exerciseCmd prop AcceptSubstitution
+  submit d.dealerA $ exerciseCmd prop RejectSubstitution
+  restored <- available d d.borrower "TBILL" 1200.0
+  prop2 <- submit d.borrower $ exerciseCmd pos ProposeSubstitution with
+    newIssuer = d.issuer, newInstrument = "TBILL", newQty = 1200.0, newHoldingCid = restored, newFeedCid = feed
+  submit d.borrower $ exerciseCmd prop2 WithdrawSubstitution
+  restored2 <- available d d.borrower "TBILL" 1200.0
+  prop3 <- submit d.borrower $ exerciseCmd pos ProposeSubstitution with
+    newIssuer = d.issuer, newInstrument = "TBILL", newQty = 1200.0, newHoldingCid = restored2, newFeedCid = feed
+  low <- mark d "CETH" 63.0
+  _ <- submit d.dealerA $ exerciseCmd pos IssueMarginCall with feedCid = low
+  -- Position CID changed, but a stale proposal can always refund its reserve.
+  submitMustFail d.dealerA $ exerciseCmd prop3 AcceptSubstitution
+  submit d.borrower $ exerciseCmd prop3 WithdrawSubstitution
+  hs <- queryFilter @Holding d.borrower (\h -> h.owner == d.borrower && h.instrument == "TBILL")
+  all (\(_, h) -> null h.lockParties) hs === True
 
-  Some closed <- queryContractId borrower closedCid
-  closed.outcome === Repurchased
+assertDeadline : Desk -> ContractId RepoPosition -> Script ()
+assertDeadline d pos = do
+  Some p <- queryContractId d.borrower pos
+  cash <- mint d.issuer d.borrower "CUSD" p.repurchasePrice
+  extra <- mint d.issuer d.borrower "CETH" 3.0
+  feed <- mark d "CETH" 100.0
+  tbill <- mint d.issuer d.borrower "TBILL" 1200.0
+  tFeed <- mark d "TBILL" 1.0
+  submitMustFail d.borrower $ exerciseCmd pos Repurchase with cashCid = cash
+  submitMustFail d.borrower $ exerciseCmd pos TopUpCollateral with extraCid = extra, extraQty = 3.0, feedCid = feed
+  submitMustFail d.borrower $ exerciseCmd pos ProposeSubstitution with
+    newIssuer = d.issuer, newInstrument = "TBILL", newQty = 1200.0, newHoldingCid = tbill, newFeedCid = tFeed
+  closed <- submit d.dealerA $ exerciseCmd pos DeclareDefault
+  Some receipt <- queryContractId d.borrower closed
+  receipt.outcome === Defaulted
+  hs <- queryFilter @Holding d.dealerA (\h -> h.owner == d.dealerA && h.instrument == "CETH")
+  all (\(_, h) -> null h.lockParties) hs === True
 
-  bColl <- balanceOf borrower "CETH"
-  bColl === 20.0
-  bCash <- balanceOf borrower "CUSD"
-  bCash === 2050.0 - expectedPrice
-  aCash <- balanceOf dealerA "CUSD"
-  aCash === 99000.0 + expectedPrice
-  aColl <- balanceOf dealerA "CETH"
-  aColl === 0.0
+maturityDefault : Script ()
+maturityDefault = do
+  d <- setupDesk
+  (pos, _) <- position d
+  submitMustFail d.dealerA $ exerciseCmd pos DeclareDefault
+  passTime (days 30)
+  fresh <- mark d "CETH" 63.0
+  submitMustFail d.dealerA $ exerciseCmd pos IssueMarginCall with feedCid = fresh
+  assertDeadline d pos
 
-  debug "repoHappyPath: strike, atomic settlement, early repurchase - dealer earned the fixed rate, collateral home"
+cureDeadlineLiquidation : Script ()
+cureDeadlineLiquidation = do
+  d <- setupDesk
+  (pos, initial) <- position d
+  now <- getTime
+  low <- submit d.oracle $ exerciseCmd initial SetPrice with newPrice = 63.0, at = now
+  called <- submit d.dealerA $ exerciseCmd pos IssueMarginCall with feedCid = low
+  passTime (seconds 15)
+  Some p <- queryContractId d.borrower called
+  cash <- mint d.issuer d.borrower "CUSD" p.repurchasePrice
+  extra <- mint d.issuer d.borrower "CETH" 3.0
+  submitMustFail d.borrower $ exerciseCmd called Repurchase with cashCid = cash
+  submitMustFail d.borrower $ exerciseCmd called TopUpCollateral with extraCid = extra, extraQty = 3.0, feedCid = low
+  submitMustFail d.dealerA $ exerciseCmd called DeclareDefault
+  wrong <- submit d.outsider $ createCmd ((feedValue d "CETH" 63.0 now) with oracle = d.outsider)
+  submitMustFail d.dealerA $ exerciseCmd called Liquidate with feedCid = wrong
+  submitMustFail d.dealerA $ exerciseCmd called Liquidate with feedCid = low
+  closeoutAt <- getTime
+  closeoutFeed <- submit d.oracle $ exerciseCmd low SetPrice with newPrice = 63.0, at = closeoutAt
+  closed <- submit d.dealerA $ exerciseCmd called Liquidate with feedCid = closeoutFeed
+  Some receipt <- queryContractId d.borrower closed
+  receipt.outcome === Liquidated
+  receipt.closeoutPrice === Some 63.0
+  case receipt.closeoutHealthFactor of
+    Some factor -> (factor < 1.0) === True
+    None -> abort "missing liquidation health factor"
+  hs <- queryFilter @Holding d.dealerA (\h -> h.owner == d.dealerA && h.instrument == "CETH")
+  all (\(_, h) -> null h.lockParties) hs === True
+
+recoveredCallBlocksLiquidation : Script ()
+recoveredCallBlocksLiquidation = do
+  d <- setupDesk
+  (pos, initial) <- position d
+  now <- getTime
+  low <- submit d.oracle $ exerciseCmd initial SetPrice with newPrice = 63.0, at = now
+  called <- submit d.dealerA $ exerciseCmd pos IssueMarginCall with feedCid = low
+  passTime (seconds 15)
+  recoveredAt <- getTime
+  -- 15 CETH x 70 = 1,050: the exact HF = 1.00 boundary is healthy.
+  recovered <- submit d.oracle $ exerciseCmd low SetPrice with newPrice = 70.0, at = recoveredAt
+  submitMustFail d.dealerA $ exerciseCmd called Liquidate with feedCid = recovered
+  submitMustFail d.dealerA $ exerciseCmd called Liquidate with feedCid = low
+  cleared <- submit d.borrower $ exerciseCmd called ResolveMarginCall with feedCid = recovered
+  Some active <- queryContractId d.borrower cleared
+  active.status === Active
+  cash <- mint d.issuer d.borrower "CUSD" active.repurchasePrice
+  closed <- submit d.borrower $ exerciseCmd cleared Repurchase with cashCid = cash
+  Some receipt <- queryContractId d.borrower closed
+  receipt.outcome === Repurchased

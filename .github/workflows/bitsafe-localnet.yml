@@ -1,0 +1,78 @@
+name: BitSafe three-node LocalNet proof
+on:
+  workflow_dispatch:
+  push:
+    branches: [codex/submission-devnet]
+    paths:
+      - 'daml*/**'
+      - 'scripts/bitsafe-localnet.mjs'
+      - '.github/workflows/bitsafe-localnet.yml'
+permissions:
+  contents: read
+jobs:
+  localnet:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: DLC-link/decentralization-manager
+          ref: 21ffdedf64366b1f2824301c434b427bf4726663
+          path: .omc/bitsafe-localnet
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Inspect runner resources
+        run: |
+          free -h
+          df -h .
+          docker info --format '{{.MemTotal}} bytes; {{.NCPU}} CPUs'
+      - name: Install pinned Daml SDK
+        run: |
+          curl --fail --silent --show-error --location https://get.digitalasset.com/install/install.sh --output /tmp/dpm-install.sh
+          sh /tmp/dpm-install.sh
+          echo "$HOME/.dpm/bin" >> "$GITHUB_PATH"
+      - run: dpm install 3.5.2
+      - name: Build and test exact application source
+        run: |
+          set -euo pipefail
+          mkdir -p .omc/research/bitsafe .omc/evidence
+          cp .omc/bitsafe-localnet/releases/v1/governance-action-v1-0.1.0.dar .omc/research/bitsafe/
+          cp .omc/bitsafe-localnet/releases/v1/governance-core-v1-0.1.0.dar .omc/research/bitsafe/
+          echo '4fc7912df4a0aeea3cfcc6ba07c880192a5fa88f7c75ed04b922602461b1e485  .omc/research/bitsafe/governance-action-v1-0.1.0.dar' | sha256sum --check
+          echo 'b8d05903e63288d4114632f41386491cea215e177183514ea032fe35d24a9544  .omc/research/bitsafe/governance-core-v1-0.1.0.dar' | sha256sum --check
+          for package in daml daml-test daml-bitsafe daml-bitsafe-test; do
+            (cd "$package" && dpm build)
+          done
+          (cd daml-test && dpm test) | tee .omc/evidence/core-tests.txt
+          (cd daml-bitsafe-test && dpm test) | tee .omc/evidence/bitsafe-tests.txt
+          npm ci --prefix web
+      - name: Start the official disposable LocalNet
+        run: .omc/bitsafe-localnet/hackathon/up.sh
+      - name: Seed the decentralized party and governance rules
+        run: .omc/bitsafe-localnet/hackathon/seed.sh
+      - name: Execute the Symbolon workflow through three DecMan services
+        run: |
+          set -euo pipefail
+          node web/node_modules/tsx/dist/cli.mjs scripts/bitsafe-localnet.mjs | tee .omc/evidence/symbolon-localnet.txt
+      - name: Upload reproducibility evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: symbolon-bitsafe-${{ github.sha }}
+          include-hidden-files: true
+          path: |
+            .omc/evidence/
+            daml/.daml/dist/*.dar
+            daml-bitsafe/.daml/dist/*.dar
+          retention-days: 14
+      - name: Stop this job's disposable stack
+        if: always()
+        run: .omc/bitsafe-localnet/hackathon/down.sh

@@ -1,0 +1,65 @@
+-- An operator proposes a price; the decentralized oracle party can publish it
+-- only after DecMan's GovernanceRules reaches its confirmation threshold.
+module Symbolon.BitSafe.PriceMarkProposal where
+
+import Governance.Action
+import Symbolon.Repo
+
+-- Bootstrap through governance as well: a single participant must not need to
+-- impersonate the decentralized oracle to create its initial PriceFeed.
+template InitializePriceFeedProposal
+  with
+    governanceParty : Party
+    proposer : Party
+    instrumentIssuer : Party
+    instrument : Text
+    cashIssuer : Party
+    cashInstrument : Text
+    initialPrice : Decimal
+    readers : [Party]
+  where
+    signatory proposer
+    observer governanceParty
+    ensure governanceParty /= proposer && initialPrice > 0.0
+      && instrument /= "" && cashInstrument /= ""
+
+    interface instance GovernableAction for InitializePriceFeedProposal where
+      view = GovernableActionView with
+        governanceParty
+        proposer
+        actionLabel = "InitializeSymbolonMark"
+        description = "Initialize Symbolon demo mark for " <> instrument <> "/" <> cashInstrument
+
+      executeImpl = do
+        now <- getTime
+        _ <- create PriceFeed with
+          oracle = governanceParty
+          instrumentIssuer; instrument; cashIssuer; cashInstrument; readers
+          price = initialPrice
+          asOf = now
+        pure ()
+
+template PriceMarkProposal
+  with
+    governanceParty : Party
+    proposer : Party
+    feedCid : ContractId PriceFeed
+    newPrice : Decimal
+  where
+    signatory proposer
+    observer governanceParty
+    ensure governanceParty /= proposer && newPrice > 0.0
+
+    interface instance GovernableAction for PriceMarkProposal where
+      view = GovernableActionView with
+        governanceParty
+        proposer
+        actionLabel = "SetSymbolonMark"
+        description = "Set Symbolon mark to " <> show newPrice <> " on " <> show feedCid
+
+      executeImpl = do
+        feed <- fetch feedCid
+        assertMsg "decentralized party is not the agreed feed oracle" (feed.oracle == governanceParty)
+        now <- getTime
+        _ <- exercise feedCid SetPrice with newPrice; at = now
+        pure ()
