@@ -6,7 +6,7 @@ A treasury team requests private quotes from selected dealers, transfers collate
 
 The name comes from the Greek *symbolon*: two matching halves of a token used to recognize an agreement. Symbolon applies that idea to bilateral trade terms with explicit, limited ledger visibility.
 
-For a first look, open the site's **`/demo`** route: a wallet-free simulation with Plain English and DeFi explanations. The actual ledger desk is **`/app`**. The target real-asset pair is **cBTC / USDCx**, with DevNet verification before MainNet promotion. [One release, runtime network profiles](docs/gitbook/guides/network-promotion.md) explains the configuration and remaining adapter work.
+Open the [Symbolon desk](https://symbolon.endpx.cloud/app) for the application, and the [documentation](https://symbolon.gitbook.io/symbolon-docs/) for the product and technical guides. The [recorded local Canton workflow](docs/submission/symbolon-local-demo.mp4) shows the ledger-backed repo lifecycle. The target real-asset pair is **cBTC / USDCx**, with DevNet verification before MainNet promotion. [One release, runtime network profiles](docs/gitbook/guides/network-promotion.md) explains the configuration and remaining adapter work.
 
 The current core is **`symbolon-v2` v0.2.0**; old `symbolon-0.1.0` DevNet contracts are a separate baseline. On **5 October 2026**, the revised release passed **11 core Daml scripts, 2 BitSafe scripts and 27 frontend tests**. Native local Canton completed both lifecycle scripts at offsets **55 → 202** and the BitSafe threshold-to-margin scenario at **202 → 261**. These are local simulated-asset results, not a completed shared DevNet or MainNet transaction.
 

@@ -54,4 +54,4 @@ No MainNet transaction, fee payment, native bridge result or bounty eligibility 
 
 Keep current requirement links, date of confirmation, topology diagram, party hosting records, node versions, package identifiers, test transactions, access checks and a concise recording. Any claim must distinguish work performed by the team from hosted infrastructure or assistance provided by others.
 
-No own-node deployment, DecMan installation or run, cBTC settlement, MainNet transaction, challenge award or sponsor approval is asserted here.
+No shared DevNet/MainNet decentralized-party deployment, real cBTC settlement, independent operator hosting, challenge award or sponsor approval is asserted here. The official LocalNet DecMan run is recorded above.

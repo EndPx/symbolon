@@ -29,3 +29,11 @@ Validate the initial customer and dealer hypotheses through interviews and a con
 Manual renewal by a new agreement, dealer-operated risk automation, audit exports, richer asset policy, and controlled data disclosure may be useful after the core path is stable. Transferable positions, vaults, FX, pooled liquidity and public benchmarks require separate product and privacy decisions.
 
 BitSafe Contribution Pool LocalNet work is the active challenge path; see [challenge scope](challenges.md). Gold's own-node deployment is deferred. cBTC collateral with a verified USD cash asset is planned for Phase 3, after the LocalNet proof; no real-token settlement is claimed now. Grofty source code remains present, but its bounty is outside the current submission scope.
+
+## Go-to-market pilot
+
+The initial customer hypothesis is a treasury manager at a digital-asset fund holding Canton assets, working with financing dealers. Reach prospective operators through Canton issuer introductions and direct outreach to treasury and collateral leads. These are proposed channels; no response rate or partnership is claimed.
+
+The first activation milestone is one observed financing rehearsal: request quotes, review the fixed repayment amount, settle, handle a collateral change, and close the position. Measure time to a usable quote, manual handoffs, rejected actions, completed repayments, and whether the operator asks to repeat the workflow. Interview evidence should determine the next feature before broader acquisition.
+
+A small pilot pairs an interested borrower with a participating dealer and a supported asset. Repeat use and referrals depend on completing that workflow reliably. A workspace fee or usage-based financing workflow fee is a commercial hypothesis to test; the prototype implements neither fee collection nor revenue.

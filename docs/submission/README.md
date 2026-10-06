@@ -4,7 +4,7 @@ Symbolon is a private, bilateral fixed-rate repo desk on Canton. Borrowers recei
 
 ## Judge's first look
 
-1. Open the site's `/demo` route for a wallet-free guided simulation. Plain English and DeFi explanations cover both repurchase and an uncured margin call. This is a simulation, not a network transaction.
+1. Open the [Symbolon app](https://symbolon.endpx.cloud/app) and [documentation](https://symbolon.gitbook.io/symbolon-docs/). Watch the [recorded local Canton workflow](symbolon-local-demo.mp4) for quote comparison, settlement, margin handling and repurchase with a committed ledger receipt.
 2. Follow the root README to start the real local Canton desk. Its UI submits commands and displays committed update IDs.
 3. Review the Daml tests, asset locks and exact settlement inputs. The repo model is `symbolon-v2` v0.2.0; the old shared DevNet package is separate.
 4. Review the BitSafe governance adapter and reproducible three-node LocalNet runner. Credit an official multi-node execution only when its JSON evidence and successful workflow run are available.
@@ -23,7 +23,7 @@ Symbolon is a private, bilateral fixed-rate repo desk on Canton. Borrowers recei
 
 **Product evidence:** Eleven core Daml Script entries; two BitSafe governance scripts; frontend and deployment tests; real local Canton lifecycle and browser evidence. Record final counts and revision from the release run. Do not use an older passing log to claim a changed release passes.
 
-**What is new:** Exact cash reservations and pledged collateral locks, issuer/denomination/freshness checks, health-factor liquidation guards, improved desk layout, wallet receipt handling, guided onboarding, original GitBook sources, runtime network profiles and BitSafe governance integration. The August 28 baseline is pre-existing work and is disclosed in the GitBook submission record.
+**What is new:** Exact cash reservations and pledged collateral locks, issuer/denomination/freshness checks, health-factor liquidation guards, improved desk layout, wallet receipt handling, original GitBook sources, runtime network profiles and BitSafe governance integration. The August 28 baseline is pre-existing work and is disclosed in the GitBook submission record.
 
 **What remains:** Real cBTC/USDCx adapters, canonical oracle lineage, realized closeout/surplus/shortfall accounting, completed shared DevNet flow, installed-wallet verification, independent review and production operations. No MainNet release, adoption, audit, partnership or real liquidity claim is made.
 

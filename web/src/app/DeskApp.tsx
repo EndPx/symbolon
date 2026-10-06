@@ -103,7 +103,7 @@ function ConnectDialog({ connected, close }: { connected(s: Session): void; clos
     finally { setBusy(null); }
   };
   return <Dialog title="Connect a Canton wallet" close={close} busy={busy !== null}>
-    <p className="panel-lede">Your wallet identifies your Canton Party ID and approves ledger actions on the configured development network. For a first look, <a href="/demo">try the guided walkthrough</a>.</p>
+    <p className="panel-lede">Connect your Canton wallet to access your party’s private requests, quotes, and positions on the configured network.</p>
     {wallets === null && <p className="empty-state" role="status">Discovering wallets…</p>}
     <ul className="wallet-list">{wallets?.map((w) => <li key={w.id}>
       <button className="wallet-row" disabled={busy !== null || !w.installed || !!w.unavailableReason} onClick={() => void connect(w.id)}>
@@ -545,7 +545,7 @@ function Workspace({ session: s, connect, demoParties, switchParty, disconnect }
         {receipt.detail && <p>{receipt.detail}</p>}{receipt.updateId && <details><summary>Ledger update receipt</summary><code>{receipt.updateId}</code></details>}
       </div>}</div>
       <MarketOverview state={st} party={s.party} connected={trading} mode={oracle ? "oracle" : tab} onConnect={connect} onRequestPair={setRequestedPair} />
-      {!trading && <section className="open-desk"><img src="/brand/logo-mark.png" alt="" width="54" height="54" /><h2>A private repo desk</h2><p>Learn the flow with simulated cBTC / USDCx, or connect a development wallet to submit Canton commands.</p><div className="acts wrap"><a className="seal" href="/demo">Try the guided walkthrough</a><button className="ghost" onClick={connect}>Connect development wallet</button></div><p className="sm muted">Private books require an authorized party session. MainNet trading is not enabled for this prototype.</p></section>}
+      {!trading && <section className="open-desk"><img src="/brand/logo-mark.png" alt="" width="54" height="54" /><h2>A private repo desk</h2><p>Connect your Canton wallet to request financing, review dealer quotes, and manage your positions.</p><div className="acts wrap"><button className="seal" onClick={connect}>Connect wallet</button><a className="ghost" href="https://symbolon.gitbook.io/symbolon-docs/">Read the docs</a></div><p className="sm muted">Private books require an authorized party session. MainNet trading is not enabled for this prototype.</p></section>}
       {trading && !st && !error && <p role="status" className="empty-state">Loading your party’s ledger view…</p>}
       {trading && st && <><div className="work-heading"><div><span>Deal workspace</span><h2>{oracle ? "Keep collateral marks current" : tab === "borrow" ? "From private quote to settlement" : "Price and manage your requests"}</h2></div><p>{oracle ? "Only the agreed oracle can publish marks for these pairs." : "Every action below is scoped to your connected party and confirmed on the ledger."}</p></div>
         <div className={`board ${oracle ? "board-oracle" : tab === "borrow" ? "board-borrow" : "board-lend"}`}>{oracle ? <Panel id="oracle-marks" title="Publish simulated marks" description="You are the oracle party. Prices are entered manually; each update receives a current timestamp.">{st.feeds.filter((f) => f.payload.oracle === s.party).map((f) => <OracleMark key={feedIdentity(f.payload)} feed={f} s={s} />)}</Panel>

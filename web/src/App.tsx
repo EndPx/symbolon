@@ -356,8 +356,8 @@ export default function App() {
                 <a className="seal" href="/app">
                   Open the desk
                 </a>
-                <a className="quiet" href="/demo">
-                  Try the guided walkthrough
+                <a className="quiet" href="https://symbolon.gitbook.io/symbolon-docs/">
+                  Read the docs
                 </a>
               </div>
             </div>

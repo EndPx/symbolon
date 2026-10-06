@@ -67,7 +67,7 @@ export default function MarketOverview({ state, party, connected, mode, onConnec
     <div className="market-layout">
       <div className="market-list" aria-label="Visible financing pairs">
       <div className="market-list-head"><span>Collateral / cash</span><span>Oracle mark</span><span>Mark status</span><span>{mode === "oracle" ? "Funding rate" : "Your best quote"}</span></div>
-        {filtered.length === 0 && <div className="market-empty"><strong>No visible financing pairs</strong><p>{pairs.length ? "Try a different filter." : connected ? "Ask an agreed oracle to publish a price feed visible to your party." : "Connect a wallet to see your authorized pairs, or select a seeded local demo party."}</p></div>}
+        {filtered.length === 0 && <div className="market-empty"><strong>No visible financing pairs</strong><p>{pairs.length ? "Try a different filter." : connected ? "Ask an agreed oracle to publish a price feed visible to your party." : "Connect a wallet to see your authorized financing pairs."}</p></div>}
         {filtered.map(pair => {
           const f = pair.payload;
           const pairQuotes = connected ? (state?.quotes ?? []).filter(({ payload: q }) =>
