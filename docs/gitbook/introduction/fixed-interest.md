@@ -1,4 +1,4 @@
-# Why fixed interest on Canton
+# Why Fixed-Rate
 
 Symbolon fixes the repurchase amount when a quote is accepted. A borrower can therefore budget the cash required to recover collateral at the agreed maturity. A dealer can calculate the contractual cash inflow for that term. This is useful for a financing need with a known horizon; it is not a claim that fixed-rate borrowing is always cheaper.
 

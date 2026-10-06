@@ -22,14 +22,6 @@ The [official Grofty dApp SDK](https://github.com/groftywallet/grofty-dapp-sdk) 
 
 The [official hackathon challenge page](https://hackathon.appsfactory.cc/season-3#challenges) is the requirement reference. Keep qualification claims separate from SDK tests and recheck the current sponsor requirements before submission.
 
-## Product and information-architecture references
-
-[ATFI's documentation index](https://atfi.gitbook.io/atfi-docs/sitemap.md) informed the organization into introduction, workflow, technical details, deployment and roadmap. Its product content was not copied. The `/documentation` reference is a navigation group; individual Markdown pages are listed in its sitemap.
-
-[Centuari staging documentation](https://docs-staging.centuari.finance/introduction) informed questions about rate presentation, maturity, collateral operations and failure states. Symbolon is not an implementation of Centuari. It uses a private bilateral repo model, ACT/360 term interest and full-price early repurchase, rather than Centuari's documented order-book/CBT model. Competitor documentation does not validate Symbolon's customers or establish deployed capabilities.
-
-Detailed research notes are maintained locally and are not part of this public GitBook. These pages contain original Symbolon explanations and source links rather than republishing a third party's documentation.
-
 ## Maintaining the GitBook source
 
 `SUMMARY.md` lists the pages and section order. Root `.gitbook.yaml` points GitBook at this folder. Keep internal links relative to the GitBook root; keep links to external documentation explicit. Avoid linking public pages to private research notes, local machine paths or credentials.

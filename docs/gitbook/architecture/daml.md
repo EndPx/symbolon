@@ -1,6 +1,6 @@
 # Daml contract model
 
-The core package is `symbolon` version `0.1.0`, built with Daml SDK `3.5.2`. `Symbolon.DemoAsset` supplies holdings. `Symbolon.Repo` supplies price feeds, requests, quotes, positions, substitution proposals and receipts. The test and live packages depend on the built core DAR.
+The core package is `symbolon-v2` version `0.2.0`, built with Daml SDK `3.5.2`. `Symbolon.DemoAsset` supplies holdings. `Symbolon.Repo` supplies price feeds, requests, quotes, positions, substitution proposals and receipts. The test and live packages depend on the built core DAR.
 
 ## Templates and authority
 

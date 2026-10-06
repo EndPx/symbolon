@@ -12,9 +12,7 @@ if (import.meta.env.DEV && import.meta.env.VITE_ENABLE_REACT_DEVTOOLS === "1") {
 
 const App = lazy(() => import("./App"));
 const DeskApp = lazy(() => import("./app/DeskApp"));
-const GuidedDemo = lazy(() => import("./app/GuidedDemo"));
 const isApp = window.location.pathname.replace(/\/+$/, "") === "/app";
-const isDemo = window.location.pathname.replace(/\/+$/, "") === "/demo";
 
 const rootElement = document.getElementById("root") as (HTMLElement & { symbolonRoot?: Root });
 const root = rootElement.symbolonRoot ?? createRoot(rootElement);
@@ -23,7 +21,7 @@ root.render(<main style={{ padding: "3rem", fontFamily: "serif" }} aria-busy="tr
 void loadDeployment().then(() => root.render(
   <StrictMode>
     <Suspense fallback={<main style={{ padding: "3rem", fontFamily: "serif" }} aria-busy="true">Opening Symbolon…</main>}>
-      {isDemo ? <GuidedDemo /> : isApp ? <DeskApp /> : <App />}
+      {isApp ? <DeskApp /> : <App />}
     </Suspense>
   </StrictMode>,
 ));

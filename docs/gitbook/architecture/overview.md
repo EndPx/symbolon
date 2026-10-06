@@ -1,6 +1,8 @@
-# System architecture
+# Technical Architecture
 
 Symbolon has two principal implementation layers: Daml contracts that enforce the transaction and a React browser application that presents and submits it. The current application has no Symbolon-operated database, order matcher or business-logic API. Canton participants and wallets remain essential infrastructure; the absence of a custom application backend does not remove infrastructure trust.
+
+![Symbolon component map](../assets/component-map.png)
 
 ```mermaid
 flowchart TB
@@ -12,10 +14,8 @@ flowchart TB
     end
     Session -->|Development only| Proxy[Vite ledger proxy]
     Session -->|Compatible wallet mode| Wallet[PartyLayer and Canton wallet]
-    Session -->|Grofty MainNet| Grofty[Grofty SDK: own-party reads and prepared commands]
     Proxy --> JSON[Canton JSON Ledger API]
     Wallet --> JSON
-    Grofty --> Participant
     JSON --> Participant[Participant: authorization, execution and contract store]
     Participant --> Repo[Symbolon.Repo Daml]
     Repo --> Assets[DemoAsset holdings]
@@ -32,7 +32,6 @@ flowchart TB
 | Script tests | Deterministic and adversarial assertions | `daml-test/Symbolon/Test/EndToEnd.daml` |
 | Live setup/scripts | Seed and exercise a wall-clock sandbox | `daml-live/Symbolon/` |
 | Ledger transport | HTTP or wallet requests and command encoding | `web/src/ledger/api.ts` |
-| Grofty transport | MainNet account binding, restricted reads and prepared submission | `web/src/ledger/grofty.ts` |
 | Session model | Current party, wallet connection and local mode | `web/src/ledger/session.ts` |
 | Contract projection | Typed payloads, contract buckets and display calculations | `web/src/ledger/symbolon.ts` |
 | Actions | Assemble authorized choices from current state | `web/src/app/actions.ts` |
@@ -48,6 +47,14 @@ Conversely, correct contracts do not automatically produce a safe deployment. An
 
 **Local development:** one sandbox may host borrower, dealers, oracle and issuer. The browser accesses it through a local proxy, and developers may switch demo roles. This is a convenient test environment, not independent institutional hosting.
 
-**Wallet demonstration:** the browser connects to a wallet that identifies a party and routes supported reads and submissions. Grofty uses its dedicated SDK and MainNet account; other compatible wallets use the PartyLayer path. The party, packages, tokens, synchronizer and wallet must actually be compatible. A wallet connection alone does not prove successful settlement. See the [Grofty integration boundary](../guides/grofty.md).
+**Wallet access:** the browser connects through the PartyLayer path to a compatible Canton wallet. The party, packages, assets, synchronizer, and supported wallet API must match the configured network. A connection alone does not prove settlement. The prototype Grofty adapter remains in source for later work and is outside the current submission scope.
 
 **Future multi-operator pilot:** counterparties use appropriately isolated participant infrastructure and real authorized assets. The transaction model can be tested in that topology, but the current repository does not claim such a deployment has been completed. See [DevNet readiness](../guides/wallet-devnet.md).
+
+## Ledger and application data
+
+[Onchain and Offchain Data](onchain-offchain.md) distinguishes authoritative contracts, browser memory, public runtime configuration, and recorded execution evidence. The current app has no custom business database or durable global index.
+
+## Governed oracle publication
+
+BitSafe DecMan uses the configured 2-of-3 rule to execute a Symbolon price-mark proposal. The replacement feed changes repo coverage; the dealer's margin choice validates that feed independently. The [LocalNet integration](../guides/bitsafe-localnet.md) records below-threshold rejection, successful execution, and repo repurchase. Governance proposals run through the integration harness, not a screen in the current desk.
