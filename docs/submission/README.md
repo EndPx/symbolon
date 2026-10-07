@@ -8,12 +8,13 @@ Symbolon is a private, bilateral fixed-rate repo desk on Canton. Borrowers recei
 2. Follow the root README to start the real local Canton desk. Its UI submits commands and displays committed update IDs.
 3. Review the Daml tests, asset locks and exact settlement inputs. The repo model is `symbolon-v2` v0.2.0; the old shared DevNet package is separate.
 4. Review the BitSafe governance adapter and reproducible three-node LocalNet runner. Credit an official multi-node execution only when its JSON evidence and successful workflow run are available.
+5. Review the [shared DevNet record](evidence/shared-devnet.md): 20 committed receipts, the failed one-confirmation execution, governed mark, margin call, top-up and `Repurchased`. The [original JSON](evidence/shared-devnet.json) retains the exact actor mapping and timestamped states. This is a one-participant Ledger API run, separate from the three-participant LocalNet DecMan proof.
 
 ## Submission text
 
 **Project name:** Symbolon
 
-**Elevator pitch:** Treasury teams holding tokenized assets need to compare financing terms without exposing their funding needs or dealer quotes. Symbolon combines private bilateral repo quotes, a fixed annualized rate and an agreed repurchase amount with collateral management on Canton. The local prototype reserves dealer cash, exchanges cash and collateral atomically, tracks health factor, handles margin calls and top-ups, and closes through repurchase or dealer-led closeout. A BitSafe GovernableAction integrates threshold approval into simulated oracle marks. The intended real-asset pair is cBTC / USDCx. Assets and marks in the demonstrated prototype are simulated; shared DevNet execution and official token adapters still require verification. We have engineering evidence, not customer demand evidence.
+**Elevator pitch:** Treasury teams holding tokenized assets need to compare financing terms without exposing their funding needs or dealer quotes. Symbolon combines private bilateral repo quotes, a fixed annualized rate and an agreed repurchase amount with collateral management on Canton. The prototype reserves dealer cash, exchanges cash and collateral atomically, tracks health factor, handles margin calls and top-ups, and closes through repurchase or dealer-led closeout. A BitSafe GovernableAction integrates threshold approval into simulated oracle marks. The repo and governed mark have executed on shared HackCanton DevNet; the separate DecMan topology has executed on three-participant LocalNet. The intended real-asset pair is cBTC / USDCx. Demonstrated assets and marks are simulated; official token adapters and wallet signing still require verification. We have engineering evidence, not customer demand evidence.
 
 **Technology:** Daml SDK 3.5.2, Canton, TypeScript, React 19, Vite, Canton JSON Ledger API, PartyLayer, BitSafe DecMan GovernableAction.
 
@@ -25,7 +26,7 @@ Symbolon is a private, bilateral fixed-rate repo desk on Canton. Borrowers recei
 
 **What is new:** Exact cash reservations and pledged collateral locks, issuer/denomination/freshness checks, health-factor liquidation guards, improved desk layout, wallet receipt handling, original GitBook sources, runtime network profiles and BitSafe governance integration. The August 28 baseline is pre-existing work and is disclosed in the GitBook submission record.
 
-**What remains:** Real cBTC/USDCx adapters, canonical oracle lineage, realized closeout/surplus/shortfall accounting, completed shared DevNet flow, installed-wallet verification, independent review and production operations. No MainNet release, adoption, audit, partnership or real liquidity claim is made.
+**What remains:** Real cBTC/USDCx adapters, canonical oracle lineage, realized closeout/surplus/shortfall accounting, installed-wallet verification, independent review and production operations. The shared DevNet Ledger API flow is complete; no MainNet release, adoption, audit, partnership or real liquidity claim is made.
 
 ## Delivery files
 
@@ -38,5 +39,8 @@ Symbolon is a private, bilateral fixed-rate repo desk on Canton. Borrowers recei
 - [Network promotion procedure](../gitbook/guides/network-promotion.md)
 - [Current evidence and limits](../gitbook/reference/status.md)
 - [Verified BitSafe three-participant proof](evidence/bitsafe-localnet.json)
+- [Shared DevNet judge summary](evidence/shared-devnet.md)
+- [Original shared DevNet receipts and state](evidence/shared-devnet.json)
+- [Shared DevNet provisioning and runner guide](shared-devnet-proof.md)
 
 Supply verified public URLs and the tested revision in the final hackathon form. A script or storyboard is not a published video; GitBook source is not a hosted GitBook. Final form submission remains a participant action.

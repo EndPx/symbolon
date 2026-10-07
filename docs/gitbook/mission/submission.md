@@ -23,6 +23,12 @@ Separate the starting revision from changes made within the eligible period. Pre
 
 Do not substitute screenshots of a form for committed transactions, or a local sandbox for an asserted shared DevNet deployment. Include a clear environment label in the recording.
 
+## Recorded shared-network execution
+
+On **7 October 2026**, the current release completed its governed mark, margin call, top-up and repurchase on shared HackCanton DevNet. The [judge record](https://github.com/EndPx/symbolon/blob/main/docs/submission/evidence/shared-devnet.md) retains 20 committed receipts, one expected threshold rejection, five timestamped state snapshots and the final `ClosedRepo: Repurchased`. It includes the exact participant/synchronizer, party mapping, package IDs, source hashes and node-log lookup links.
+
+This is a Ledger API run using the application's action builders with simulated cBTC-demo / USDCx-demo and ordinary hosted parties on one participant. The separate three-participant LocalNet record establishes the DecMan topology. No shared DevNet wallet signing, independent operator deployment or real-token settlement is implied.
+
 ## Suggested demonstration order
 
 Explain the proposed user's financing problem; show two separate dealer requests; accept one quote; show both settlement legs and the fixed due amount; demonstrate the losing dealer's limited view; change a simulated mark; show health factor below `1.00`, a margin call and a successful top-up; then close through repurchase. On a separate position, show that an uncured call requires a new post-cure mark still below `1.00` before the dealer can liquidate. Distinguish this from maturity default. End by stating what remains simulated and what the next integration will prove.

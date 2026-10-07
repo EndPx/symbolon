@@ -1,0 +1,26 @@
+{
+  "normalization": "CRLF to LF only",
+  "evidenceLfSha256": "c8a90bdd2818b7cdad5b8a53584f921702c85a11a11c1681bba711fdc0d267ad",
+  "sources": {
+    "scripts/shared-devnet.mjs": {
+      "recordedSha256": "2ee8bf774323bdc7e51c046de73b65772ed5d00dbc7fd90288462d3d0aee3e36",
+      "lfSha256": "2ee8bf774323bdc7e51c046de73b65772ed5d00dbc7fd90288462d3d0aee3e36"
+    },
+    "scripts/lib/shared-devnet.mjs": {
+      "recordedSha256": "1752a9037cb2f2cf383daddcf38f0d2cabc0209090b61ee3f85eb2de225072ca",
+      "lfSha256": "1752a9037cb2f2cf383daddcf38f0d2cabc0209090b61ee3f85eb2de225072ca"
+    },
+    "web/src/app/actions.ts": {
+      "recordedSha256": "db9bb516701971433836a2943becd9da0512e525e51f6ab9a63d6d057aff6ceb",
+      "lfSha256": "db9bb516701971433836a2943becd9da0512e525e51f6ab9a63d6d057aff6ceb"
+    },
+    "web/src/ledger/api.ts": {
+      "recordedSha256": "7b6dfd5dcb941a02b8c87521a8116d738cf1fa56d4a93ac49f6f381217fb7fda",
+      "lfSha256": "7b6dfd5dcb941a02b8c87521a8116d738cf1fa56d4a93ac49f6f381217fb7fda"
+    },
+    "web/src/ledger/symbolon.ts": {
+      "recordedSha256": "4b83db8b0ab6b9bba34bb6d5c5977e8509dac1ae1773a7db4fcceb1c1b7d384a",
+      "lfSha256": "4b83db8b0ab6b9bba34bb6d5c5977e8509dac1ae1773a7db4fcceb1c1b7d384a"
+    }
+  }
+}

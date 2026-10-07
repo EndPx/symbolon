@@ -5,7 +5,7 @@ Symbolon is built on Canton. The same release uses runtime profiles for DevNet a
 | Network | Current scope |
 | --- | --- |
 | [LocalNet](localnet.md) | Executed repo and three-participant BitSafe governance with simulated assets |
-| [Shared DevNet](devnet.md) | Older package installation; current full transaction remains unverified |
+| [Shared DevNet](devnet.md) | Current release executed governed mark, margin call, top-up and repurchase with simulated assets on one participant |
 | [MainNet](mainnet.md) | Production target; trading disabled until release gates pass |
 
 [Network promotion](../guides/network-promotion.md) explains runtime configuration and the integration work that cannot be solved by changing a setting.

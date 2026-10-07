@@ -1,6 +1,6 @@
 # Grofty MainNet integration
 
-Symbolon includes a dedicated transport for the official `@groftylabs/dapp-sdk`, pinned to **0.2.0**. It connects the wallet's own party to the repo action builders used by the desk. This is source-level integration; a successful local demo or fake-provider test does not establish a working MainNet repo. Current deployment evidence is limited to the core DAR vetted on shared **DevNet**. See [status and limitations](../reference/status.md).
+Symbolon includes a dedicated transport for the official `@groftylabs/dapp-sdk`, pinned to **0.2.0**. It connects the wallet's own party to the repo action builders used by the desk. This is source-level integration; a successful local demo or fake-provider test does not establish a working MainNet repo. The current release has executed a simulated-asset repo on shared **DevNet** through authenticated Ledger API submission, without Grofty or browser-wallet signing. See [status and limitations](../reference/status.md).
 
 Grofty is a MainNet path, separate from the [PartyLayer DevNet guide](wallet-devnet.md). Changing the runtime network profile does not move a Grofty account to DevNet or make local demo parties available in its wallet. The bounty is deferred; this adapter is a source prototype and is hidden from the submitted wallet picker. Runtime release checks block real trading.
 

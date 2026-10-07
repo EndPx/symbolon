@@ -8,7 +8,9 @@ The name comes from the Greek *symbolon*: two matching halves of a token used to
 
 Open the [Symbolon desk](https://symbolon.endpx.cloud/app) for the application, and the [documentation](https://symbolon.gitbook.io/symbolon-docs/) for the product and technical guides. The [recorded local Canton workflow](docs/submission/symbolon-local-demo.mp4) shows the ledger-backed repo lifecycle. The target real-asset pair is **cBTC / USDCx**, with DevNet verification before MainNet promotion. [One release, runtime network profiles](docs/gitbook/guides/network-promotion.md) explains the configuration and remaining adapter work.
 
-The current core is **`symbolon-v2` v0.2.0**; old `symbolon-0.1.0` DevNet contracts are a separate baseline. On **5 October 2026**, the revised release passed **11 core Daml scripts, 2 BitSafe scripts and 27 frontend tests**. Native local Canton completed both lifecycle scripts at offsets **55 → 202** and the BitSafe threshold-to-margin scenario at **202 → 261**. These are local simulated-asset results, not a completed shared DevNet or MainNet transaction.
+The current core is **`symbolon-v2` v0.2.0**; old `symbolon-0.1.0` DevNet contracts are a separate baseline. On **5 October 2026**, the revised release passed **11 core Daml scripts, 2 BitSafe scripts and 27 frontend tests**. Native local Canton completed both lifecycle scripts at offsets **55 → 202** and the BitSafe threshold-to-margin scenario at **202 → 261**.
+
+On **7 October 2026**, the revised release completed a repo on **shared HackCanton DevNet**: two governance confirmations published a lower simulated mark, followed by a margin call, top-up and `ClosedRepo: Repurchased`. The [judge evidence](docs/submission/evidence/shared-devnet.md) retains **20 committed receipts, one expected threshold rejection and five timestamped snapshots** at offsets **2293352 → 2293507**. This used the frontend action builders through authenticated Ledger API submission on one participant, with simulated cBTC-demo / USDCx-demo. It does not establish wallet signing, DevNet decentralized-party hosting or real-token settlement.
 
 ## What works
 
@@ -74,9 +76,9 @@ The newer liquidation browser run used a separate one-dealer 1,000 CUSD / 15 CET
 
 ## Wallets and deployment
 
-The core `symbolon-0.1.0` package is uploaded and **Vetted** on shared DevNet participant `hackcanton-devnet-3`, verified in the NODERS Console on September 23, 2026 WIB. [Deployment evidence and package ID](docs/gitbook/reference/status.md#shared-devnet-package-installation) distinguish this installation from the still-unverified shared-network wallet flow.
+The current **symbolon-v2 v0.2.0** and **symbolon-bitsafe v0.2.0** packages are uploaded and **Vetted** on shared DevNet participant `hackcanton-devnet-3`. The older `symbolon-0.1.0` installation remains a separate baseline. [Deployment evidence and package IDs](docs/gitbook/deployments/devnet.md) record the completed current-release repo and its remaining wallet/real-asset boundaries.
 
-That DevNet package predates the health-factor liquidation change. The rebuilt DAR has a different package ID and has not been uploaded or vetted on shared DevNet.
+[Shared DevNet provisioning and reproduction](docs/submission/shared-devnet-proof.md) explains wallet onboarding, Console party setup and the local credential helper. To check retained evidence without connecting to a network, run `node scripts/verify-shared-devnet-evidence.mjs`.
 
 The desk supports PartyLayer wallets for its configured network. A dedicated [Grofty Wallet adapter](docs/gitbook/guides/grofty.md) also remains in source through the official `@groftylabs/dapp-sdk@0.2.0`, but Grofty is **deferred and outside the current submission scope**. It is MainNet-only, requires extension 2.0.4 or newer, and has no verified Symbolon MainNet transaction. Never place access tokens or passwords in `VITE_` variables. The [wallet/DevNet guide](docs/gitbook/guides/wallet-devnet.md) distinguishes package upload, party allocation and a verified wallet transaction.
 
@@ -86,4 +88,4 @@ There is no MainNet Symbolon package/asset deployment or Grofty-signed product t
 
 The repository includes a pre-existing scaffold committed on **August 28, 2026**. HackCanton delivery began September 18; disclose the baseline and describe the delivery-phase changes separately. [Submission evidence](docs/gitbook/mission/submission.md) records the required distinctions.
 
-The active challenge direction is the [BitSafe Contribution Pool LocalNet path](docs/gitbook/mission/challenges.md). The Grofty adapter remains in source but is deferred. The verified DecMan integration is confined to the official LocalNet. Real cBTC/USDCx, independent hosting and a completed shared DevNet or MainNet wallet flow remain unverified. User validation and GTM remain [explicit hypotheses and a pilot plan](docs/gitbook/mission/validation.md), not invented traction.
+The active challenge direction is the [BitSafe Contribution Pool LocalNet path](docs/gitbook/mission/challenges.md). The Grofty adapter remains in source but is deferred. The verified DecMan integration is confined to the official LocalNet; the shared DevNet record adds ordinary hosted-party governance and repo execution. Real cBTC/USDCx, independent hosting and a completed shared DevNet or MainNet wallet flow remain unverified. User validation and GTM remain [explicit hypotheses and a pilot plan](docs/gitbook/mission/validation.md), not invented traction.

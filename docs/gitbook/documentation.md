@@ -17,6 +17,6 @@ A repo is an agreement to exchange an asset for cash and buy the asset back on a
 
 ## Current scope
 
-The working prototype uses simulated assets and prices. Its repo lifecycle has executed on local Canton; the BitSafe integration has also executed through three participants on the official LocalNet. The intended production pair is cBTC / USDCx. Official token adapters and a completed shared DevNet or MainNet transaction remain future milestones.
+The working prototype uses simulated assets and prices. Its repo lifecycle has executed on local Canton and shared HackCanton DevNet; the BitSafe integration has also executed through three participants on the official LocalNet. The shared-network run links a 2-of-3 governed mark to margin handling, top-up and repurchase on one hosted participant. The intended production pair is cBTC / USDCx. Official token adapters, shared-network wallet signing and MainNet settlement remain future milestones. [Shared DevNet](deployments/devnet.md) records the actual execution scope.
 
 The [application](https://symbolon.endpx.cloud/app) is the financing desk. [Local setup](guides/local-setup.md) explains how to run the ledger workflow; the [BitSafe guide](guides/bitsafe-localnet.md) explains threshold-controlled oracle marks. Recorded transaction evidence is available in the [public repository](https://github.com/EndPx/symbolon/tree/codex/submission-devnet/docs/submission).

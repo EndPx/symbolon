@@ -16,5 +16,10 @@ jobs:
           cache: npm
           cache-dependency-path: web/package-lock.json
       - run: npm ci
+      - name: Shared DevNet runner guards
+        run: node --test ../scripts/test/shared-devnet.test.mjs ../scripts/test/shared-devnet-launch.test.mjs
+      - name: Retained shared DevNet evidence
+        working-directory: .
+        run: node scripts/verify-shared-devnet-evidence.mjs
       - run: npm test
       - run: npm run build
