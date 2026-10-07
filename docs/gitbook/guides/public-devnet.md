@@ -6,6 +6,14 @@ validates the user's token and existing party rights. Account access is a hosted
 participant flow; it is not evidence of a browser wallet signature or MainNet
 custody. Access and party allocation require a HackCanton/NODERS account.
 
+The public access package is vetted and the enabled DevNet profile now references
+an actual dedicated dealer contract. The primary account borrower flow was
+verified through the frontend, including a trade from the public app URL. See
+[public receipts](../../submission/evidence/public-devnet.md) and
+[executed UI coverage](../../submission/evidence/frontend-e2e.md). The connected,
+missing-market, read-only and failed-read states are separate; a connected account
+is not asked to connect again because trading is paused.
+
 After connection, the app lists only parties for which that account has `CanActAs`.
 Ledger views filter only the selected party. Access/refresh tokens stay in memory;
 the browser stores a temporary PKCE verifier and public pending-command metadata,

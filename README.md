@@ -14,6 +14,8 @@ The current core is **`symbolon-v2` v0.2.0**; old `symbolon-0.1.0` DevNet contra
 
 On **7 October 2026**, the revised release completed a repo on **shared HackCanton DevNet**: two governance confirmations published a lower simulated mark, followed by a margin call, top-up and `ClosedRepo: Repurchased`. The [judge evidence](docs/submission/evidence/shared-devnet.md) retains **20 committed receipts, one expected threshold rejection and five timestamped snapshots** at offsets **2293352 → 2293507**. This used the frontend action builders through authenticated Ledger API submission on one participant, with simulated cBTC-demo / USDCx-demo. It does not establish wallet signing, DevNet decentralized-party hosting or real-token settlement.
 
+The public `/app` now supports HackCanton account sign-in and a verified DevNet borrower path through a disclosed, dedicated standing dealer. Browser-driven grant, funded quote, settlement, margin/top-up and repurchase runs were completed, including a trade directly at [symbolon.endpx.cloud/app](https://symbolon.endpx.cloud/app). [Public frontend receipts](docs/submission/evidence/public-devnet.md) and [E2E coverage](docs/submission/evidence/frontend-e2e.md) record the executed paths and their limits. These are hosted-account transactions with simulated assets; MainNet and wallet-signed execution remain separate work.
+
 ## What works
 
 - Separate private RFQs and funded quotes for each counterparty.

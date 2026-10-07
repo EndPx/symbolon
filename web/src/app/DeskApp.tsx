@@ -537,7 +537,7 @@ function Workspace({ session: s, connect, demoParties, switchParty, disconnect }
     }
     if (lock.current || error || s.pendingCommand?.()) return false;
     lock.current = true;
-    setReceipt({ phase: "pending", label, detail: s.kind==="account" ? "Waiting for the participant to confirm your account's action. Asset preparation may require more than one transaction." : "Awaiting wallet authorization and ledger confirmation. Asset preparation may require more than one transaction." });
+    setReceipt({ phase: "pending", label, detail: s.kind==="account" ? "Waiting for the participant to confirm your account's action. Asset preparation may require more than one transaction." : s.kind==="sandbox" ? "Waiting for the local Canton ledger to confirm the action. Asset preparation may require more than one transaction." : "Awaiting wallet authorization and ledger confirmation. Asset preparation may require more than one transaction." });
     try {
       const updateId = await action();
       const ledger = s.lastReceipt?.();
@@ -607,7 +607,7 @@ function Workspace({ session: s, connect, demoParties, switchParty, disconnect }
     <main className="desk-body" id="desk-content">
       {deploymentFailure() && <p className="session-error" role="alert">Deployment configuration unavailable. Remote signing is paused. {deploymentFailure()}</p>}
       {["wallet","account"].includes(s.kind) && !trading && <p className="session-error" role="status">{tradingBlocker(s.networkId)}</p>}
-      {error && <div className="ledger-error" role="alert"><strong>Ledger unavailable</strong><p>{error}</p><p className="sm">Showing the last successful read. Trading is paused until refresh succeeds. Check the participant connection and wallet permissions.</p></div>}
+      {error && <div className="ledger-error" role="alert"><strong>Ledger unavailable</strong><p>{error}</p><p className="sm">{st?"Showing the last successful read.":"No ledger data is available yet."} Trading is paused until refresh succeeds. Check the participant connection and wallet permissions.</p></div>}
       <div className="receipt-region" aria-live="polite" aria-atomic="true">{receipt && <div className={`transaction-receipt ${receipt.phase}`}>
         <strong>{receipt.phase === "pending" ? "Pending" : receipt.phase === "succeeded" ? "Confirmed" : receipt.phase==="unconfirmed"?"Unconfirmed":"Failed"} · {receipt.label}</strong>
         {receipt.detail && <p>{receipt.detail}</p>}{receipt.updateId && <details><summary>Ledger update receipt</summary><code>{receipt.updateId}</code>{receipt.ledger&&<><dl className="terms"><div><dt>Command ID</dt><dd><code>{receipt.ledger.commandId}</code></dd></div><div><dt>Ledger offset</dt><dd>{receipt.ledger.offset}</dd></div><div><dt>Recorded</dt><dd>{receipt.ledger.recordTime}</dd></div><div><dt>Synchronizer</dt><dd><code>{receipt.ledger.synchronizerId}</code></dd></div></dl><button className="ghost sm" onClick={()=>downloadReceipt(receipt.ledger!)}>Download receipt</button></>}</details>}

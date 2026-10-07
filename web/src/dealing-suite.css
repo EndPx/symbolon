@@ -609,6 +609,10 @@
 .public-access-balances span { font-size: .75rem; color: var(--ink-soft); }
 .public-access-balances strong { font-family: "Courier Prime", monospace; }
 .account-connect { width: 100%; margin-block: var(--desk-space-16, 16px); }
+@media (max-width: 1000px) {
+  /* A wrapped account header must not obscure in-page section navigation. */
+  .desk-head { position: static; }
+}
 .transaction-receipt.unconfirmed { border-color: var(--desk-danger, #7a2f1c); }
 
 /* Provider artwork stays recognizable within the existing paper connection sheet. */

@@ -4,6 +4,16 @@ On 7 October 2026, Symbolon's browser frontend completed two internal repo lifec
 
 The frontend was served locally during these initial browser checks. The ledger was the actual shared DevNet. These are hosted-account transactions, not Console Wallet signatures, MainNet settlement or external customer adoption. Assets and valuation marks are simulated.
 
+The enabled release was then deployed to `https://symbolon.endpx.cloud/app`. A third trade ran entirely from that public URL: the primary borrower requested 100 USDCx-demo for 14 days, reviewed 5.2% and `100.2022222222` before settlement, then repurchased and recovered all 0.0025 cBTC-demo. No LocalNet party picker exists in the deployed app. The account showed no Read-only label and no Connect CTA while authenticated.
+
+| Public-URL operation | Ledger offset | Update ID |
+| --- | ---: | --- |
+| Funded quote | 2329102 | `1220d2f54a45e7dcc8355abb59d640aeded78c78d71a5d29d816d0d523d38c9bc1a8` |
+| Settlement | 2329210 | `1220a8c583188e0f17094f9cb17121d03c12b3542b7e8ae82bf1afc9501745e76c4d` |
+| Repurchase | 2329296 | `12202e29ebe191a708ab834208adda31d8a89722ec77f4cdafbb5b44752c220d1c8e` |
+
+The public app also recovered after a deliberately blocked first ledger read, and its reference-mark refresh committed at offset 2332773 (`1220890e08b17ed971eb606f6af1b39fb411fffdfd29431fed6eb50c0cc9c4bc59f7`). These network fault checks only interrupted reads; they did not replay a financial submission.
+
 ## Deployment identity
 
 - Participant: `hackcanton-devnet-3::12204a9d883d1158141d8f099d06dd2e42cb52615deb42da5a46f042c8d0e1dbdf0e`
@@ -54,4 +64,4 @@ The redacted closing receipt is [public-devnet-repurchase.json](public-devnet-re
 
 All roles in these runs are controlled by one internal account on one hosted participant. The price change was a single-operator simulated mark. The separate [BitSafe LocalNet record](bitsafe-localnet.json) demonstrates threshold-governed publication through three DecMan services; this browser run does not claim that topology on shared DevNet.
 
-These runs establish the public-contract claim, funded quote, settlement, margin/top-up and repurchase paths through the frontend. Full UI coverage of substitutions, expiry, liquidation, maturity defaults, responsive states and wallet-signed transactions is tracked separately. Production cBTC/USDCx adapters, live valuation and MainNet operating controls remain future work.
+These runs establish the public-contract claim, funded quote, settlement, margin/top-up and repurchase paths through the frontend. Additional LocalNet UI coverage is documented in [frontend-e2e.md](frontend-e2e.md). Wallet-signed transactions, production cBTC/USDCx adapters, live valuation and MainNet operating controls remain future work.
