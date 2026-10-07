@@ -2,11 +2,13 @@
 
 **A confidential, fixed-rate bilateral repo desk on Canton.**
 
-A treasury team requests private quotes from selected dealers, transfers collateral against cash atomically, and sees the agreed repurchase amount before accepting. The annualized rate is fixed for that transaction; collateral risk, margin calls, and counterparty risk remain.
+Floating-rate borrowing leaves future interest expense uncertain. Symbolon lets a borrower agree a dealer's fixed annualized rate and exact principal-plus-interest repurchase amount before accepting financing on Canton. Cash and pledged collateral settle atomically. The benefit is a known contractual repayment amount; network fees, collateral maintenance, margin calls and counterparty risk remain.
 
 The name comes from the Greek *symbolon*: two matching halves of a token used to recognize an agreement. Symbolon applies that idea to bilateral trade terms with explicit, limited ledger visibility.
 
 Open the [Symbolon desk](https://symbolon.endpx.cloud/app) for the application, and the [documentation](https://symbolon.gitbook.io/symbolon-docs/) for the product and technical guides. The [recorded local Canton workflow](docs/submission/symbolon-local-demo.mp4) shows the ledger-backed repo lifecycle. The target real-asset pair is **cBTC / USDCx**, with DevNet verification before MainNet promotion. [One release, runtime network profiles](docs/gitbook/guides/network-promotion.md) explains the configuration and remaining adapter work.
+
+[Submission text pack](docs/submission/form/README.md) contains separate Value, ICP, Metrics, GTM and project-page Markdown. It distinguishes implemented behavior from customer hypotheses and labels synthetic test actors separately from users.
 
 The current core is **`symbolon-v2` v0.2.0**; old `symbolon-0.1.0` DevNet contracts are a separate baseline. On **5 October 2026**, the revised release passed **11 core Daml scripts, 2 BitSafe scripts and 27 frontend tests**. Native local Canton completed both lifecycle scripts at offsets **55 → 202** and the BitSafe threshold-to-margin scenario at **202 → 261**.
 

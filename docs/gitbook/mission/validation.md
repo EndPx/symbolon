@@ -6,6 +6,8 @@ The initial customer profile is a treasury operator at a small or mid-sized digi
 
 | Hypothesis | Evidence to seek | Evidence against it |
 | --- | --- | --- |
+| Floating-rate changes materially disrupt a treasury's repayment budget | Last actual rate change, revised expense and decision made | Rate uncertainty is immaterial or an existing fixed arrangement already meets the need |
+| A known repayment amount justifies fixed-term trade-offs | Accepted premium, term and early repayment policy after a concrete example | Users prefer flexible floating borrowing or reject the fixed quote's cost |
 | Temporary funding against held assets is a recurring need | Recent concrete transactions and frequency | Need is rare or assets are not financeable |
 | Coordination is a material source of friction | Time spent, handoffs, failed settlement or reconciliation work | Existing tools resolve it adequately |
 | Private dealer comparison matters | Specific information the operator cannot publish | Users prefer a public venue or have no relevant concern |
@@ -14,7 +16,7 @@ The initial customer profile is a treasury operator at a small or mid-sized digi
 
 ## Discovery interviews
 
-Seek an initial group of 5–8 relevant operators across both sides of the trade. Ask about the last completed funding transaction before showing a product pitch. Request the steps, elapsed time to usable cash, teams involved, asset restrictions, documents or tools used, and the most costly exception. Do not ask respondents merely whether they like a hypothetical fixed-rate product.
+Seek an initial group of 5–8 relevant operators across both sides of the trade. Before showing the product, ask about the last financing decision, how its interest expense was budgeted, whether the realized rate changed, and whether that change caused a concrete decision or loss. Then investigate fixed-rate premium tolerance, early repayment needs, counterparty/asset access and operational exceptions. Do not substitute liking a hypothetical fixed-rate product for observed pain or willingness to switch.
 
 Show the prototype only after recording the current process. Ask the respondent to request a quote, interpret the due amount, respond to a margin call, and explain what information another dealer should see. Record observed confusion separately from suggestions and compliments.
 

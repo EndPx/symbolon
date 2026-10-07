@@ -1,6 +1,6 @@
 # Solution
 
-Symbolon combines private bilateral quotes, a fixed repurchase amount, and collateral management on Canton. The borrower compares offers addressed to them; each dealer manages its own request, quote, and position.
+Symbolon makes the contractual principal-plus-interest amount known before financing is accepted. A dealer offers a fixed annualized rate for the requested term; the borrower compares private quotes and accepts an exact repurchase amount. Collateral management and controlled visibility support that agreement on Canton. Each dealer manages its own request, quote and position.
 
 ## Agree the economics before moving assets
 
@@ -18,4 +18,4 @@ After an uncured call, dealer-led liquidation requires the elapsed cure window a
 
 The BitSafe integration places simulated price-mark publication under 2-of-3 governance. A single confirmation cannot execute the proposal; two confirmations can publish the mark. The accepted mark affects repo health factor and margin behavior.
 
-This addresses unilateral control over a sensitive input. It does not establish a correct market price or independent operators. The [integration guide](../../guides/bitsafe-localnet.md) provides the working LocalNet setup and evidence.
+This demonstrates authorization on the governed action path. It does not establish a correct market price, independent operators or an operator-resistant oracle. An account with native authority to act as the ordinary oracle party can invoke its oracle choices directly in the shared-node prototype. Production needs appropriate authority/hosting policy and verified price provenance. The [integration guide](../../guides/bitsafe-localnet.md) provides the working LocalNet setup and evidence.
