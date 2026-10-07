@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { defaultDeployment, parseDeployment, tradingBlocker } from "../src/ledger/deployment.ts";
+import { defaultDeployment, networkLabel, parseDeployment, tradingBlocker } from "../src/ledger/deployment.ts";
 const hash = "a".repeat(64);
 const complete = () => ({ ...structuredClone(defaultDeployment), tradingEnabled: true,
   participant: "https://participant.example.org", synchronizerId: "sync::123", corePackageId: hash,
@@ -30,9 +30,21 @@ test("deployment parsing rejects wrong network, unsafe endpoints, package hashes
     { participant: "http://participant.example.org" }, { participant: "https://user:password@participant.example.org" },
     { participant: "https://participant.example.org?token=secret" }, { tradingEnabled: "yes" },
     { assets: { cash: { symbol: "USDCx", admin: null, adapter: "cip56", packageIds: [] } } },
+    { assets: { ...complete().assets, secret: { token: "must-not-be-public" } } },
   ]) assert.throws(() => parseDeployment({ ...complete(), ...change }));
 });
 test("an unavailable runtime configuration disables remote signing by default", () => {
   assert.match(tradingBlocker("devnet", defaultDeployment)!, /disabled/);
   assert.match(tradingBlocker("mainnet", defaultDeployment)!, /uses devnet/);
+});
+test("LocalNet stays a separate simulation profile and cannot authorize remote signing", () => {
+  const localnet = parseDeployment({ ...complete(), network: "localnet", walletNetwork: "localnet", participant: null, tradingEnabled: false });
+  assert.equal(networkLabel(localnet.network), "LocalNet");
+  for (const network of ["localnet", "devnet", "mainnet", "canton:da-devnet"]) {
+    assert.match(tradingBlocker(network, localnet)!, /Remote wallet and hosted-account signing are disabled/);
+  }
+  for (const change of [{ participant: "https://remote.example" }, { tradingEnabled: true }, { walletNetwork: "devnet" },
+    { assets: { ...localnet.assets, cash: { ...localnet.assets.cash, adapter: "cip56" } } }]) {
+    assert.throws(() => parseDeployment({ ...localnet, ...change }));
+  }
 });

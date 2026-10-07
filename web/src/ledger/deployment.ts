@@ -9,7 +9,7 @@ export interface AssetDeployment {
 }
 export interface Deployment {
   schemaVersion: 1;
-  network: "devnet" | "mainnet";
+  network: "localnet" | "devnet" | "mainnet";
   walletNetwork: string;
   participant: string | null;
   synchronizerId: string | null;
@@ -25,17 +25,20 @@ export interface Deployment {
 }
 export const normalizeNetwork = (value?: string) => {
   const name = value?.toLowerCase();
+  if (name === "localnet") return "localnet";
   if (["devnet", "canton:da-devnet", "canton:devnet", "canton_network_dev"].includes(name ?? "")) return "devnet";
   if (["mainnet", "canton:da-mainnet", "canton:mainnet", "canton_network"].includes(name ?? "")) return "mainnet";
   return name;
 };
+export const networkLabel = (network: string = active.network): string =>
+  (({ localnet: "LocalNet", devnet: "DevNet", mainnet: "MainNet" } as Record<string, string>)[normalizeNetwork(network) ?? ""] ?? network);
 const packageHash = /^[a-f0-9]{64}$/;
 export function parseDeployment(value: unknown): Deployment {
   if (!value || typeof value !== "object") throw new Error("Missing deployment configuration.");
   const d = value as Deployment;
   const allowed = ["schemaVersion", "network", "walletNetwork", "participant", "synchronizerId", "corePackageId", "tradingEnabled", "releaseEvidence", "assets", "publicPackageId", "publicDesk"];
   if (Object.keys(d).some(key => !allowed.includes(key))) throw new Error("Unexpected deployment field. Credentials must stay outside public configuration.");
-  if (d.schemaVersion !== 1 || !["devnet", "mainnet"].includes(d.network)
+  if (d.schemaVersion !== 1 || !["localnet", "devnet", "mainnet"].includes(d.network)
     || normalizeNetwork(d.walletNetwork) !== d.network || typeof d.tradingEnabled !== "boolean") {
     throw new Error("Invalid deployment network or schema.");
   }
@@ -44,6 +47,10 @@ export function parseDeployment(value: unknown): Deployment {
   }
   if (d.corePackageId !== null && !packageHash.test(d.corePackageId)) throw new Error("Invalid core package ID.");
   if (d.publicPackageId != null && !packageHash.test(d.publicPackageId)) throw new Error("Invalid public access package ID.");
+  if (d.network === "localnet" && (d.participant !== null || d.tradingEnabled || d.publicDesk != null || d.publicPackageId != null)) {
+    throw new Error("LocalNet must use the development proxy with remote signing disabled.");
+  }
+  if (Object.keys(d.assets ?? {}).some(key => !["collateral", "cash"].includes(key))) throw new Error("Unexpected deployment asset field.");
   if (d.publicDesk != null) {
     const p = d.publicDesk;
     if (!d.publicPackageId || !d.synchronizerId || !p.operator?.includes("::")
@@ -69,6 +76,7 @@ export function parseDeployment(value: unknown): Deployment {
       throw new Error(`Invalid ${role} asset identity.`);
     }
     if (Object.keys(a).some(key => !["symbol", "admin", "adapter", "packageIds"].includes(key))) throw new Error(`Unexpected ${role} asset field.`);
+    if (d.network === "localnet" && a.adapter !== "demo-holding") throw new Error("LocalNet supports demo holdings only.");
   }
   return d;
 }
@@ -97,8 +105,9 @@ export async function loadDeployment() {
   }
 }
 export function tradingBlocker(network?: string, d = active): string | null {
+  if (d.network === "localnet") return "LocalNet uses the development party picker. Remote wallet and hosted-account signing are disabled.";
   if (normalizeNetwork(network) !== d.network) return `This deployment uses ${d.network}. Connect a wallet on that network.`;
-  if (!d.tradingEnabled) return `${d.network === "mainnet" ? "MainNet" : "DevNet"} trading is disabled in this deployment configuration.`;
+  if (!d.tradingEnabled) return `${networkLabel(d.network)} trading is disabled in this deployment configuration.`;
   if (!d.corePackageId || !d.participant || !d.synchronizerId || !d.releaseEvidence) return "The deployment needs a pinned package, participant, synchronizer and release evidence.";
   // This release has only the trusted-issuer demo adapter. Configuration cannot
   // make a simulated Holding into a real cBTC/USDCx contract.

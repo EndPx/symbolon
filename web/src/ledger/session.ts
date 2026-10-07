@@ -61,12 +61,15 @@ export const canTrade = (s: Session | null): boolean => s !== null &&
 // A deployed app must obtain authority through a wallet or authenticated hosted account.
 export function sandboxModeEnabled(): boolean {
   return typeof window !== "undefined" && ["localhost", "127.0.0.1", "[::1]"].includes(window.location.hostname)
-    && (import.meta.env?.DEV || import.meta.env?.VITE_ENABLE_LOCAL_DEMO === "true");
+    && !!import.meta.env?.DEV && deployment().network !== "mainnet";
 }
 function requireSandbox() {
   if (!sandboxModeEnabled()) throw new Error("The demo party picker is only available on a local demo server.");
 }
-export function sandboxApi() { return new LedgerApi(sandboxTransport(), "symbolon-local"); }
+export function sandboxApi() {
+  const userId = import.meta.env?.DEV ? import.meta.env.VITE_LOCAL_LEDGER_USER_ID ?? "symbolon-local" : "symbolon-local";
+  return new LedgerApi(sandboxTransport(), userId);
+}
 
 export function browseSession(readParty?: string): Session {
   return {
@@ -105,9 +108,10 @@ export function connectSandbox(party: string): Session {
   const api = sandboxApi();
   remember({ kind: "sandbox", party });
   const session: Session = {
-    kind: "sandbox", party, label: partyLabel(party), networkId: "local",
+    kind: "sandbox", party, label: partyLabel(party), networkId: deployment().network === "localnet" ? "localnet" : "local",
     read: () => { requireSandbox(); return api.activeContracts(party); },
-    submit: (commands, options) => { requireSandbox(); return api.submit(party, commands, options); },
+    submit: (commands, options) => { requireSandbox(); return api.submit(party, commands,
+      deployment().network === "localnet" ? { ...options, ...deploymentSubmissionOptions() } : options); },
     async disconnect() { if (currentSession === session) remember(null); },
   };
   return activate(session);
@@ -135,6 +139,7 @@ const walletMarks: Record<string, string> = {
   console: "/wallets/console.png", loop: "/wallets/loop.svg", send: "/wallets/send.jpg",
 };
 export async function listWalletOptions(network = walletNetwork()): Promise<WalletOption[]> {
+  if (deployment().network === "localnet") return [];
   // Grofty bounty work is deferred. Keep the prototype adapter in source while
   // the submitted product exposes its configured development wallet path.
   return listSecondaryWallets(network);
@@ -207,6 +212,7 @@ function walletSession(c: PartyLayerClient, s: WalletSession, network: string): 
 /** Ignore a late connection response without revoking the user's wallet permission. */
 export function cancelWalletConnection() { connectionRevision++; }
 export async function connectWallet(walletId?: string, network = walletNetwork()): Promise<Session> {
+  if (deployment().network === "localnet") throw new Error("Use the LocalNet development party picker. Remote wallet connections are disabled in this profile.");
   const revision = ++connectionRevision;
   if (walletId === "console") {
     const { openConsoleSession } = await import("./console");
@@ -247,6 +253,7 @@ function bootstrapCommand(commands: Command[], party: string) {
     && create.createArguments.operator === party;
 }
 export async function connectAccount(party?: string): Promise<Session | null> {
+  if (deployment().network === "localnet") return null;
   const revision = ++connectionRevision;
   const account = activeAccountContext() ?? await finishAccountConnection();
   requireCurrentConnection(revision);
@@ -316,6 +323,7 @@ export async function restoreSession(): Promise<Session | null> {
       requireCurrentConnection(revision);
       if (parties.includes(saved.party)) return connectSandbox(saved.party);
     } else {
+      if (deployment().network === "localnet") { remember(null); return null; }
       if (saved.network !== walletNetwork()) { remember(null); return null; }
       if(saved.walletId === "console") {
         const { openConsoleSession } = await import("./console");

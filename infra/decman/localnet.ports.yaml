@@ -1,0 +1,29 @@
+# Keep the official sandbox private and isolate it from other VPS workloads.
+# !override requires Docker Compose 2.24.4 or newer.
+services:
+  postgres:
+    container_name: symbolon-localnet-postgres
+    restart: unless-stopped
+    logging: &logs
+      driver: json-file
+      options: { max-size: "20m", max-file: "3" }
+    ports: !reset []
+  canton:
+    container_name: symbolon-localnet-canton
+    restart: unless-stopped
+    logging: *logs
+    ports: !override
+      - "127.0.0.1:13901:3901"
+      - "127.0.0.1:13902:3902"
+      - "127.0.0.1:3975:3975"
+      - "127.0.0.1:2901:2901"
+      - "127.0.0.1:2902:2902"
+      - "127.0.0.1:2975:2975"
+      - "127.0.0.1:4901:4901"
+      - "127.0.0.1:4902:4902"
+      - "127.0.0.1:4975:4975"
+  splice:
+    container_name: symbolon-localnet-splice
+    restart: unless-stopped
+    logging: *logs
+    ports: !reset []

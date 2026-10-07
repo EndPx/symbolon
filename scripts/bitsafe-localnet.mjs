@@ -83,7 +83,7 @@ const vetting = await Promise.all(dmPorts.map(port => request(port, "/packages/v
 const runId = randomUUID().slice(0, 8);
 const roles = {};
 for (const name of ["issuer", "borrower", "dealer", "outsider"]) {
-  const result = await request(3975, "/v2/parties", "POST", { party_id_hint: `symbolon-${name}-${runId}`, local_metadata: { annotations: {} } }, true);
+  const result = await request(3975, "/v2/parties", "POST", { partyIdHint: `${name}-symbolon-${runId}`, localMetadata: { annotations: {} }, identityProviderId: "" }, true);
   roles[name] = result.partyDetails.party;
 }
 await request(3975, "/v2/users/ledger-api-user/rights", "POST", {
@@ -156,10 +156,12 @@ const closed = one((await book(borrower.party)).closed, "closing receipt");
 assert.equal(closed.payload.outcome, "Repurchased");
 assert.equal(balanceOf((await book(borrower.party)).holdings, borrower.party, "cBTC-demo", issuer.party), 0.1);
 const audits = await Promise.all(dmPorts.map(port => poll(`chain audit on ${port}`, () => request(port, `/governance/chain-audit?party_id=${encodeURIComponent(party)}&limit=50&refresh=true`),
-  data => new Set((data.entries ?? []).filter(entry => entry.event_type === "execute" && entry.update_id).map(entry => entry.update_id)).size >= 2)));
+  data => [initialized.proposalCid, marked.proposalCid].every(cid => data.entries?.some(entry =>
+    entry.event_type === "execute" && entry.choice === "GovernableAction_Execute" && entry.contract_id === cid && entry.update_id)))));
 // Each node must see the same committed executions, not merely local REST logs.
-const updates = audits.map(data => new Set(data.entries.filter(entry => entry.event_type === "execute").map(entry => entry.update_id)));
-assert.ok(updates.every(ids => ids.size >= 2 && ids.size === updates[0].size), "Two distinct, equally observed execution updates per participant");
+const updates = audits.map(data => new Set(data.entries.filter(entry => entry.event_type === "execute"
+  && entry.choice === "GovernableAction_Execute" && [initialized.proposalCid, marked.proposalCid].includes(entry.contract_id)).map(entry => entry.update_id)));
+assert.ok(updates.every(ids => ids.size === 2), "Two current-run execution updates per participant");
 assert.ok([...updates[0]].every(id => id && updates[1].has(id) && updates[2].has(id)), "Consistent execution receipts across participants");
 const evidence = { checkedAt: new Date().toISOString(), environment: "official disposable BitSafe three-participant LocalNet",
   sourceCommit: commit, decentralizedParty: party, participantIds: pids, roles, initialized, marked, vetting, audits,
