@@ -23,7 +23,7 @@ The public `/app` now supports HackCanton account sign-in and a verified DevNet 
 - Atomic cash/collateral settlement, ACT/360 fixed repurchase price, full-price early repurchase.
 - Agreed oracle, issuer and cash denomination checks; freshness and initial margin validation.
 - Health factor, margin call, sufficient top-up, recovered-mark call resolution, negotiated collateral substitution, dealer liquidation after an uncured call, separate maturity default and closing receipts.
-- Borrower/dealer/oracle screens, a visible financing-pair browser, available versus locked holdings, transaction receipts, local demo roles and wallet transport.
+- One market workspace with Borrow/Lend actions, Overview/Offers/Positions/Activity tabs, issuer-separated holdings and committed transaction receipts. Account details contain authorized party switching and oracle administration.
 
 This is a **working prototype using simulated assets and marks**. `Symbolon.DemoAsset.Holding` is not a CIP-56 token. Its trusted issuer can mint/archive holdings and sees asset movements. Per-party visibility tests on one local participant do not prove separation from that participant's administrator or independent hosting. [Read the privacy boundaries](docs/gitbook/architecture/privacy-and-trust.md).
 
@@ -34,6 +34,8 @@ This is a **working prototype using simulated assets and marks**. `Symbolon.Demo
 On **8 October 2026 WIB**, the three-participant/three-manager stack was installed on an existing VPS with private loopback ports and persistent storage. A browser repo on this installed LocalNet used a DecMan-approved mark for its margin call, topped up, and repurchased for the unchanged `1004.3333333333`. [Installed-run evidence](docs/submission/evidence/bitsafe-vps-localnet.md) contains matching all-node audits and five final browser receipts. All roles remain controlled by one operator; this is Contribution Pool evidence, without independent-operator or live DevNet decentralized-party claims.
 
 Follow the [LocalNet installation runbook](infra/decman/README.md) for Docker setup, SSH access and the separate frontend at `http://127.0.0.1:15173/app`. Its dedicated Vite config uses the installed LocalNet 0.6.12 / Canton API 3.5.8 / DecMan v1.8.0 and keeps sandbox authorization on the local server. The public app continues to use shared DevNet. **45 frontend tests and the production build pass** for this release; MainNet remains blocked.
+
+The **8 October market-terminal revision** replaces scrolling section navigation with actual tabs and displays the dealer role as **Lender**. Borrow/Lend changes the action form while preserving the connected signing party. Raw identities, party switching and oracle controls are under **Account → Advanced account controls**. The revised UI passes **49 frontend tests** and a browser LocalNet cycle covering request, lender offer, settlement, governed margin call, top-up and repurchase. The contractual repayment stayed `1004.3333333333` while health factor moved `1.43 → 0.86 → 1.03`. A further public-URL DevNet cycle confirmed automatic Positions/Activity navigation, an exact `105.25%` maintenance threshold and repurchase at `100.1011111111`; see the [terminal verification record](docs/submission/evidence/terminal-ux.md).
 
 ## Run the complete demo
 

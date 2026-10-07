@@ -4,6 +4,8 @@ The frontend uses React, TypeScript and Vite. `web/src/main.tsx` chooses the lan
 
 ## One session boundary
 
+The market terminal uses Markets/Portfolio views and true Overview/Offers/Positions/Activity tabs. Borrow/Lend changes the action panel without changing the session, and left-side tab changes preserve form inputs. Account details contain the authorized signing-party switch and oracle administration. Market requests, quotes and positions are filtered by agreed oracle, both issuers and both instrument names; ticker matches alone cannot mix markets. The compact layout does not publish a global order book or market-wide liquidity statistics.
+
 The session abstraction supplies the active party, a read operation, a command-submission operation and disconnect behavior. Local demo mode uses a development proxy. The existing wallet path delegates Ledger API requests through PartyLayer. Grofty has a dedicated SDK transport with own-party reads and a separate prepared-transaction operation. Read-only browsing must not silently impersonate a demo trader or show their private contracts.
 
 `restoreSession()` restores an already active wallet session without opening a connection prompt automatically. `sandboxModeEnabled()` requires loopback hosting and development mode or the explicit local-preview flag. In local mode, browsing may use the oracle's public demo marks; an external site remains empty until an authorized wallet is connected. The local role picker is never a substitute for remote party authentication.

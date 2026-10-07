@@ -628,3 +628,255 @@
   .desk-dialog .wallet-row { gap: var(--desk-space-3, 12px); padding-inline: var(--desk-space-2, 8px); }
   .desk-dialog .wallet-name { font-size: .875rem; }
 }
+
+/* Compact market terminal. Tokens and anatomy: DESIGN.md, 8 October UX contract. */
+.terminal {
+  --terminal-canvas: #f4f5f7; --terminal-surface: #fff; --terminal-soft: #fafbfc;
+  --terminal-text: #202733; --terminal-muted: #69727f; --terminal-border: #e1e4e8;
+  --terminal-radius: 12px; --terminal-control-radius: 8px; --terminal-motion: 150ms;
+  height: 100dvh; min-height: 0; display: flex; flex-direction: column; overflow: hidden;
+  background: var(--terminal-canvas); color: var(--terminal-text); font: 14px/1.5 "Libre Franklin", sans-serif;
+  --ink-warm: var(--terminal-text); --ink-soft: var(--terminal-muted);
+}
+.terminal *, .terminal *::before, .terminal *::after { box-sizing: border-box; }
+.terminal h1, .terminal h2, .terminal h3, .terminal p { margin: 0; }
+.terminal h1 { font: 400 24px/1.25 "Marcellus", serif; }
+.terminal h2 { font: 600 16px/1.4 "Libre Franklin", sans-serif; }
+.terminal h3 { font: 600 14px/1.5 "Libre Franklin", sans-serif; }
+.terminal small, .terminal .sm { font-size: 12px; line-height: 1.5; }
+.terminal .muted, .terminal-muted { color: var(--terminal-muted); }
+.terminal button, .terminal input, .terminal select, .terminal textarea { font-family: "Libre Franklin", sans-serif; letter-spacing: 0; }
+.terminal button { cursor: pointer; text-transform: none; }
+.terminal button:disabled { cursor: not-allowed; opacity: .5; }
+.terminal button:focus-visible, .terminal a:focus-visible, .terminal input:focus-visible, .terminal select:focus-visible, .terminal textarea:focus-visible { outline: 2px solid var(--antique-gold, #c9a227); outline-offset: 3px; }
+.terminal .seal, .terminal .ghost { min-height: 44px; border-radius: var(--terminal-control-radius); padding: 10px 16px; font-size: 13px; font-weight: 600; letter-spacing: 0; text-transform: none; transition: background-color var(--terminal-motion), color var(--terminal-motion); }
+.terminal .seal { background: var(--ink-navy, #0b1220); color: #fff; border: 1px solid var(--ink-navy, #0b1220); }
+.terminal .seal:hover:not(:disabled) { background: #202733; }
+.terminal .ghost { color: var(--terminal-text); border: 1px solid var(--terminal-border); background: var(--terminal-surface); }
+.terminal .ghost:hover:not(:disabled) { background: var(--terminal-soft); }
+.terminal .chip { padding: 8px 12px; border: 1px solid var(--terminal-border); border-radius: var(--terminal-control-radius); background: var(--terminal-soft); font: inherit; min-height: 40px; }
+.terminal .quiet { color: var(--terminal-text); text-decoration: underline; text-underline-offset: 3px; }
+.terminal-head { height: 64px; min-height: 64px; flex: 0 0 auto; display: flex; align-items: center; gap: 32px; padding: 0 24px; background: var(--ink-navy, #0b1220); color: #fff; }
+.terminal-head .brand { display: inline-flex; align-items: center; gap: 12px; color: #f4e9ce; font: 16px "Marcellus", serif; letter-spacing: .12em; white-space: nowrap; }
+.terminal-head .brand img { width: 24px; height: 24px; }
+.terminal-nav { display: flex; align-items: center; height: 100%; gap: 8px; }
+.terminal-nav button, .terminal-nav a { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 8px 16px; border: 0; border-radius: 8px; font: 500 14px "Libre Franklin", sans-serif; color: #d8c89e; background: transparent; text-decoration: none; }
+.terminal-nav button[aria-current], .terminal-nav button.active, .terminal-nav a[aria-current] { background: rgba(255,255,255,.08); color: #fff; }
+.terminal-account-button { margin-left: auto; min-height: 40px; display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; color: #fff; border: 1px solid rgba(255,255,255,.2); border-radius: 8px; background: transparent; font: 13px "Libre Franklin", sans-serif; }
+.terminal-account-button svg { width: 16px; height: 16px; }
+.terminal-head .terminal-network { margin-left: auto; color: #d8c89e; font-size: 12px; white-space: nowrap; }
+.terminal-head .terminal-network + .terminal-account-button { margin-left: 0; }
+.terminal-workspace { flex: 1; min-height: 0; width: 100%; padding: 20px 24px; overflow: auto; display: flex; flex-direction: column; gap: 16px; }
+.terminal-layout { display: grid; flex: 1; grid-template-columns: minmax(0,1fr) minmax(320px,380px); gap: 16px; min-height: 0; }
+.terminal-main { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 16px; }
+.terminal-market-header { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; padding: 12px 16px; background: var(--terminal-surface); border: 1px solid var(--terminal-border); border-radius: var(--terminal-radius); }
+.terminal-market-header h1, .terminal-market-header h2 { font: 400 22px "Marcellus", serif; }
+.terminal-pair-back { min-height: 40px; padding: 4px 8px; border: 0; background: transparent; color: var(--terminal-muted); font: 12px "Libre Franklin", sans-serif; }
+.terminal-pair-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-left: auto; font-size: 12px; color: var(--terminal-muted); }
+.terminal-stats { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); background: var(--terminal-surface); border: 1px solid var(--terminal-border); border-radius: var(--terminal-radius); }
+.terminal-metric { min-width: 0; padding: 16px 20px; display: grid; gap: 4px; border-right: 1px solid var(--terminal-border); }
+.terminal-metric:last-child { border-right: 0; }
+.terminal-metric > span, .terminal-metric dt { color: var(--terminal-muted); font-size: 12px; }
+.terminal-metric strong, .terminal-metric dd { margin: 0; font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.terminal-overview, .terminal-portfolio { min-width: 0; min-height: 0; }
+.terminal-overview-summary { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px 24px; padding: 20px; }
+.terminal-overview-summary > div { display: flex; justify-content: space-between; gap: 12px; font-variant-numeric: tabular-nums; }
+.terminal-overview-summary dt { color: var(--terminal-muted); }
+.terminal-overview-summary dd { margin: 0; text-align: right; }
+.terminal-tabs { display: flex; flex-wrap: wrap; gap: 20px; align-items: center; padding: 0 20px; border-bottom: 1px solid var(--terminal-border); background: var(--terminal-surface); }
+.terminal-tabs button { position: relative; min-height: 48px; padding: 12px 0; border: 0; border-bottom: 2px solid transparent; background: transparent; font: 500 14px "Libre Franklin", sans-serif; color: var(--terminal-muted); white-space: nowrap; }
+.terminal-tabs button[aria-selected=true], .terminal-tabs button.active { color: var(--terminal-text); border-bottom-color: var(--antique-gold, #c9a227); }
+.terminal-tabs button:hover { color: var(--terminal-text); }
+.terminal-tabs button small { display: inline-flex; margin-left: 6px; min-width: 18px; justify-content: center; background: var(--terminal-canvas); border-radius: 8px; }
+.terminal-tab-panel { min-height: 0; overflow: auto; flex: 1; }
+.terminal [hidden] { display: none !important; }
+.terminal-main > .terminal-tab-panel { background: var(--terminal-surface); border: 1px solid var(--terminal-border); border-top: 0; border-radius: 0 0 var(--terminal-radius) var(--terminal-radius); }
+.terminal-main > .terminal-tabs { margin-bottom: -16px; border: 1px solid var(--terminal-border); border-radius: var(--terminal-radius) var(--terminal-radius) 0 0; }
+.terminal-tab-count { display: inline-flex; justify-content: center; min-width: 18px; margin-left: 6px; padding-inline: 4px; font-size: 11px; border-radius: 6px; background: var(--terminal-canvas); }
+.terminal .terminal-account-button, .terminal .terminal-pair-back { min-height: 44px; }
+.terminal-tab-panel[hidden], .terminal-trade-panel[hidden] { display: none !important; }
+.terminal-content { display: flex; flex: 1; min-height: 0; flex-direction: column; border: 1px solid var(--terminal-border); border-radius: var(--terminal-radius); background: var(--terminal-surface); overflow: hidden; }
+.terminal-trade { min-height: 0; min-width: 0; overflow: auto; border: 1px solid var(--terminal-border); border-radius: var(--terminal-radius); background: var(--terminal-surface); align-self: stretch; }
+.terminal-trade-tabs { display: grid; grid-template-columns: 1fr 1fr; padding: 0 16px; border-bottom: 1px solid var(--terminal-border); }
+.terminal-trade-tabs button { min-height: 56px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--terminal-muted); font: 500 15px "Libre Franklin", sans-serif; }
+.terminal-trade-tabs button[aria-selected=true], .terminal-trade-tabs button.active { color: var(--terminal-text); border-bottom-color: var(--antique-gold, #c9a227); }
+.terminal-trade-panel { padding: 20px; }
+.terminal .panel { padding: 20px; margin: 0; border: 0; box-shadow: none; border-radius: 0; background: transparent; color: var(--terminal-text); min-width: 0; }
+.terminal .panel h2 { margin: 0 0 12px; }
+.terminal .panel h2 { font: 600 16px/1.4 "Libre Franklin", sans-serif; }
+.terminal h1 { text-transform: none; letter-spacing: 0; }
+.terminal .ticket-row > span:first-child { color: var(--terminal-muted); }
+.terminal .desk-field { display: flex; flex-direction: column; gap: 8px; font: 500 12px/1.5 "Libre Franklin", sans-serif; color: var(--terminal-text); }
+.terminal .desk-field small { color: var(--terminal-muted); font-weight: 400; }
+.terminal .panel .panel-lede { color: var(--terminal-muted); font-size: 12px; margin-bottom: 12px; line-height: 1.5; }
+.terminal-trade-panel > .panel { padding: 0; }
+.terminal .desk-form { display: grid; gap: 16px; }
+.terminal label.field, .terminal .field { display: flex; flex-direction: column; gap: 8px; color: var(--terminal-text); font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none; }
+.terminal .field small { font-weight: 400; color: var(--terminal-muted); }
+.terminal input:not([type=checkbox]), .terminal select, .terminal textarea { width: 100%; min-width: 0; min-height: 44px; padding: 12px; border: 1px solid var(--terminal-border); border-radius: var(--terminal-control-radius); background: var(--terminal-soft); color: var(--terminal-text); font: 14px/1.5 "Libre Franklin", sans-serif; }
+.terminal input[type=number] { font-variant-numeric: tabular-nums; }
+.terminal textarea { min-height: 72px; font-size: 12px; }
+.terminal .field-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.terminal .terms-disclosure, .terminal details.terminal-details { border-top: 1px solid var(--terminal-border); border-bottom: 0; padding: 12px 0; margin: 0; }
+.terminal details > summary { cursor: pointer; font-size: 12px; color: var(--terminal-muted); }
+.terminal details[open] > summary { margin-bottom: 12px; }
+.terminal .ticket-preview { padding: 12px 0; background: transparent; color: var(--terminal-text); border-top: 1px solid var(--terminal-border); border-bottom: 1px solid var(--terminal-border); }
+.terminal .ticket-row { padding: 4px 0; border: 0; font-size: 12px; display: flex; justify-content: space-between; gap: 12px; }
+.terminal .ticket-row > span { font-size: 12px; line-height: 1.5; }
+.terminal .ticket-row .tr-val { white-space: nowrap; }
+.terminal details > summary { min-height: 44px; padding-block: 12px; }
+.terminal .terms-disclosure:not([open]) { padding-block: 0; }
+.terminal .tr-val { color: var(--terminal-text); font-family: inherit; font-variant-numeric: tabular-nums; }
+.terminal-collateral-summary { padding: 12px; border: 1px solid var(--terminal-border); border-radius: 8px; background: var(--terminal-soft); display: grid; gap: 4px; font-size: 12px; }
+.terminal-collateral-summary strong { font-size: 16px; font-variant-numeric: tabular-nums; }
+.terminal-trade-note { margin-top: 12px !important; font-size: 12px; color: var(--terminal-muted); }
+.terminal .acts { display: flex; flex-wrap: wrap; gap: 8px; }
+.terminal .desk-form > .seal { width: 100%; }
+.terminal .rfq, .terminal .position { margin: 0; padding: 16px 0; border: 0; border-bottom: 1px solid var(--terminal-border); background: transparent; color: var(--terminal-text); }
+.terminal .rfq:first-child, .terminal .position:first-child { padding-top: 0; }
+.terminal .rfq:last-child, .terminal .position:last-child { border-bottom: 0; }
+.terminal .rfq p { margin-block: 4px; font-size: 12px; }
+.terminal .rate { font-family: inherit; font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--terminal-text); }
+.terminal .rfq-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.terminal .terms { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; margin-block: 12px; }
+.terminal .terms > div { min-width: 0; }
+.terminal .terms dt { color: var(--terminal-muted); font-size: 12px; letter-spacing: 0; text-transform: none; }
+.terminal .terms dd { margin: 4px 0 0; font: 500 14px "Libre Franklin", sans-serif; overflow-wrap: anywhere; }
+.terminal .health-meter { margin: 12px 0; }
+.terminal .row { padding: 12px 0; border-bottom: 1px solid var(--terminal-border); display: flex; justify-content: space-between; gap: 12px; font-size: 12px; }
+.terminal .balance-list { display: grid; gap: 0; }
+.terminal .balance-row { padding: 12px 0; border-bottom: 1px solid var(--terminal-border); display: grid; grid-template-columns: minmax(0,1fr) auto auto; gap: 20px; }
+.terminal .balance-row > div { display: grid; gap: 4px; }
+.terminal .balance-row small { color: var(--terminal-muted); }
+.terminal .bal-amt { color: var(--terminal-text); font: 500 16px "Libre Franklin", sans-serif; font-variant-numeric: tabular-nums; }
+.terminal .party-name { font-family: inherit; font-size: inherit; overflow-wrap: anywhere; }
+.terminal-status { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 8px; font-size: 12px; background: var(--terminal-canvas); color: var(--terminal-muted); }
+.terminal-status.stale { color: #7a2f1c; background: #fff3e8; }
+.terminal-status.fresh { color: #28604a; background: #edf6f1; }
+.terminal-inline-error { padding: 12px 16px; color: #7a2f1c; background: #fff3e8; font-size: 12px; }
+.terminal .transaction-receipt, .terminal .ledger-error, .terminal .session-error { margin: 0 0 12px; padding: 12px 16px; border: 1px solid var(--terminal-border); border-radius: 8px; background: var(--terminal-surface); color: var(--terminal-text); font-size: 12px; }
+.terminal .transaction-receipt strong { font-size: 13px; }
+.terminal .transaction-receipt code { font-size: 11px; overflow-wrap: anywhere; }
+.terminal .transaction-receipt details { margin-top: 4px; }
+.terminal .ledger-error p { margin-top: 4px; }
+.terminal .terminal-notices:empty { display: none; }
+.terminal .terminal-notices:has(> .receipt-region:only-child:empty) { display: none; }
+.terminal-notices { flex: 0 0 auto; }
+.terminal .terminal-notices .transaction-receipt { margin-bottom: 0; }
+.terminal-page-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
+.terminal-page-heading p { margin-top: 8px; color: var(--terminal-muted); }
+.terminal-market-browser { width: 100%; min-width: 0; }
+.terminal-market-filters { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+.terminal-market-filters label { display: grid; gap: 4px; font-size: 12px; }
+.terminal-market-filters select { width: auto; min-width: 160px; }
+.terminal-market-table { border: 1px solid var(--terminal-border); border-radius: var(--terminal-radius); overflow: hidden; background: var(--terminal-surface); }
+.terminal-market-columns, .terminal-market-row { display: grid; grid-template-columns: minmax(180px,1.5fr) 1fr 1.2fr .7fr 110px; align-items: center; gap: 20px; padding: 16px 24px; }
+.terminal-market-columns { color: var(--terminal-muted); font-size: 12px; border-bottom: 1px solid var(--terminal-border); background: var(--terminal-soft); }
+.terminal-market-row { width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--terminal-border); border-radius: 0; background: var(--terminal-surface); color: var(--terminal-text); font: 14px "Libre Franklin", sans-serif; min-height: 84px; transition: background-color 150ms; }
+.terminal-market-row:last-child { border-bottom: 0; }
+.terminal-market-row:hover { background: var(--terminal-soft); }
+.terminal-market-row > span, .terminal-market-row > strong { min-width: 0; }
+.terminal-market-row small { display: block; color: var(--terminal-muted); font-size: 12px; }
+.terminal-market-pair { display: grid; gap: 6px; }
+.terminal-market-pair > small { margin-left: 54px; }
+.terminal-pair-icons { display: inline-flex; align-items: center; gap: 0; min-width: 0; }
+.terminal-token { width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; color: #fff; flex: 0 0 auto; }
+.terminal-token.collateral { background: #c9a227; }
+.terminal-token.cash { background: #0b1220; border: 2px solid var(--terminal-surface); margin-left: -8px; }
+.terminal-token-names { margin-left: 12px; color: var(--terminal-text); font-size: 14px; font-weight: 600; }
+.terminal-token-names > span { margin-left: 4px; font-weight: 400; }
+.terminal-open { color: var(--terminal-text); font-size: 12px; text-align: right; }
+.terminal-empty { padding: 32px 20px; display: grid; gap: 12px; justify-items: start; }
+.terminal-empty p { color: var(--terminal-muted); max-width: 48ch; }
+.terminal .empty-state { padding: 16px 0; color: var(--terminal-muted); font-size: 13px; line-height: 1.5; }
+.terminal-list-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.terminal-portfolio { display: flex; flex-direction: column; height: 100%; background: var(--terminal-surface); border: 1px solid var(--terminal-border); border-radius: var(--terminal-radius); overflow: hidden; }
+.terminal-portfolio .terminal-tab-panel { padding: 4px 0; }
+.terminal .desk-dialog { max-width: min(620px,calc(100vw - 32px)); max-height: calc(100dvh - 40px); overflow: auto; padding: 24px; border: 1px solid var(--terminal-border); border-radius: 12px; color: var(--terminal-text); background: var(--terminal-surface); }
+.terminal .desk-dialog::backdrop { background: rgba(11,18,32,.48); }
+.terminal .dialog-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+.terminal .dialog-heading h2 { font: 600 18px "Libre Franklin", sans-serif; }
+.terminal .review-terms { display: grid; gap: 0; padding: 12px 0; }
+.terminal .decision-note { margin: 12px 0; padding: 12px; background: var(--terminal-soft); border-radius: 8px; font-size: 12px; }
+.terminal .party-detail { padding: 8px 0; }
+.terminal .party-detail code, .terminal-account-dialog code { font-size: 11px; overflow-wrap: anywhere; display: block; }
+.terminal .wallet-row { min-height: 72px; border-bottom: 1px solid var(--terminal-border); color: var(--terminal-text); }
+.terminal .wallet-name { font-size: 14px; }
+.terminal .wallet-mark { background: transparent; }
+.terminal .connection-network, .terminal .connection-help { font-size: 12px; color: var(--terminal-muted); }
+.terminal .public-access { margin: 0; }
+.terminal .public-access-balances { gap: 24px; }
+.terminal-onboarding { padding: 12px; margin-bottom: 16px; border: 1px solid var(--terminal-border); border-radius: 8px; background: var(--terminal-soft); }
+.terminal-onboarding p { color: var(--terminal-muted); font-size: 12px; margin-bottom: 12px; }
+.terminal-onboarding .acts { gap: 8px; }
+.terminal-dialog { --ink-warm: #202733; --ink-soft: #69727f; max-width: min(620px,calc(100vw - 32px)); max-height: calc(100dvh - 40px); overflow: auto; padding: 24px; border: 1px solid #e1e4e8; border-radius: 12px; color: #202733; background: #fff; font: 14px/1.5 "Libre Franklin", sans-serif; }
+.terminal-dialog::backdrop { background: rgba(11,18,32,.48); }
+.terminal-dialog .dialog-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+.terminal-dialog .dialog-heading h2 { font: 600 18px "Libre Franklin", sans-serif; margin: 0; }
+.terminal-dialog .ghost { min-height: 44px; padding: 10px 16px; border-radius: 8px; border: 1px solid #e1e4e8; color: #202733; font: 500 13px "Libre Franklin", sans-serif; background: #fff; }
+.terminal-dialog .wallet-row { min-height: 72px; border-color: #e1e4e8; color: #202733; }
+.terminal-dialog .connection-help, .terminal-dialog .connection-network, .terminal-dialog .wallet-name small, .terminal-dialog .wallet-note { color: #69727f; font: 12px/1.5 "Libre Franklin", sans-serif; }
+@media (max-width: 1100px) {
+  .terminal-layout { grid-template-columns: minmax(0,1fr) 330px; }
+  .terminal-head { gap: 16px; padding-inline: 20px; }
+  .terminal-workspace { padding: 16px; }
+  .terminal-tabs { gap: 16px; padding-inline: 16px; }
+  .terminal-market-columns, .terminal-market-row { grid-template-columns: minmax(160px,1.5fr) 1fr 1fr .7fr; gap: 12px; padding-inline: 16px; }
+  .terminal-market-columns > :last-child, .terminal-market-row > :last-child { display: none; }
+  .terminal-overview-summary { grid-template-columns: 1fr; }
+  .terminal-metric { padding: 12px; }
+  .terminal-metric strong { font-size: 18px; }
+}
+@media (max-width: 820px) {
+  .terminal { height: auto; min-height: 100dvh; overflow: visible; }
+  .terminal-head { flex-wrap: wrap; height: auto; min-height: 64px; gap: 8px 12px; padding: 12px 16px; }
+  .terminal-head .brand { margin-right: auto; }
+  .terminal-nav { order: 3; width: 100%; height: 44px; }
+  .terminal-head .terminal-network { margin-left: 0; }
+  .terminal-account-button { margin-left: 0; }
+  .terminal-workspace { overflow: visible; padding: 16px; }
+  .terminal-layout { flex: none; height: auto; grid-template-columns: minmax(0,1fr); }
+  .terminal-main, .terminal-trade { min-height: auto; overflow: visible; }
+  .terminal-layout > .terminal-main { display: contents; }
+  .terminal-layout .terminal-market-header { order: 0; }
+  .terminal-layout .terminal-stats { order: 1; }
+  .terminal-layout .terminal-trade { order: 2; }
+  .terminal-layout .terminal-main > .terminal-tabs { order: 3; }
+  .terminal-layout .terminal-main > .terminal-tab-panel { order: 4; }
+  .terminal-content { min-height: 280px; }
+  .terminal-tab-panel { max-height: 520px; }
+  .terminal-trade-panel { padding: 20px; }
+  .terminal-portfolio { height: auto; min-height: 360px; }
+}
+@media (max-width: 520px) {
+  .terminal-workspace { padding: 12px; }
+  .terminal-market-header { padding: 12px; gap: 8px; }
+  .terminal-market-header h1 { font-size: 20px; }
+  .terminal-pair-meta { margin-left: 0; width: 100%; }
+  .terminal-stats { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .terminal-metric { display: grid; gap: 4px; border-right: 0; border-bottom: 1px solid var(--terminal-border); }
+  .terminal-metric:nth-child(odd) { border-right: 1px solid var(--terminal-border); }
+  .terminal-metric:nth-last-child(-n+2) { border-bottom: 0; }
+  .terminal-metric strong { font-size: 16px; }
+  .terminal-tabs { gap: 12px; padding-inline: 12px; }
+  .terminal-tabs button { font-size: 12px; }
+  .terminal-market-columns { display: none; }
+  .terminal-market-row { grid-template-columns: minmax(0,1fr) auto; padding: 16px; gap: 12px; }
+  .terminal-market-row > :nth-child(3) { grid-column: 1; font-size: 12px; color: var(--terminal-muted); }
+  .terminal-market-row > :nth-child(4) { grid-column: 2; }
+  .terminal-token-names { font-size: 12px; }
+  .terminal-market-pair > small { margin-left: 0; }
+  .terminal-market-filters select { min-width: 0; }
+  .terminal .panel { padding: 16px; }
+  .terminal .terminal-trade-panel > .panel { padding: 0; }
+  .terminal-trade-panel { padding: 16px; }
+  .terminal-trade-panel form.desk-form { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .terminal-trade-panel form.desk-form > * { grid-column: 1 / -1; }
+  .terminal-trade-panel form.desk-form > .desk-field:nth-child(-n+2) { grid-column: auto; }
+  .terminal .balance-row { gap: 8px; }
+  .terminal .terms { gap: 12px; }
+  .terminal input:not([type=checkbox]), .terminal select, .terminal textarea { font-size: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .terminal *, .terminal *::before, .terminal *::after { transition-duration: 0s !important; animation-duration: 0s !important; scroll-behavior: auto !important; }
+}

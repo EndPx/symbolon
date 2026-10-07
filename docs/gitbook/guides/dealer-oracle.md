@@ -1,8 +1,12 @@
-# Dealer and oracle guide
+# Lender and oracle guide
+
+The application displays the financing counterparty as **Lender**; the Daml templates retain their `dealer` field names. Borrow and Lend share one market workspace and use the currently connected signing party.
 
 Dealer and oracle are different authorities. A dealer prices a counterparty and manages a repo. The oracle publishes marks. The prototype may host both on a local sandbox for convenience, but their separate parties and choices remain important.
 
 ## Dealer: review an RFQ
+
+Open a market and select **Lend** in the right action panel. Choose a request addressed to your account, enter the rate and validity, and use **Review funded offer** before reserving cash.
 
 Check the requesting party, collateral and cash issuer/instrument, quantities, tenor, margin threshold, cure duration and oracle policy. Treat all sample instrument names as demo identities. An issuer/instrument pair must be acceptable; a matching ticker is insufficient.
 
@@ -10,11 +14,15 @@ Use the pass action if you do not want to quote. Otherwise, ensure you have enou
 
 ## Dealer: manage outstanding offers
 
+Open **Offers → Sent offers** to inspect or revoke your funded quotes.
+
 Keep track of cash associated with each live quote. Revoke an offer that you no longer want outstanding through its authorized choice. Expiry prevents acceptance; it should not be assumed to cause an automatic transaction releasing a holding. Confirm the returned free cash after revocation or rejection.
 
 Never reuse a stale cash contract ID after a merge, reservation or transfer. Refresh active contracts before building a new command.
 
 ## Dealer: manage a position
+
+Use the market's **Positions** tab, or **Portfolio → Positions** across markets.
 
 A margin call needs a genuine shortfall under a valid agreed feed. The ledger refuses a call against a healthy position, the wrong oracle/asset pair or an invalid timestamp. The call establishes a cure deadline. Track the state after a borrower top-up because the previous position contract ID has been consumed.
 
@@ -24,7 +32,7 @@ Once an open cure deadline is reached, request a new mark from the agreed oracle
 
 ## Oracle: publish a mark
 
-Connect as the oracle party and locate the feed for the correct collateral issuer/instrument and cash issuer/instrument. Enter a positive simulated price. Updating the feed creates a new contract version, so consumers must refresh its contract ID.
+Connect as the oracle party. Under **Account → Advanced account controls → Oracle administration**, locate the feed for the correct collateral issuer/instrument and cash issuer/instrument. Enter a positive simulated price. Updating the feed creates a new contract version, so consumers must refresh its contract ID. DecMan-controlled marks use the committee workflow described in the BitSafe LocalNet guide; the ordinary account controls do not bypass its threshold.
 
 For demonstration, announce the original price, the new simulated price and the purpose of the change. Do not describe this input as a live market feed. When testing invalid marks, use the adversarial script rather than weakening the UI or pretending that manually entered data is authenticated market data.
 
