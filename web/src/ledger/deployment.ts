@@ -16,19 +16,24 @@ export interface Deployment {
   corePackageId: string | null;
   tradingEnabled: boolean;
   releaseEvidence: string | null;
+  publicPackageId?: string | null;
+  publicDesk?: {
+    contractId: string; createdEventBlob: string; operator: string; label: string;
+    referencePrice: string; rate: string; maxPrincipal: string;
+  } | null;
   assets: { collateral: AssetDeployment; cash: AssetDeployment };
 }
 export const normalizeNetwork = (value?: string) => {
   const name = value?.toLowerCase();
-  if (name === "devnet" || name === "canton:da-devnet") return "devnet";
-  if (name === "mainnet" || name === "canton:da-mainnet") return "mainnet";
+  if (["devnet", "canton:da-devnet", "canton:devnet", "canton_network_dev"].includes(name ?? "")) return "devnet";
+  if (["mainnet", "canton:da-mainnet", "canton:mainnet", "canton_network"].includes(name ?? "")) return "mainnet";
   return name;
 };
 const packageHash = /^[a-f0-9]{64}$/;
 export function parseDeployment(value: unknown): Deployment {
   if (!value || typeof value !== "object") throw new Error("Missing deployment configuration.");
   const d = value as Deployment;
-  const allowed = ["schemaVersion", "network", "walletNetwork", "participant", "synchronizerId", "corePackageId", "tradingEnabled", "releaseEvidence", "assets"];
+  const allowed = ["schemaVersion", "network", "walletNetwork", "participant", "synchronizerId", "corePackageId", "tradingEnabled", "releaseEvidence", "assets", "publicPackageId", "publicDesk"];
   if (Object.keys(d).some(key => !allowed.includes(key))) throw new Error("Unexpected deployment field. Credentials must stay outside public configuration.");
   if (d.schemaVersion !== 1 || !["devnet", "mainnet"].includes(d.network)
     || normalizeNetwork(d.walletNetwork) !== d.network || typeof d.tradingEnabled !== "boolean") {
@@ -38,6 +43,18 @@ export function parseDeployment(value: unknown): Deployment {
     if (d[field] !== null && (typeof d[field] !== "string" || !d[field]?.trim())) throw new Error(`Invalid ${field}.`);
   }
   if (d.corePackageId !== null && !packageHash.test(d.corePackageId)) throw new Error("Invalid core package ID.");
+  if (d.publicPackageId != null && !packageHash.test(d.publicPackageId)) throw new Error("Invalid public access package ID.");
+  if (d.publicDesk != null) {
+    const p = d.publicDesk;
+    if (!d.publicPackageId || !d.synchronizerId || !p.operator?.includes("::")
+      || typeof p.contractId !== "string" || !p.contractId || typeof p.createdEventBlob !== "string" || !p.createdEventBlob
+      || typeof p.label !== "string" || !p.label || !(Number(p.referencePrice) > 0)
+      || !(Number(p.rate) >= 0 && Number(p.rate) <= 1) || !(Number(p.maxPrincipal) > 0 && Number(p.maxPrincipal) <= 10000)
+      || Object.keys(p).some(key => !["contractId", "createdEventBlob", "operator", "label", "referencePrice", "rate", "maxPrincipal"].includes(key))) {
+      throw new Error("Invalid public desk disclosure or policy.");
+    }
+    if (Object.values(d.assets).some(a => a.admin !== p.operator)) throw new Error("The public desk must match both asset administrators.");
+  }
   if (d.participant !== null) {
     const url = new URL(d.participant);
     if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash) {

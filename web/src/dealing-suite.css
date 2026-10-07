@@ -602,3 +602,25 @@
   .desk .market-row { padding: 13px 18px; }
   .desk .market-detail { padding: 22px 19px; }
 }
+/* Public onboarding follows the existing flat ledger and balance primitives. */
+.public-access { margin-block: var(--desk-space-24, 24px); }
+.public-access-balances { display: flex; flex-wrap: wrap; gap: var(--desk-space-24, 24px); margin-block: var(--desk-space-16, 16px); }
+.public-access-balances > div { display: grid; gap: var(--desk-space-4, 4px); }
+.public-access-balances span { font-size: .75rem; color: var(--ink-soft); }
+.public-access-balances strong { font-family: "Courier Prime", monospace; }
+.account-connect { width: 100%; margin-block: var(--desk-space-16, 16px); }
+.transaction-receipt.unconfirmed { border-color: var(--desk-danger, #7a2f1c); }
+
+/* Provider artwork stays recognizable within the existing paper connection sheet. */
+.desk-dialog .wallet-mark { width: 40px; height: 40px; }
+.desk-dialog .wallet-logo { background: transparent; object-fit: contain; }
+.desk-dialog .wallet-symbol { display: grid; place-items: center; color: var(--ink-warm); }
+.desk-dialog .wallet-name { min-width: 0; }
+.desk-dialog .wallet-name small { display: block; margin-top: var(--desk-space-1, 4px); font-size: .75rem; line-height: 1.5; color: var(--ink-soft); }
+.desk-dialog .wallet-note { flex: none; font-family: "Libre Franklin", sans-serif; font-size: .75rem; letter-spacing: 0; text-transform: none; white-space: nowrap; }
+.desk-dialog .connection-section { margin-top: var(--desk-space-4, 16px); padding-top: var(--desk-space-4, 16px); border-top: 1px solid var(--desk-rule-on-paper); color: var(--ink-soft); font-size: .75rem; }
+.desk-dialog .connection-help, .desk-dialog .connection-network { margin-top: var(--desk-space-4, 16px); color: var(--ink-soft); font-size: .75rem; line-height: 1.6; }
+@media (max-width: 520px) {
+  .desk-dialog .wallet-row { gap: var(--desk-space-3, 12px); padding-inline: var(--desk-space-2, 8px); }
+  .desk-dialog .wallet-name { font-size: .875rem; }
+}

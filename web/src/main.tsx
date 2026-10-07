@@ -4,6 +4,9 @@ import "./landing.css";
 import "./app.css";
 import "./dealing-suite.css";
 import { loadDeployment } from "./ledger/deployment";
+import { captureAccountCallback } from "./ledger/account";
+
+captureAccountCallback();
 
 if (import.meta.env.DEV && import.meta.env.VITE_ENABLE_REACT_DEVTOOLS === "1") {
   void import("react-grab");

@@ -2,11 +2,13 @@
   "schemaVersion": 1,
   "network": "devnet",
   "walletNetwork": "devnet",
-  "participant": null,
-  "synchronizerId": null,
+  "participant": "https://ledger-api-json.participant.hackcanton-01.devnet.naas.noders.services",
+  "synchronizerId": "global-domain::1220be58c29e65de40bf273be1dc2b266d43a9a002ea5b18955aeef7aac881bb471a",
   "corePackageId": "1d40e972b56e42c279140639d33dc362b432f2c0f608c77ec36410f0395f3e19",
   "tradingEnabled": false,
   "releaseEvidence": null,
+  "publicPackageId": "c2eeb6d65814e813ecc6dc2c3e583b31f20bf9b8781f956fd6250d8b720cd04b",
+  "publicDesk": null,
   "assets": {
     "collateral": {
       "symbol": "cBTC",

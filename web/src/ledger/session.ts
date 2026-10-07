@@ -4,14 +4,21 @@ import { connectGrofty, GROFTY_WALLET_ID, WalletSessionChanged } from "./grofty"
 import { partyLabel } from "./symbolon";
 import { requireTradingRelease } from "./release";
 import { deployment, deploymentSubmissionOptions, tradingBlocker } from "./deployment";
+import { activeAccountContext, disconnectAccount, finishAccountConnection, type AccountContext } from "./account";
+import { CantonV2Client, type CommittedReceipt, type PendingCommand } from "./canton-v2";
 
 export interface Session {
-  readonly kind: "browse" | "sandbox" | "wallet";
+  readonly kind: "browse" | "sandbox" | "wallet" | "account";
   readonly party: string;
   readonly label: string;
   readonly wallet?: string;
   readonly networkId?: string;
   readonly walletVersion?: string;
+  readonly ledgerRead?: boolean;
+  readonly ownedParties?: string[];
+  pendingCommand?(): PendingCommand | null;
+  reconcilePending?(): Promise<{status: "pending" | "committed" | "failed";updateId?:string}>;
+  lastReceipt?(): CommittedReceipt | null;
   read(): ReturnType<LedgerApi["activeContracts"]>;
   submit(commands: Command[], options?: SubmissionOptions): Promise<string>;
   onInvalidated?(listener: (reason: string) => void): () => void;
@@ -32,6 +39,7 @@ function requireCurrentConnection(revision: number, candidate?: Session) {
   }
 }
 function activate(session: Session): Session {
+  if (currentSession?.kind === "account" && session.kind !== "account") disconnectAccount();
   currentSession?.dispose?.();
   currentSession = session;
   return session;
@@ -47,10 +55,10 @@ export class WalletRequired extends Error {
   constructor() { super("Connect a wallet to sign this."); this.name = "WalletRequired"; }
 }
 export const canTrade = (s: Session | null): boolean => s !== null &&
-  (s.kind === "sandbox" ? sandboxModeEnabled() : s.kind === "wallet" && tradingBlocker(s.networkId) === null);
+  (s.kind === "sandbox" ? sandboxModeEnabled() : ["wallet", "account"].includes(s.kind) && tradingBlocker(s.networkId) === null);
 
 // A party picker is deliberately confined to a loopback development server.
-// A deployed app must obtain authority through the connected wallet.
+// A deployed app must obtain authority through a wallet or authenticated hosted account.
 export function sandboxModeEnabled(): boolean {
   return typeof window !== "undefined" && ["localhost", "127.0.0.1", "[::1]"].includes(window.location.hostname)
     && (import.meta.env?.DEV || import.meta.env?.VITE_ENABLE_LOCAL_DEMO === "true");
@@ -63,6 +71,7 @@ export function sandboxApi() { return new LedgerApi(sandboxTransport(), "symbolo
 export function browseSession(readParty?: string): Session {
   return {
     kind: "browse", party: "", label: "Browsing",
+    ledgerRead: !!readParty && sandboxModeEnabled(),
     // Oracle marks are demo data, not a public read capability on a live participant.
     read: async () => readParty && sandboxModeEnabled() ? sandboxApi().activeContracts(readParty) : [],
     submit: () => Promise.reject(new WalletRequired()),
@@ -122,6 +131,9 @@ export interface WalletOption {
   network?: string; minimumVersion?: string; version?: string; unavailableReason?: string;
 }
 const SUPPORTED = ["console", "loop", "send"];
+const walletMarks: Record<string, string> = {
+  console: "/wallets/console.png", loop: "/wallets/loop.svg", send: "/wallets/send.jpg",
+};
 export async function listWalletOptions(network = walletNetwork()): Promise<WalletOption[]> {
   // Grofty bounty work is deferred. Keep the prototype adapter in source while
   // the submitted product exposes its configured development wallet path.
@@ -134,7 +146,8 @@ async function listSecondaryWallets(network: string): Promise<WalletOption[]> {
   return Promise.all(wallets.map(async w => {
     const detected = await c.getAdapter(w.walletId)?.detectInstalled().catch(() => undefined);
     return { id: w.walletId, name: w.name, network, installed: detected?.installed ?? false,
-      icon: w.icons?.sm ?? w.icons?.md ?? w.icons?.lg };
+      ...(String(w.walletId) === "loop" ? { unavailableReason: "Symbolon transactions are not supported by Loop yet." } : {}),
+      icon: walletMarks[String(w.walletId)] ?? w.icons?.md ?? w.icons?.sm ?? w.icons?.lg };
   }));
 }
 
@@ -191,8 +204,18 @@ function walletSession(c: PartyLayerClient, s: WalletSession, network: string): 
   remember({ kind: "wallet", walletId: s.walletId, network });
   return activate(session);
 }
+/** Ignore a late connection response without revoking the user's wallet permission. */
+export function cancelWalletConnection() { connectionRevision++; }
 export async function connectWallet(walletId?: string, network = walletNetwork()): Promise<Session> {
   const revision = ++connectionRevision;
+  if (walletId === "console") {
+    const { openConsoleSession } = await import("./console");
+    const session = await openConsoleSession(true);
+    if (!session) throw new Error("Console Wallet did not approve this connection.");
+    requireCurrentConnection(revision,session);
+    remember({kind:"wallet",walletId:"console",network});
+    return activate(session);
+  }
   if (walletId === GROFTY_WALLET_ID) {
     if (network !== "mainnet" && network !== "canton:da-mainnet") {
       throw new Error("Grofty Wallet supports MainNet only. Select the Grofty MainNet connection explicitly.");
@@ -216,6 +239,54 @@ async function groftySession(interactive: boolean, revision: number): Promise<Se
 }
 export function walletNetwork(): string { return deployment().walletNetwork; }
 
+function bootstrapCommand(commands: Command[], party: string) {
+  const d = deployment();
+  if (commands.length !== 1 || !d.publicPackageId || !("CreateCommand" in commands[0])) return false;
+  const create = commands[0].CreateCommand;
+  return create.templateId === `${d.publicPackageId}:Symbolon.PublicDesk:PublicDesk`
+    && create.createArguments.operator === party;
+}
+export async function connectAccount(party?: string): Promise<Session | null> {
+  const revision = ++connectionRevision;
+  const account = activeAccountContext() ?? await finishAccountConnection();
+  requireCurrentConnection(revision);
+  if (!account) return null;
+  const selected = party ?? account.primaryParty ?? account.parties[0];
+  if (!account.parties.includes(selected)) throw new Error("Select an authorized account party.");
+  const session = accountSession(account, selected);
+  remember(null);
+  return activate(session);
+}
+function accountSession(account: AccountContext, party: string): Session {
+  const d = deployment();
+  if (d.network !== "devnet" || !d.corePackageId || !d.synchronizerId || d.participant !== "https://ledger-api-json.participant.hackcanton-01.devnet.naas.noders.services") {
+    throw new Error("The HackCanton account connection needs the configured shared DevNet participant and synchronizer.");
+  }
+  const client = new CantonV2Client({ party, request: account.request, corePackageId: d.corePackageId,
+    ...(d.publicPackageId ? { publicPackageId: d.publicPackageId } : {}), synchronizerId: d.synchronizerId,
+    store: typeof sessionStorage === "undefined" ? undefined : sessionStorage });
+  let disposed = false;
+  const bound = () => {
+    if (disposed || activeAccountContext() !== account) throw new WalletSessionChanged("This account session changed. Connect again.");
+  };
+  return {
+    kind: "account", party, label: partyLabel(party), wallet: "HackCanton account", networkId: "devnet", ledgerRead: true,
+    ownedParties: account.parties,
+    async read() { bound(); return client.read(); },
+    async submit(commands, options) {
+      bound();
+      if (!bootstrapCommand(commands,party)) requireTradingRelease("devnet");
+      await client.preflight();
+      return client.submit(commands, options);
+    },
+    pendingCommand: () => client.pendingCommand(),
+    reconcilePending: () => { bound(); return client.reconcile(); },
+    lastReceipt: () => client.lastReceipt,
+    dispose() { disposed = true; },
+    async disconnect() { disposed = true; disconnectAccount(); },
+  };
+}
+
 export async function sandboxAvailable(): Promise<boolean> {
   if (!sandboxModeEnabled()) return false;
   try { await sandboxApi().ledgerEnd(); return true; } catch { return false; }
@@ -234,6 +305,8 @@ export function rememberedSession(): Remembered | null {
 
 /** Restore cached authority without opening a wallet permission prompt. */
 export async function restoreSession(): Promise<Session | null> {
+  const account = await connectAccount();
+  if (account) return account;
   const saved = rememberedSession();
   if (!saved) return null;
   const revision = ++connectionRevision;
@@ -244,6 +317,12 @@ export async function restoreSession(): Promise<Session | null> {
       if (parties.includes(saved.party)) return connectSandbox(saved.party);
     } else {
       if (saved.network !== walletNetwork()) { remember(null); return null; }
+      if(saved.walletId === "console") {
+        const { openConsoleSession } = await import("./console");
+        const restored = await openConsoleSession(false);
+        requireCurrentConnection(revision,restored??undefined);
+        if(restored)return activate(restored);
+      }
       if (saved.walletId === GROFTY_WALLET_ID) {
         const restored = await groftySession(false, revision);
         if (restored) return restored;

@@ -3,7 +3,7 @@ import type { Contract } from "../ledger/api";
 import {
   browseSession, canTrade, connectWallet, listWalletOptions, publicReadParty,
   walletNetwork, sandboxModeEnabled, listSandboxParties, connectSandbox,
-  restoreSession, type Session, type WalletOption,
+  restoreSession, connectAccount, cancelWalletConnection, type Session, type WalletOption,
 } from "../ledger/session";
 import {
   balanceOf, cureDeadline, cureElapsed, cureLeft, deadlineElapsed, deskState, feedFor,
@@ -15,6 +15,11 @@ import {
 import * as act from "./actions";
 import MarketOverview from "./MarketOverview";
 import { deploymentFailure, tradingBlocker } from "../ledger/deployment";
+import { deployment } from "../ledger/deployment";
+import { startAccountConnection } from "../ledger/account";
+import { SubmissionUncertain } from "../ledger/canton-v2";
+import { completePublicRequests, requestPublicQuote } from "../ledger/public-desk";
+import { PublicAccess, PublicDeskSetup, PublicMarket } from "./PublicAccess";
 
 function useDesk(session: Session) {
   const [state, setState] = useState<DeskState | null>(null);
@@ -27,7 +32,7 @@ function useDesk(session: Session) {
       const contracts = await session.read();
       if (sequence.current !== request) return;
       setState(deskState(contracts));
-      setReadAt(new Date());
+      setReadAt(session.kind !== "browse" || session.ledgerRead ? new Date() : null);
       setError(null);
     } catch (e) {
       if (sequence.current === request) setError((e as Error).message);
@@ -48,7 +53,7 @@ function useDesk(session: Session) {
   return { state, error, refresh, readAt };
 }
 
-type Receipt = { phase: "pending" | "succeeded" | "failed"; label: string; detail?: string; updateId?: string };
+type Receipt = { phase: "pending" | "succeeded" | "failed" | "unconfirmed"; label: string; detail?: string; updateId?: string };
 type Transaction = { busy: boolean; run(label: string, action: () => Promise<string>): Promise<boolean> };
 const Transactions = createContext<Transaction>({ busy: false, run: async () => false });
 
@@ -84,11 +89,26 @@ function Dialog({ title, children, close, busy = false }: { title: string; child
   </dialog>;
 }
 
+function ConnectionMark({ icon, account = false }: { icon?: string; account?: boolean }) {
+  const [failed, setFailed] = useState(false);
+  if (icon && !failed) return <img className="wallet-mark wallet-logo" src={icon} alt="" width="40" height="40" onError={() => setFailed(true)} />;
+  return <span className="wallet-mark wallet-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    {account ? <><circle cx="12" cy="8" r="3"/><path d="M6 20v-2a6 6 0 0 1 12 0v2"/></>
+      : <><path d="M20 8V6a2 2 0 0 0-2-2H6a3 3 0 0 0 0 6h14v10H6a3 3 0 0 1-3-3V7"/><path d="M20 12h-5v4h5"/></>}
+  </svg></span>;
+}
+
 function ConnectDialog({ connected, close }: { connected(s: Session): void; close(): void }) {
   const [wallets, setWallets] = useState<WalletOption[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
+  const connectionAttempt = useRef(0);
+  const pendingConnection = useRef(false);
+  useEffect(() => () => {
+    connectionAttempt.current++;
+    if (pendingConnection.current) cancelWalletConnection();
+  }, []);
   useEffect(() => {
     let active = true;
     setWallets(null); setError(null);
@@ -97,25 +117,42 @@ function ConnectDialog({ connected, close }: { connected(s: Session): void; clos
     return () => { active = false; };
   }, [attempt]);
   const connect = async (id: string) => {
+    const revision = ++connectionAttempt.current;
+    pendingConnection.current = true;
     setBusy(id); setError(null);
-    try { connected(await connectWallet(id, id === "grofty" ? "mainnet" : walletNetwork())); }
-    catch (e) { setError((e as Error).message); }
-    finally { setBusy(null); }
+    try {
+      const session = await connectWallet(id, id === "grofty" ? "mainnet" : walletNetwork());
+      if (revision !== connectionAttempt.current) { session.dispose?.(); return; }
+      pendingConnection.current = false;
+      connected(session);
+    }
+    catch (e) { if (revision === connectionAttempt.current) setError((e as Error).message); }
+    finally { if (revision === connectionAttempt.current) { pendingConnection.current = false; setBusy(null); } }
   };
-  return <Dialog title="Connect a Canton wallet" close={close} busy={busy !== null}>
-    <p className="panel-lede">Connect your Canton wallet to access your party’s private requests, quotes, and positions on the configured network.</p>
+  const cancel = () => {
+    connectionAttempt.current++; pendingConnection.current = false;
+    cancelWalletConnection(); setBusy(null); setError(null);
+  };
+  const dismiss = () => { if (pendingConnection.current) cancel(); close(); };
+  return <Dialog title="Connect to Symbolon" close={dismiss} busy={busy === "account"}>
+    <p className="panel-lede">Connect on Canton DevNet to access your private quotes and positions.</p>
+    {deployment().network === "devnet" && <button className="wallet-row account-connect" disabled={busy !== null} onClick={()=>{
+      setBusy("account");void startAccountConnection().catch(e=>{setError(e.message);setBusy(null);});
+    }}><ConnectionMark account/><span className="wallet-name">HackCanton account<small>Sign in to your hosted DevNet party</small></span><span className="wallet-note">{busy==="account"?"Redirecting…":"Sign in"}</span></button>}
+    <p className="connection-section">Browser wallets</p>
     {wallets === null && <p className="empty-state" role="status">Discovering wallets…</p>}
     <ul className="wallet-list">{wallets?.map((w) => <li key={w.id}>
       <button className="wallet-row" disabled={busy !== null || !w.installed || !!w.unavailableReason} onClick={() => void connect(w.id)}>
-        <span className="wallet-mark mono">{w.name.slice(0, 2)}</span>
-        <span className="wallet-name">{w.name}<small>{w.id === "grofty" ? `Canton MainNet · v${w.minimumVersion}+ required` : w.network ?? walletNetwork()}</small></span>
-        <span className="wallet-note">{busy === w.id ? "Connecting…" : w.unavailableReason ? "Unavailable" : w.installed ? "Connect" : "Not found"}</span>
+        <ConnectionMark icon={w.icon}/>
+        <span className="wallet-name">{w.name}<small>{w.unavailableReason ?? (w.id === "grofty" ? `Canton MainNet · v${w.minimumVersion}+ required` : w.installed ? "Open your wallet to approve the connection" : "Wallet extension not detected")}</small></span>
+        <span className="wallet-note">{busy === w.id ? "Connecting…" : w.unavailableReason ? "Unavailable" : w.installed ? "Connect" : "Not detected"}</span>
       </button></li>)}</ul>
-    {wallets?.filter(w => w.unavailableReason).map(w => <p className="net-note" key={`${w.id}-reason`}>{w.name}: {w.unavailableReason}</p>)}
     {wallets?.length === 0 && <p className="empty-state">No supported wallet was discovered. Open your Canton wallet on the configured network, then retry.</p>}
     {error && <p className="err" role="alert">{error}</p>}
-    <div className="acts"><button className="ghost sm" disabled={busy !== null} onClick={() => setAttempt((a) => a + 1)}>Retry discovery</button></div>
-    <p className="net-note">Configured network: <code>{walletNetwork()}</code>. MainNet trading is disabled until the cBTC / USDCx token adapters and operator release checks are verified.</p>
+    {pendingConnection.current && <p className="connection-help" role="status">Check the wallet window and approve the connection. You can cancel if it does not open.</p>}
+    <div className="acts"><button className="ghost sm" disabled={busy !== null} onClick={() => setAttempt((a) => a + 1)}>Refresh wallets</button>
+      {pendingConnection.current && <button className="ghost sm" onClick={cancel}>Cancel connection</button>}</div>
+    <p className="connection-network">Canton DevNet · Test assets only. MainNet transactions are not enabled.</p>
   </Dialog>;
 }
 
@@ -202,6 +239,7 @@ function ReceivedQuotes({ s, st }: { s: Session; st: DeskState }) {
     {!!requests.length && <div className="pending-requests"><h3>Awaiting a quote</h3>{requests.map((r) => <div className="row" key={r.contractId}>
       <span><Party party={r.payload.dealer} /> · {fmtAmount(r.payload.cashAmount)} {r.payload.cashInstrument}</span>
       <button className="ghost sm" disabled={busy} onClick={() => void run("Request withdrawn", () => act.withdrawRequest(s, r.contractId))}>Withdraw</button>
+      {r.payload.dealer===deployment().publicDesk?.operator&&<button className="seal sm" disabled={busy} onClick={()=>void run("Funded quote received",()=>requestPublicQuote(s,r.contractId))}>Get funded quote</button>}
     </div>)}</div>}
     {review && <QuoteReview quote={review} st={st} s={s} close={() => setReview(null)} />}
   </Panel>;
@@ -221,13 +259,14 @@ function BorrowRequest({ s, st, demoParties, initialPair }: { s: Session; st: De
   const feeds = latestFeeds(st.feeds);
   const [chosen, setChosen] = useState("");
   useEffect(() => { if (initialPair) setChosen(initialPair); }, [initialPair]);
-  const [amount, setAmount] = useState("");
+  const [amount, setAmount] = useState(deployment().publicDesk ? "1000" : "");
   const [cushion, setCushion] = useState("150");
   const [term, setTerm] = useState("30");
   const [threshold, setThreshold] = useState("105");
   const [cure, setCure] = useState("60");
   const [maxAge, setMaxAge] = useState("60");
-  const [dealersText, setDealersText] = useState("");
+  const [dealersText, setDealersText] = useState(deployment().publicDesk?.operator ?? "");
+  useEffect(()=>{if(!chosen&&feeds.length)setChosen(feedIdentity(feeds[0].payload));},[chosen,feeds]);
   const selected = feeds.find((f) => feedIdentity(f.payload) === chosen);
   const feed = selected?.payload;
   const purchase = Number(amount);
@@ -252,12 +291,19 @@ function BorrowRequest({ s, st, demoParties, initialPair }: { s: Session; st: De
     <form className="desk-form" onSubmit={(e) => {
       e.preventDefault();
       if (!ready || !feed) return;
-      void run("Private quote requests submitted", () => act.requestQuotes(s, {
+      void run("Private quote requests submitted", async () => {
+        const updateId=await act.requestQuotes(s, {
         dealers, oracle: feed.oracle, collateralIssuer: feed.instrumentIssuer,
         collateralInstrument: feed.instrument, collateralAmount: pledge,
         cashIssuer: feed.cashIssuer, cashInstrument: feed.cashInstrument, cashAmount: purchase,
         termDays: Number(term), marginThresholdPct: margin, cureSeconds: Math.round(Number(cure) * 60), maxPriceAgeSeconds: ageSeconds,
-      }));
+        });
+        if(deployment().publicDesk&&dealers.includes(deployment().publicDesk!.operator)) {
+          await completePublicRequests(s);
+          return s.lastReceipt?.()?.updateId??updateId;
+        }
+        return updateId;
+      });
     }}>
       <Field label="Collateral and oracle"><select required value={chosen} onChange={(e) => setChosen(e.target.value)}>
         <option value="">Select an agreed price feed</option>{feeds.map(({ payload: f }) => <option key={feedIdentity(f)} value={feedIdentity(f)}>
@@ -471,21 +517,21 @@ function Workspace({ session: s, connect, demoParties, switchParty, disconnect }
   const trading = canTrade(s);
   const run = useCallback(async (label: string, action: () => Promise<string>) => {
     if (!trading) { connect(); return false; }
-    if (lock.current || error) return false;
+    if (lock.current || error || s.pendingCommand?.()) return false;
     lock.current = true;
-    setReceipt({ phase: "pending", label, detail: "Awaiting wallet authorization and ledger confirmation. Asset preparation may require more than one transaction." });
+    setReceipt({ phase: "pending", label, detail: s.kind==="account" ? "Waiting for the participant to confirm your account's action. Asset preparation may require more than one transaction." : "Awaiting wallet authorization and ledger confirmation. Asset preparation may require more than one transaction." });
     try {
       const updateId = await action();
       setReceipt({ phase: "succeeded", label, updateId });
       await refresh();
       return true;
     } catch (e) {
-      setReceipt({ phase: "failed", label, detail: (e as Error).message });
+      setReceipt({ phase: e instanceof SubmissionUncertain ? "unconfirmed" : "failed", label, detail: (e as Error).message });
       await refresh();
       return false;
     } finally { lock.current = false; }
-  }, [trading, error, connect, refresh]);
-  const transactions = useMemo(() => ({ busy: busy || !!error, run }), [busy, error, run]);
+  }, [trading, error, connect, refresh, s]);
+  const transactions = useMemo(() => ({ busy: busy || !!error || !!s.pendingCommand?.(), run }), [busy, error, run, s]);
   const oracle = trading && st?.feeds.some((f) => f.payload.oracle === s.party);
   useEffect(() => {
     const ids = oracle ? ["markets", "oracle-marks", "open-positions"] : tab === "borrow" ? ["markets", "private-quotes", "request-repo", "open-positions"] : ["markets", "dealer-requests", "open-positions"];
@@ -511,7 +557,7 @@ function Workspace({ session: s, connect, demoParties, switchParty, disconnect }
     <header className="desk-head"><a className="brand" href="/" aria-label="Symbolon home"><img src="/brand/logo-mark.png" alt="" width="24" height="24" /><span>SYMBOLON</span></a>
       {trading && !oracle && <nav className="desk-tabs" aria-label="Desk role">{(["borrow", "lend"] as const).map((t) => <button key={t} className={t === tab ? "on" : ""} aria-pressed={t === tab} onClick={() => setTab(t)}>{t === "borrow" ? "Borrower" : "Dealer"}</button>)}</nav>}
       <div className="who">{s.kind !== "browse" ? <><span className="who-label"><Party party={s.party} /></span><span className="muted sm">{s.kind === "sandbox" ? "Local demo" : `${s.wallet ?? "Wallet"} · ${s.networkId ?? walletNetwork()}${trading ? "" : " · Read-only"}`}</span><button className="ghost sm" disabled={busy} onClick={disconnect}>Disconnect</button></>
-        : <><span className="sm muted">Read-only</span><button className="seal sm" onClick={connect}>Connect wallet</button></>}</div>
+        : <><span className="sm muted">{deployment().network==="devnet"?"DevNet":"Read-only"}</span><button className="seal sm" onClick={connect}>Connect</button></>}</div>
     </header>
     <div className="desk-shell">
     <aside className="desk-sidebar" aria-label="Desk navigation and session">
@@ -524,12 +570,13 @@ function Workspace({ session: s, connect, demoParties, switchParty, disconnect }
       <div className="environment-note"><strong>{s.kind === "sandbox" ? "Local Canton demo" : "Symbolon prototype"}</strong><span>{s.kind === "sandbox" ? "Demo assets · Simulated oracle marks · No real funds" : s.wallet === "grofty" ? "Prototype assets · Simulated oracle marks · MainNet actions can incur real fees" : "Demo assets · Simulated oracle marks · Verify your network and participant"}</span></div>
       <details className="desk-session-disclosure" open={sessionOpen} onToggle={(e) => setSessionOpen(e.currentTarget.open)}><summary>Session controls and simulated marks</summary>
       <div className="desk-tools">
+      {s.kind==="account"&&s.ownedParties&&s.ownedParties.length>1&&<Field label="Account party" hint="Only parties authorized for your account are listed."><select value={s.party} disabled={busy||!!s.pendingCommand?.()} onChange={e=>switchParty(e.target.value)}>{s.ownedParties.map(p=><option key={p} value={p}>{partyLabel(p)}</option>)}</select></Field>}
       {sandboxModeEnabled() && <div className="demo-controls"><Field label="Local demo party" hint="Development only. Each party reads its own ledger view."><select value={s.kind === "sandbox" ? s.party : ""} disabled={busy} onChange={(e) => { if (e.target.value) switchParty(e.target.value); }}>
         <option value="">Choose a seeded demo party</option>{demoParties.map((p) => <option key={p} value={p}>{partyLabel(p)}</option>)}
       </select></Field>{!demoParties.length && <p className="sm muted">No seeded parties found. Start and seed the local Canton sandbox, then reload.</p>}</div>}
       <div className="session-tools">
       {trading && <details className="party-detail"><summary>Your full party ID</summary><code>{s.party}</code></details>}
-      <div className="ledger-status"><span className="sm muted">{readAt ? `Last ledger read ${readAt.toLocaleTimeString()} · Times shown in ${Intl.DateTimeFormat().resolvedOptions().timeZone}` : "Reading ledger…"}</span><button className="ghost sm" disabled={busy} onClick={() => void refresh()}>Refresh</button></div>
+      <div className="ledger-status"><span className="sm muted">{readAt ? `Last ledger read ${readAt.toLocaleTimeString()} · Times shown in ${Intl.DateTimeFormat().resolvedOptions().timeZone}` : s.kind==="browse"&&!s.ledgerRead?"Connect to load your private ledger view":"Reading ledger…"}</span><button className="ghost sm" disabled={busy||s.kind==="browse"&&!s.ledgerRead} onClick={() => void refresh()}>Refresh</button></div>
       </div></div>
       {st && !!st.feeds.length && <div className="marks-strip"><span className="marks-tag">Simulated marks</span>{latestFeeds(st.feeds).map(({ contractId, payload: f }) => <span className="mark" key={contractId} title={`Oracle ${f.oracle}; issuer ${f.instrumentIssuer}; ${fmtTime(f.asOf)}`}>
         <span className="mark-sym">{f.instrument}</span><span className="mark-px">{fmtAmount(f.price)} {f.cashInstrument}</span><span className="sm muted">{isFresh(f, DEFAULT_PRICE_AGE_SECONDS) ? "current" : "stale"}</span>
@@ -538,14 +585,19 @@ function Workspace({ session: s, connect, demoParties, switchParty, disconnect }
     </aside>
     <main className="desk-body" id="desk-content">
       {deploymentFailure() && <p className="session-error" role="alert">Deployment configuration unavailable. Remote signing is paused. {deploymentFailure()}</p>}
-      {s.kind === "wallet" && !trading && <p className="session-error" role="status">{tradingBlocker(s.networkId)}</p>}
+      {["wallet","account"].includes(s.kind) && !trading && <p className="session-error" role="status">{tradingBlocker(s.networkId)}</p>}
       {error && <div className="ledger-error" role="alert"><strong>Ledger unavailable</strong><p>{error}</p><p className="sm">Showing the last successful read. Trading is paused until refresh succeeds. Check the participant connection and wallet permissions.</p></div>}
       <div className="receipt-region" aria-live="polite" aria-atomic="true">{receipt && <div className={`transaction-receipt ${receipt.phase}`}>
-        <strong>{receipt.phase === "pending" ? "Pending" : receipt.phase === "succeeded" ? "Confirmed" : "Failed"} · {receipt.label}</strong>
+        <strong>{receipt.phase === "pending" ? "Pending" : receipt.phase === "succeeded" ? "Confirmed" : receipt.phase==="unconfirmed"?"Unconfirmed":"Failed"} · {receipt.label}</strong>
         {receipt.detail && <p>{receipt.detail}</p>}{receipt.updateId && <details><summary>Ledger update receipt</summary><code>{receipt.updateId}</code></details>}
       </div>}</div>
-      <MarketOverview state={st} party={s.party} connected={trading} mode={oracle ? "oracle" : tab} onConnect={connect} onRequestPair={setRequestedPair} />
-      {!trading && <section className="open-desk"><img src="/brand/logo-mark.png" alt="" width="54" height="54" /><h2>A private repo desk</h2><p>Connect your Canton wallet to request financing, review dealer quotes, and manage your positions.</p><div className="acts wrap"><button className="seal" onClick={connect}>Connect wallet</button><a className="ghost" href="https://symbolon.gitbook.io/symbolon-docs/">Read the docs</a></div><p className="sm muted">Private books require an authorized party session. MainNet trading is not enabled for this prototype.</p></section>}
+      {s.pendingCommand?.()&&<div className="ledger-error" role="status"><strong>Check the original transaction</strong><p>New submissions are paused until this command is confirmed or rejected.</p><code>{s.pendingCommand!()!.commandId}</code><button className="ghost sm" disabled={busy} onClick={()=>{
+        void s.reconcilePending?.().then(async result=>{setReceipt({phase:result.status==="committed"?"succeeded":result.status==="failed"?"failed":"unconfirmed",label:"Original transaction status",updateId:result.updateId,detail:result.status==="pending"?"No completion was found yet. Keep checking the original command.":undefined});await refresh();}).catch(e=>setReceipt({phase:"unconfirmed",label:"Original transaction status",detail:e.message}));
+      }}>Check ledger status</button></div>}
+      {s.kind==="browse"&&deployment().publicDesk?<PublicMarket onConnect={connect}/>:<MarketOverview state={st} party={s.party} connected={trading} mode={oracle ? "oracle" : tab} onConnect={connect} onRequestPair={setRequestedPair} />}
+      {trading&&<PublicAccess session={s} state={st} busy={transactions.busy} run={run}/>}
+      <PublicDeskSetup session={s} onRefresh={refresh}/>
+      {!trading && <section className="open-desk"><img src="/brand/logo-mark.png" alt="" width="54" height="54" /><h2>Your private financing desk</h2><p>Connect your account to get DevNet assets, request a funded quote, and manage repayment.</p><div className="acts wrap"><button className="seal" onClick={connect}>Connect</button><a className="ghost" href="https://symbolon.gitbook.io/symbolon-docs/">Read the docs</a></div><p className="sm muted">Canton DevNet uses simulated assets. MainNet trading is not enabled.</p></section>}
       {trading && !st && !error && <p role="status" className="empty-state">Loading your party’s ledger view…</p>}
       {trading && st && <><div className="work-heading"><div><span>Deal workspace</span><h2>{oracle ? "Keep collateral marks current" : tab === "borrow" ? "From private quote to settlement" : "Price and manage your requests"}</h2></div><p>{oracle ? "Only the agreed oracle can publish marks for these pairs." : "Every action below is scoped to your connected party and confirmed on the ledger."}</p></div>
         <div className={`board ${oracle ? "board-oracle" : tab === "borrow" ? "board-borrow" : "board-lend"}`}>{oracle ? <Panel id="oracle-marks" title="Publish simulated marks" description="You are the oracle party. Prices are entered manually; each update receives a current timestamp.">{st.feeds.filter((f) => f.payload.oracle === s.party).map((f) => <OracleMark key={feedIdentity(f.payload)} feed={f} s={s} />)}</Panel>
@@ -587,6 +639,9 @@ export default function DeskApp() {
     catch (e) { setSessionError((e as Error).message); }
   };
   const switchParty = (party: string) => {
+    if(session.kind==="account"){
+      void connectAccount(party).then(next=>{if(next){setSession(next);setSessionError(null);}}).catch(e=>setSessionError(e.message));return;
+    }
     if (!sandboxModeEnabled() || !demoParties.includes(party)) return;
     setSession(connectSandbox(party)); setSessionError(null);
   };

@@ -1,0 +1,108 @@
+module Symbolon.PublicDeskTest where
+
+import Daml.Script
+import DA.Assert
+import Symbolon.DemoAsset
+import Symbolon.Repo
+import Symbolon.PublicDesk
+
+newDesk : Party -> [Party] -> Script (ContractId PublicDesk)
+newDesk operator readers = submit operator do
+  createCmd PublicDesk with
+    operator; label = "Symbolon DevNet dealer"; rate = 0.052
+    referencePrice = 60000.0; quoteValiditySeconds = 3600; maxPrincipal = 10000.0; readers
+
+newRequest : Party -> Party -> Decimal -> Script (ContractId QuoteRequest)
+newRequest borrower dealer cashAmount = submit borrower do
+  createCmd QuoteRequest with
+    borrower; dealer; oracle = dealer
+    collateralIssuer = dealer; collateralInstrument = "cBTC-demo"; collateralAmount = 0.025
+    cashIssuer = dealer; cashInstrument = "USDCx-demo"; cashAmount
+    termDays = 30; marginThresholdPct = 1.05; cureSeconds = 600; maxPriceAgeSeconds = 3600
+
+publicGrantUsesOnlyIssuerAuthorizedDemoAssets : Script ()
+publicGrantUsesOnlyIssuerAuthorizedDemoAssets = script do
+  operator <- allocateParty "public-operator"
+  borrower <- allocateParty "public-borrower"
+  deskCid <- newDesk operator [borrower]
+  grant <- submit borrower do exerciseCmd deskCid ClaimDevnetAssets with claimant = borrower
+  collateral <- queryContractId borrower grant.collateralCid
+  cash <- queryContractId borrower grant.cashCid
+  case (collateral, cash) of
+    (Some c, Some u) -> do
+      c.owner === borrower
+      c.issuer === operator
+      c.amount === 0.1
+      c.instrument === "cBTC-demo"
+      u.amount === 5000.0
+      u.instrument === "USDCx-demo"
+    _ -> abort "grant holdings are missing"
+
+outsiderCannotClaimOrQuoteForAnotherBorrower : Script ()
+outsiderCannotClaimOrQuoteForAnotherBorrower = script do
+  operator <- allocateParty "public-operator"
+  borrower <- allocateParty "public-borrower"
+  outsider <- allocateParty "public-outsider"
+  deskCid <- newDesk operator [borrower, outsider]
+  submitMustFail outsider do exerciseCmd deskCid ClaimDevnetAssets with claimant = borrower
+  requestCid <- newRequest borrower operator 1000.0
+  submitMustFail outsider do exerciseCmd deskCid RequestFundedQuote with borrower; requestCid
+  submitMustFail outsider do exerciseCmd deskCid RequestFundedQuote with borrower = outsider; requestCid
+
+quoteCannotUseAnotherIssuerOrExceedLimit : Script ()
+quoteCannotUseAnotherIssuerOrExceedLimit = script do
+  operator <- allocateParty "public-operator"
+  borrower <- allocateParty "public-borrower"
+  otherIssuer <- allocateParty "foreign-issuer"
+  deskCid <- newDesk operator [borrower]
+  requestCid <- newRequest borrower operator 10001.0
+  submitMustFail borrower do exerciseCmd deskCid RequestFundedQuote with borrower; requestCid
+  foreignRequest <- submit borrower do
+    createCmd QuoteRequest with
+      borrower; dealer = operator; oracle = operator
+      collateralIssuer = operator; collateralInstrument = "cBTC-demo"; collateralAmount = 0.025
+      cashIssuer = otherIssuer; cashInstrument = "USDCx-demo"; cashAmount = 1000.0
+      termDays = 30; marginThresholdPct = 1.05; cureSeconds = 600; maxPriceAgeSeconds = 3600
+  submitMustFail borrower do exerciseCmd deskCid RequestFundedQuote with borrower; requestCid = foreignRequest
+
+publicQuoteSettlesAndRepurchasesWithTheFixedAmount : Script ()
+publicQuoteSettlesAndRepurchasesWithTheFixedAmount = script do
+  operator <- allocateParty "public-operator"
+  borrower <- allocateParty "public-borrower"
+  deskCid <- newDesk operator [borrower]
+  grant <- submit borrower do exerciseCmd deskCid ClaimDevnetAssets with claimant = borrower
+  requestCid <- newRequest borrower operator 1000.0
+  quoteCid <- submit borrower do exerciseCmd deskCid RequestFundedQuote with borrower; requestCid
+  submitMustFail borrower do exerciseCmd deskCid RequestFundedQuote with borrower; requestCid
+  (exactCollateral, _) <- submit borrower do
+    exerciseCmd grant.collateralCid Transfer with to = borrower; qty = 0.025; newViewers = []
+  positionCid <- submit borrower do
+    exerciseCmd quoteCid AcceptQuote with collateralCid = exactCollateral; feedCid = grant.feedCid
+  position <- queryContractId borrower positionCid
+  case position of
+    Some p -> do
+      p.repurchasePrice === 1004.3333333333
+      (exactCash, _) <- submit borrower do
+        exerciseCmd grant.cashCid Transfer with to = borrower; qty = p.repurchasePrice; newViewers = []
+      closedCid <- submit borrower do exerciseCmd positionCid Repurchase with cashCid = exactCash
+      closed <- queryContractId borrower closedCid
+      case closed of
+        Some c -> c.outcome === Repurchased
+        None -> abort "repurchased closing record is missing"
+    None -> abort "settled position is missing"
+
+onlyAFeedReaderCanRefreshTheFixedReferenceMark : Script ()
+onlyAFeedReaderCanRefreshTheFixedReferenceMark = script do
+  operator <- allocateParty "public-operator"
+  borrower <- allocateParty "public-borrower"
+  outsider <- allocateParty "public-outsider"
+  deskCid <- newDesk operator [borrower, outsider]
+  grant <- submit borrower do exerciseCmd deskCid ClaimDevnetAssets with claimant = borrower
+  submitMustFail outsider do
+    exerciseCmd deskCid RefreshReferenceMark with requester = outsider; feedCid = grant.feedCid
+  refreshed <- submit borrower do
+    exerciseCmd deskCid RefreshReferenceMark with requester = borrower; feedCid = grant.feedCid
+  feed <- queryContractId borrower refreshed
+  case feed of
+    Some f -> f.price === 60000.0
+    None -> abort "refreshed feed is missing"
