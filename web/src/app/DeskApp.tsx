@@ -75,8 +75,10 @@ function partyDisplayName(party: string, name?: string) {
   const publicDesk = deployment().publicDesk;
   const label = party === publicDesk?.operator ? publicDesk.label.replace(/\bdealer\b/gi, "lender")
     : (name || partyLabel(party)).replace(/^dealer/i, "lender");
-  if (/^[a-f0-9]{8}-/i.test(label)) return `Account ${label.slice(0, 6)}`;
-  return label.length > 24 ? `${label.slice(0, 21)}…` : label;
+  if (/^[a-f0-9]{8}-[a-f0-9]{4}-/i.test(label)) return `Account ${label.slice(0, 6)}…${label.slice(-4)}`;
+  const proofAlias = /^[a-f0-9]{8}-symbolon-proof-([a-f0-9]+)-(.+)$/i.exec(label);
+  if (proofAlias) return `${proofAlias[2].replace(/^dealer/i, "lender")} · ${proofAlias[1].slice(0, 4)}`;
+  return label.length > 24 ? `${label.slice(0, 12)}…${label.slice(-8)}` : label;
 }
 
 function Party({ party }: { party: string }) {
