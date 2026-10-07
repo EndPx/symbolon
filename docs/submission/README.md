@@ -2,6 +2,8 @@
 
 Symbolon is a private, bilateral fixed-rate repo desk on Canton. Borrowers receive cash against pledged assets and agree the repurchase amount before settlement. Each dealer sees its own request and quote; the borrower compares the addressed offers. Fixed rate does not remove collateral or counterparty risk.
 
+The primary value is a known contractual principal-plus-interest amount rather than ongoing exposure to floating-rate interest changes. Use the [five separate submission Markdown files](form/README.md) for Value, ICP, Metrics, GTM and the project-page Elevator Pitch. They include the complete disclosed mechanism and distinguish test activity, customer hypotheses and proposed targets.
+
 ## Judge's first look
 
 1. Open the [Symbolon app](https://symbolon.endpx.cloud/app) and [documentation](https://symbolon.gitbook.io/symbolon-docs/). Watch the [recorded local Canton workflow](symbolon-local-demo.mp4) for quote comparison, settlement, margin handling and repurchase with a committed ledger receipt.
@@ -14,7 +16,7 @@ Symbolon is a private, bilateral fixed-rate repo desk on Canton. Borrowers recei
 
 **Project name:** Symbolon
 
-**Elevator pitch:** Treasury teams holding tokenized assets need to compare financing terms without exposing their funding needs or dealer quotes. Symbolon combines private bilateral repo quotes, a fixed annualized rate and an agreed repurchase amount with collateral management on Canton. The prototype reserves dealer cash, exchanges cash and collateral atomically, tracks health factor, handles margin calls and top-ups, and closes through repurchase or dealer-led closeout. A BitSafe GovernableAction integrates threshold approval into simulated oracle marks. The repo and governed mark have executed on shared HackCanton DevNet; the separate DecMan topology has executed on three-participant LocalNet. The intended real-asset pair is cBTC / USDCx. Demonstrated assets and marks are simulated; official token adapters and wallet signing still require verification. We have engineering evidence, not customer demand evidence.
+**Elevator pitch:** Floating-rate borrowing makes interest expense change while a position is open. Symbolon is a private fixed-rate financing desk on Canton: borrowers compare dealer-funded quotes and agree the exact contractual principal-plus-interest amount before settlement. Daml settles cash against pledged collateral atomically and enforces collateral and closing actions. The MVP has completed a simulated-asset repo on shared DevNet; the separate three-participant BitSafe LocalNet run demonstrates governed oracle marks affecting margin handling. Real cBTC/USDCx adapters and production wallet execution remain future work. Fixed interest does not remove collateral risk, network costs or counterparty risk. [Full project-page field](form/05-project-page.md).
 
 **Technology:** Daml SDK 3.5.2, Canton, TypeScript, React 19, Vite, Canton JSON Ledger API, PartyLayer, BitSafe DecMan GovernableAction.
 

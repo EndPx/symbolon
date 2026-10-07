@@ -1,10 +1,12 @@
 # Problem
 
-Financing against an asset requires more than choosing a rate. A treasury operator must agree which counterparty will provide cash, what collateral it accepts, when settlement occurs, how much must be repaid, and what happens if collateral value falls.
+Floating-rate borrowing makes future interest expense uncertain while a position remains open. A borrower budgeting a repayment cannot assume today's rate will remain unchanged; later liquidity and utilization changes can increase the interest charged. Symbolon's primary problem is that uncertainty in the contractual repayment budget.
 
 ## Predictable financing terms
 
 A variable borrowing rate can change the cost of an existing position. An operator budgeting a future payment needs to understand that uncertainty. A fixed-rate agreement makes the contractual repayment amount known when the deal opens; collateral and counterparty risks remain.
+
+The agreed number covers principal and financing interest, not all future costs. Network fees and additional collateral requirements remain separate. A fixed quote can carry a premium and may cost more than a floating alternative if later rates fall. Fixed-rate financing already exists; Symbolon implements it with private Canton counterparties and asset workflows.
 
 Symbolon's proposed initial user is a treasury manager at a digital-asset fund holding tokenized assets on Canton. The manager wants financing while retaining an agreed route to recover those assets. Maturity follows the deal's needs rather than defining the product as short-term lending.
 
