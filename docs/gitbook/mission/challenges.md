@@ -44,7 +44,7 @@ The official challenge is **MainNet only**: a DevNet or TestNet integration does
 
 Symbolon now has a dedicated adapter using the official `@groftylabs/dapp-sdk@0.2.0`. It verifies the extension version and MainNet party, reads the party's own contracts, and submits the repo action builders through prepared execution. This replaces the earlier assumption that a generic PartyLayer `ledgerApi` proxy would be sufficient for Grofty. The [integration guide](../guides/grofty.md) describes the implemented boundary and verification steps.
 
-The outstanding deployment work is substantive: Grofty account access, the core package on the actual MainNet hosting path, authorized issuer/oracle/counterparties, exact demo holdings and feed visibility, any necessary disclosure, and a reviewed fee budget. Only the core DAR's shared **DevNet** vetting has been established. That milestone does not make the MainNet workflow available.
+The outstanding deployment work is substantive: Grofty account access, the core package on the actual MainNet hosting path, authorized issuer/oracle/counterparties, exact demo holdings and feed visibility, any necessary disclosure, and a reviewed fee budget. The current release has completed a simulated-asset repo on shared **DevNet** through authenticated Ledger API submission. That record does not involve Grofty or installed-wallet signing and does not make the MainNet workflow available.
 
 An optional bridge direction would need a real implemented and demonstrated inbound flow. Linking to Grofty's wallet or describing its existing bridge is insufficient evidence of a Symbolon bridge integration. Funding a real CC/USDCx balance also does not create the demo CUSD/CETH consumed by the current repo contracts.
 

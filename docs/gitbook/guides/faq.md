@@ -30,7 +30,7 @@ They are the intended production pair. Verified workflows use simulated holdings
 
 ## Is MainNet trading available?
 
-No. LocalNet execution and older shared DevNet package-installation evidence are recorded. Real assets, oracle lineage, closeout accounting, wallet execution, and operational review remain MainNet gates.
+No. The repo and governed mark have executed on LocalNet and shared DevNet with simulated assets. Real assets, oracle lineage, closeout accounting, wallet execution, and operational review remain MainNet gates.
 
 ## What does BitSafe add?
 

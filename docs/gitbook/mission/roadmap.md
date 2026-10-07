@@ -14,7 +14,7 @@ Completion requires that a reviewer can start from a fresh environment and repro
 
 Run the pinned BitSafe LocalNet starter from a clean setup and document exact prerequisites and commands. Integrate the DecMan decentralized-party workflow with a material Symbolon operation, then show the threshold outcome in the repo lifecycle. A generic governance vote without a Symbolon effect is not sufficient evidence of app integration.
 
-The current demo is on a separate local Canton sandbox; shared DevNet only has the vetted core package. A shared-network transaction is not a prerequisite for the selected Contribution Pool path. Gold's own participant and peer-hosting work, and Grofty's MainNet wallet flow, are deferred.
+On **7 October 2026**, the current release also completed the governed mark, margin call, top-up and repurchase on shared HackCanton DevNet. [Retained receipts and snapshots](../deployments/devnet.md) add external network execution to the separate LocalNet proof. All assets remain simulated, and the DevNet run used an ordinary hosted oracle on one participant. Gold's own participant and peer-hosting work, and Grofty's MainNet wallet flow, are deferred.
 
 ## Phase 3: one real asset integration
 

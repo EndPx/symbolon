@@ -2,6 +2,16 @@
 
 This page distinguishes source capabilities from operational evidence. The original browser and wall-clock Canton baseline is **23 September 2026**; the health-factor liquidation source/build update is **28 September 2026**. Development is ongoing; use the final verification output for the revision being reviewed.
 
+## Shared-network execution: 7 October 2026
+
+The revised `symbolon-v2` v0.2.0 and `symbolon-bitsafe` v0.2.0 executed on **NODERS shared HackCanton DevNet**, Canton **3.5.19**, participant `hackcanton-devnet-3`. Run `d2602fd8` finished at **2026-10-07T06:24:43.782Z** with **20 committed transactions**, one expected Daml threshold rejection and five timestamped state snapshots. Ledger offsets advanced **2293352 → 2293507**.
+
+One confirmation could not execute the price action. Two confirmations changed the simulated cBTC-demo mark from **60,000 to 36,000**, reducing health factor from **1.428571 to 0.857143**. The dealer issued a margin call; 0.005 cBTC-demo restored health factor to **1.028571**; the borrower repurchased for the unchanged **1,004.3333333333 USDCx-demo**, returning all pledged collateral. The final ledger state has `ClosedRepo: Repurchased` and no open repo position.
+
+[Shared DevNet](../deployments/devnet.md) provides the exact package/transaction identifiers. The [judge record](https://github.com/EndPx/symbolon/blob/main/docs/submission/evidence/shared-devnet.md) links original receipts, party mapping, snapshots and operator-log lookups. An offline checker validates consistency, returned unlocked balances and the exact source-file hashes; it does not replace authorized ledger verification.
+
+This is a **single-participant Ledger API run using ordinary hosted parties and simulated assets**. It uses the application's action builders, without installed-wallet signing or DecMan services on DevNet. The separate three-participant LocalNet proof below remains the decentralized-party/DecMan evidence for Contribution Pool. MainNet and official cBTC/USDCx settlement remain unverified.
+
 ## Current release: 5 October 2026
 
 `symbolon-v2` v0.2.0 passed **11 core Daml scripts, two BitSafe governance scripts and 27 frontend tests**. Native Canton passed both lifecycle scripts at offsets **55 → 202**, the local BitSafe mark-to-margin script at **202 → 261**, and the actual frontend HTTP actions with **19 successful submissions** at **261 → 336**.
@@ -10,7 +20,7 @@ The official BitSafe three-participant LocalNet also passed on tested revision `
 
 Core package ID: `1d40e972b56e42c279140639d33dc362b432f2c0f608c77ec36410f0395f3e19`. [Public evidence record](https://github.com/EndPx/symbolon/blob/codex/submission-devnet/docs/submission/evidence/bitsafe-localnet.json) preserves the exact revision, failure, closing contract, application receipts and all-node execution audit. CI artifacts retain the test logs and DARs. All asset balances and prices are simulated.
 
-The shared DevNet package below remains the older baseline. Current release package upload, real cBTC/USDCx token adapters and an end-to-end shared DevNet transaction remain unverified. [Network promotion](../guides/network-promotion.md) specifies the same-artifact DevNet-first release path and the remaining MainNet gates.
+The current release is now uploaded/vetted and has completed the shared DevNet flow recorded above. The September package installation below remains historical baseline evidence. Real cBTC/USDCx token adapters and shared-network wallet signing remain unverified. [Network promotion](../guides/network-promotion.md) specifies the runtime profile and remaining MainNet gates.
 
 On **6 October 2026 WIB**, the native local browser completed the two-dealer 5.2%/5.8% comparison, opening exchange, simulated CETH price drop, margin call, 3 CETH top-up and exact full repurchase again. It returned all 18 pledged CETH and displayed `Repurchased` plus update ID `1220c496f9730965356d7593c5f0c4cacf06ffe47f387db6a3d5daf2f95e6bc5ec79`. [Browser evidence](../../submission/evidence/browser-repurchase.json) and a captioned, edited screen recording of about 2 min 26 sec are included in `docs/submission`. This is a local simulated-asset recording, separate from the BitSafe CI run.
 
@@ -36,7 +46,7 @@ Core package ID:
 29b7ac23ff40927030b00c65941fdc2d5a4869cd6941da1cd31b6d7e7811ba5d
 ```
 
-The package ID matched the main DALF in the September 23 core DAR (SDK 3.5.2). It predates the September 28 health-factor liquidation change and does not vet the rebuilt DAR. It does not demonstrate a seeded shared-network desk, an authenticated wallet trade, or multi-node party hosting. The end-to-end transaction evidence above remains local.
+That historical package ID matched the main DALF in the September 23 core DAR (SDK 3.5.2) and predates the health-factor liquidation change. It is separate from the current release's package IDs and October 7 shared-network receipts. Neither package installation alone demonstrates an authenticated wallet trade or multi-node party hosting.
 
 ## Recorded browser verification
 
@@ -64,14 +74,14 @@ After the Grofty integration, the frontend suite passed **22/22 tests**, includi
 | --- | --- | --- |
 | Contracts | Source, 11 Daml-script entries and live local liquidation lifecycle | Independent security audit |
 | Local runtime | Seeded sandbox and wall-clock workflows | Production resilience or isolated institutional nodes |
-| Shared DevNet | Core `symbolon-0.1.0` package uploaded and vetted | Completed wallet trade or multi-node execution |
+| Shared DevNet | Current v0.2.0 packages vetted; governed mark, margin call, top-up and repurchase with 20 committed receipts | Wallet signing, real assets or DevNet multi-node party hosting |
 | Grofty | Dedicated SDK source, 13 fake-provider tests and build | Installed-wallet MainNet repo execution or bounty qualification |
 | Frontend | Local browser happy path, landing/desk responsive checks and production preview | Complete accessibility review or every wallet/browser/network combination |
 | Assets | Simulated issuer/instrument holdings | Real cBTC collateral or a verified USD cash-token integration |
 | Price feed | Agreed party and timestamp checks | Live market data or manipulation resistance |
 | Privacy | Scoped contracts and party-level access tests | Secrecy from all hosting operators or asset issuers |
 | Commercial need | Defined target and validation plan | Customer traction, revenue or completed interviews |
-| GitBook | Published basic site with 37 product, architecture, reference and operational pages | Automated Git Sync or documentation proving network execution by itself |
+| GitBook | Published basic site with 55 source pages, including product, architecture, reference and operational navigation | Automated Git Sync or documentation proving network execution by itself |
 | BitSafe Contribution Pool | Official three-participant DecMan LocalNet passed; all-node execution audit and Symbolon margin/top-up/repurchase effect verified | Shared DevNet/MainNet decentralized-party deployment, independent hosting, or award |
 | Grofty | Source adapter and fake-provider tests remain available | Active submission scope, installed-wallet MainNet repo execution or bounty qualification |
 
