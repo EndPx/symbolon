@@ -79,7 +79,7 @@ export function browseSession(readParty?: string): Session {
   };
 }
 export async function publicReadParty(): Promise<string | undefined> {
-  if (!sandboxModeEnabled()) return undefined;
+  if (!sandboxModeEnabled() || deployment().publicDesk) return undefined;
   try { return (await sandboxApi().parties()).find(p => p.startsWith("oracle")); }
   catch { return undefined; }
 }

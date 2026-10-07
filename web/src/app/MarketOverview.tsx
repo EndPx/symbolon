@@ -19,10 +19,12 @@ function latestPairs(feeds: Pair[]): Pair[] {
     `${a.payload.instrument}/${a.payload.cashInstrument}`.localeCompare(`${b.payload.instrument}/${b.payload.cashInstrument}`));
 }
 
-export default function MarketOverview({ state, party, connected, mode, onConnect, onRequestPair }: {
+export default function MarketOverview({ state, party, connected, tradingEnabled = connected, pauseReason, mode, onConnect, onRequestPair }: {
   state: DeskState | null;
   party: string;
   connected: boolean;
+  tradingEnabled?: boolean;
+  pauseReason?: string;
   mode: "borrow" | "lend" | "oracle";
   onConnect(): void;
   onRequestPair(pairId: string): void;
@@ -37,6 +39,7 @@ export default function MarketOverview({ state, party, connected, mode, onConnec
     (!collateral || payload.instrument === collateral) && (!cash || payload.cashInstrument === cash));
   const selected = filtered.find(pair => identity(pair) === selectedId) ?? filtered[0];
   const feed = selected?.payload;
+  const loading = connected && state === null && !pauseReason;
   const partyRequests = connected ? (state?.requests ?? []).filter(({ payload }) => payload.borrower === party || payload.dealer === party).length : 0;
   const partyQuotes = connected ? (state?.quotes ?? []).filter(({ payload }) => (payload.borrower === party || payload.dealer === party) && Date.parse(payload.validUntil) > Date.now()).length : 0;
   const partyPositions = connected ? (state?.positions ?? []).filter(({ payload }) => payload.borrower === party || payload.dealer === party).length : 0;
@@ -67,7 +70,7 @@ export default function MarketOverview({ state, party, connected, mode, onConnec
     <div className="market-layout">
       <div className="market-list" aria-label="Visible financing pairs">
       <div className="market-list-head"><span>Collateral / cash</span><span>Oracle mark</span><span>Mark status</span><span>{mode === "oracle" ? "Funding rate" : "Your best quote"}</span></div>
-        {filtered.length === 0 && <div className="market-empty"><strong>No visible financing pairs</strong><p>{pairs.length ? "Try a different filter." : connected ? "Ask an agreed oracle to publish a price feed visible to your party." : "Connect a wallet to see your authorized financing pairs."}</p></div>}
+        {filtered.length === 0 && <div className="market-empty"><strong>{pauseReason ? "Ledger view unavailable" : loading ? "Loading financing pairs…" : "No visible financing pairs"}</strong><p>{pauseReason ?? (loading ? "Reading your party’s authorized ledger view." : pairs.length ? "Try a different filter." : connected ? "Your account is connected. No financing pair has been provisioned for this party yet." : "Connect to see your authorized financing pairs.")}</p></div>}
         {filtered.map(pair => {
           const f = pair.payload;
           const pairQuotes = connected ? (state?.quotes ?? []).filter(({ payload: q }) =>
@@ -106,12 +109,13 @@ export default function MarketOverview({ state, party, connected, mode, onConnec
             {mode === "borrow" && <div><dt>Available collateral</dt><dd>{connected ? `${fmtAmount(balanceOf(state?.holdings ?? [], party, feed.instrument, feed.instrumentIssuer), 4)} ${feed.instrument}` : "Connect to view"}</dd></div>}
           </dl>
           <details className="party-detail"><summary>Issuer and oracle party IDs</summary><p>Collateral issuer <code>{feed.instrumentIssuer}</code></p><p>Cash issuer <code>{feed.cashIssuer}</code></p><p>Oracle <code>{feed.oracle}</code></p></details>
-          {connected ? <a className="seal market-action" href={mode === "oracle" ? "#oracle-marks" : mode === "lend" ? "#dealer-requests" : quotes.length ? "#private-quotes" : "#request-repo"}
+          {connected && tradingEnabled ? <a className="seal market-action" href={mode === "oracle" ? "#oracle-marks" : mode === "lend" ? "#dealer-requests" : quotes.length ? "#private-quotes" : "#request-repo"}
               onClick={() => { if (mode === "borrow") onRequestPair(identity(selected)); }}>
               {mode === "oracle" ? "Manage oracle marks" : mode === "lend" ? "View incoming RFQs" : quotes.length ? "Review private quotes" : "Request a quote"}</a>
-            : <button className="seal market-action" onClick={onConnect}>Connect wallet</button>}
+            : connected ? <p className="market-disclosure">{pauseReason ?? "Connected in read-only mode. Trading is not enabled for this deployment."}</p>
+            : <button className="seal market-action" onClick={onConnect}>Connect</button>}
           <p className="market-disclosure">{fresh ? "Rate and repayment amount are confirmed only in a dealer quote." : "A fresh oracle mark is required before settlement."}</p>
-        </> : <div className="market-detail-empty"><p className="market-eyebrow">PAIR DETAIL</p><h2>Select a visible pair</h2><p>Private quotes and holdings appear only in an authorized party view.</p>{!connected && <button className="seal market-action" onClick={onConnect}>Connect wallet</button>}</div>}
+        </> : <div className="market-detail-empty"><p className="market-eyebrow">PAIR DETAIL</p><h2>{pauseReason ? "Ledger view unavailable" : loading ? "Loading your markets…" : connected ? "No pair available yet" : "Select a visible pair"}</h2><p>{pauseReason ?? (loading ? "Your account is connected. Waiting for the ledger read." : connected ? "You are signed in. A financing pair will appear here when it is available to your party." : "Private quotes and holdings appear only in an authorized party view.")}</p>{!connected && <button className="seal market-action" onClick={onConnect}>Connect</button>}</div>}
       </aside>
     </div>
   </section>;

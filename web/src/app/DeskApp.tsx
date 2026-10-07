@@ -17,7 +17,7 @@ import MarketOverview from "./MarketOverview";
 import { deploymentFailure, tradingBlocker } from "../ledger/deployment";
 import { deployment } from "../ledger/deployment";
 import { startAccountConnection } from "../ledger/account";
-import { SubmissionUncertain } from "../ledger/canton-v2";
+import { SubmissionUncertain, type CommittedReceipt } from "../ledger/canton-v2";
 import { completePublicRequests, requestPublicQuote } from "../ledger/public-desk";
 import { PublicAccess, PublicDeskSetup, PublicMarket } from "./PublicAccess";
 
@@ -53,7 +53,7 @@ function useDesk(session: Session) {
   return { state, error, refresh, readAt };
 }
 
-type Receipt = { phase: "pending" | "succeeded" | "failed" | "unconfirmed"; label: string; detail?: string; updateId?: string };
+type Receipt = { phase: "pending" | "succeeded" | "failed" | "unconfirmed"; label: string; detail?: string; updateId?: string; ledger?: CommittedReceipt };
 type Transaction = { busy: boolean; run(label: string, action: () => Promise<string>): Promise<boolean> };
 const Transactions = createContext<Transaction>({ busy: false, run: async () => false });
 
@@ -71,6 +71,12 @@ function Term({ label, children }: { label: string; children: ReactNode }) {
 
 function Party({ party }: { party: string }) {
   return <span title={party} className="party-name">{partyLabel(party)}</span>;
+}
+
+function downloadReceipt(receipt: CommittedReceipt) {
+  const url = URL.createObjectURL(new Blob([JSON.stringify(receipt,null,2)],{type:"application/json"}));
+  const link=document.createElement("a");link.href=url;link.download=`symbolon-receipt-${receipt.offset}.json`;
+  link.click();window.setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 
 function Dialog({ title, children, close, busy = false }: { title: string; children: ReactNode; close(): void; busy?: boolean }) {
@@ -266,7 +272,13 @@ function BorrowRequest({ s, st, demoParties, initialPair }: { s: Session; st: De
   const [cure, setCure] = useState("60");
   const [maxAge, setMaxAge] = useState("60");
   const [dealersText, setDealersText] = useState(deployment().publicDesk?.operator ?? "");
-  useEffect(()=>{if(!chosen&&feeds.length)setChosen(feedIdentity(feeds[0].payload));},[chosen,feeds]);
+  useEffect(()=>{
+    if(chosen)return;
+    const operator=deployment().publicDesk?.operator;
+    const preferred=operator?feeds.find(({payload:f})=>f.oracle===operator&&f.instrumentIssuer===operator
+      &&f.cashIssuer===operator&&f.instrument==="cBTC-demo"&&f.cashInstrument==="USDCx-demo"):feeds[0];
+    if(preferred)setChosen(feedIdentity(preferred.payload));
+  },[chosen,feeds]);
   const selected = feeds.find((f) => feedIdentity(f.payload) === chosen);
   const feed = selected?.payload;
   const purchase = Number(amount);
@@ -503,7 +515,8 @@ function Workspace({ session: s, connect, demoParties, switchParty, disconnect }
   const { state: st, error, refresh, readAt } = useDesk(s);
   const [receipt, setReceipt] = useState<Receipt | null>(null);
   const lock = useRef(false);
-  const [tab, setTab] = useState<"borrow" | "lend">(() => s.kind === "sandbox" && s.party.startsWith("dealer") ? "lend" : "borrow");
+  const [tab, setTab] = useState<"borrow" | "lend" | "oracle">(() => s.kind === "sandbox"
+    ? s.party.startsWith("oracle") ? "oracle" : s.party.startsWith("dealer") ? "lend" : "borrow" : "borrow");
   const [requestedPair, setRequestedPair] = useState("");
   const [activeSection, setActiveSection] = useState("markets");
   const [sessionOpen, setSessionOpen] = useState(() => !window.matchMedia("(max-width: 520px)").matches);
@@ -514,15 +527,21 @@ function Workspace({ session: s, connect, demoParties, switchParty, disconnect }
     return () => media.removeEventListener("change", sync);
   }, []);
   const busy = receipt?.phase === "pending";
+  const connected = s.kind !== "browse";
   const trading = canTrade(s);
   const run = useCallback(async (label: string, action: () => Promise<string>) => {
-    if (!trading) { connect(); return false; }
+    if (!trading) {
+      if (!connected) connect();
+      else setReceipt({phase:"failed",label,detail:"Your account is connected in read-only mode. Trading is not enabled for this deployment."});
+      return false;
+    }
     if (lock.current || error || s.pendingCommand?.()) return false;
     lock.current = true;
     setReceipt({ phase: "pending", label, detail: s.kind==="account" ? "Waiting for the participant to confirm your account's action. Asset preparation may require more than one transaction." : "Awaiting wallet authorization and ledger confirmation. Asset preparation may require more than one transaction." });
     try {
       const updateId = await action();
-      setReceipt({ phase: "succeeded", label, updateId });
+      const ledger = s.lastReceipt?.();
+      setReceipt({ phase: "succeeded", label, updateId, ...(ledger?.updateId===updateId?{ledger}:{}) });
       await refresh();
       return true;
     } catch (e) {
@@ -530,9 +549,11 @@ function Workspace({ session: s, connect, demoParties, switchParty, disconnect }
       await refresh();
       return false;
     } finally { lock.current = false; }
-  }, [trading, error, connect, refresh, s]);
-  const transactions = useMemo(() => ({ busy: busy || !!error || !!s.pendingCommand?.(), run }), [busy, error, run, s]);
-  const oracle = trading && st?.feeds.some((f) => f.payload.oracle === s.party);
+  }, [connected, trading, error, connect, refresh, s]);
+  const transactions = useMemo(() => ({ busy: busy || !!error || !!s.pendingCommand?.() || !trading, run }), [busy, error, run, s, trading]);
+  const hasOracleFeeds = connected && !!st?.feeds.some((f) => f.payload.oracle === s.party);
+  const oracle = tab === "oracle" && hasOracleFeeds;
+  const roles: Array<"borrow" | "lend" | "oracle"> = hasOracleFeeds ? ["borrow", "lend", "oracle"] : ["borrow", "lend"];
   useEffect(() => {
     const ids = oracle ? ["markets", "oracle-marks", "open-positions"] : tab === "borrow" ? ["markets", "private-quotes", "request-repo", "open-positions"] : ["markets", "dealer-requests", "open-positions"];
     let frame = 0;
@@ -555,7 +576,7 @@ function Workspace({ session: s, connect, demoParties, switchParty, disconnect }
   return <Transactions.Provider value={transactions}><div className="desk">
     <a className="skip-link" href="#desk-content">Skip to desk</a>
     <header className="desk-head"><a className="brand" href="/" aria-label="Symbolon home"><img src="/brand/logo-mark.png" alt="" width="24" height="24" /><span>SYMBOLON</span></a>
-      {trading && !oracle && <nav className="desk-tabs" aria-label="Desk role">{(["borrow", "lend"] as const).map((t) => <button key={t} className={t === tab ? "on" : ""} aria-pressed={t === tab} onClick={() => setTab(t)}>{t === "borrow" ? "Borrower" : "Dealer"}</button>)}</nav>}
+      {connected && <nav className="desk-tabs" aria-label="Desk role">{roles.map((t) => <button key={t} className={t === tab ? "on" : ""} aria-pressed={t === tab} onClick={() => setTab(t)}>{t === "borrow" ? "Borrower" : t === "lend" ? "Dealer" : "Oracle"}</button>)}</nav>}
       <div className="who">{s.kind !== "browse" ? <><span className="who-label"><Party party={s.party} /></span><span className="muted sm">{s.kind === "sandbox" ? "Local demo" : `${s.wallet ?? "Wallet"} · ${s.networkId ?? walletNetwork()}${trading ? "" : " · Read-only"}`}</span><button className="ghost sm" disabled={busy} onClick={disconnect}>Disconnect</button></>
         : <><span className="sm muted">{deployment().network==="devnet"?"DevNet":"Read-only"}</span><button className="seal sm" onClick={connect}>Connect</button></>}</div>
     </header>
@@ -564,18 +585,18 @@ function Workspace({ session: s, connect, demoParties, switchParty, disconnect }
       <div className="desk-side-intro"><span className="desk-side-kicker">PRIVATE DEALING DESK</span><strong>{oracle ? "Oracle" : tab === "borrow" ? "Borrow" : "Lend"}</strong><p>Fixed-rate repo on Canton</p></div>
       <nav className="desk-side-nav" aria-label="Workspace sections">
         <a className={activeSection === "markets" ? "active" : ""} aria-current={activeSection === "markets" ? "location" : undefined} href="#markets"><span>01</span> Markets</a>
-        {trading && st && (oracle ? <a className={activeSection === "oracle-marks" ? "active" : ""} aria-current={activeSection === "oracle-marks" ? "location" : undefined} href="#oracle-marks"><span>02</span> Publish marks</a> : tab === "borrow" ? <><a className={activeSection === "private-quotes" ? "active" : ""} aria-current={activeSection === "private-quotes" ? "location" : undefined} href="#private-quotes"><span>02</span> Private quotes</a><a className={activeSection === "request-repo" ? "active" : ""} aria-current={activeSection === "request-repo" ? "location" : undefined} href="#request-repo"><span>03</span> New request</a></> : <a className={activeSection === "dealer-requests" ? "active" : ""} aria-current={activeSection === "dealer-requests" ? "location" : undefined} href="#dealer-requests"><span>02</span> Incoming RFQs</a>)}
-        {trading && st && <a className={activeSection === "open-positions" ? "active" : ""} aria-current={activeSection === "open-positions" ? "location" : undefined} href="#open-positions"><span>{oracle ? "03" : tab === "borrow" ? "04" : "03"}</span> Positions</a>}
+        {connected && st && (oracle ? <a className={activeSection === "oracle-marks" ? "active" : ""} aria-current={activeSection === "oracle-marks" ? "location" : undefined} href="#oracle-marks"><span>02</span> Oracle marks</a> : tab === "borrow" ? <><a className={activeSection === "private-quotes" ? "active" : ""} aria-current={activeSection === "private-quotes" ? "location" : undefined} href="#private-quotes"><span>02</span> Private quotes</a>{trading && <a className={activeSection === "request-repo" ? "active" : ""} aria-current={activeSection === "request-repo" ? "location" : undefined} href="#request-repo"><span>03</span> New request</a>}</> : <a className={activeSection === "dealer-requests" ? "active" : ""} aria-current={activeSection === "dealer-requests" ? "location" : undefined} href="#dealer-requests"><span>02</span> Incoming RFQs</a>)}
+        {connected && st && <a className={activeSection === "open-positions" ? "active" : ""} aria-current={activeSection === "open-positions" ? "location" : undefined} href="#open-positions"><span>{oracle ? "03" : tab === "borrow" ? "04" : "03"}</span> Positions</a>}
       </nav>
       <div className="environment-note"><strong>{s.kind === "sandbox" ? "Local Canton demo" : "Symbolon prototype"}</strong><span>{s.kind === "sandbox" ? "Demo assets · Simulated oracle marks · No real funds" : s.wallet === "grofty" ? "Prototype assets · Simulated oracle marks · MainNet actions can incur real fees" : "Demo assets · Simulated oracle marks · Verify your network and participant"}</span></div>
       <details className="desk-session-disclosure" open={sessionOpen} onToggle={(e) => setSessionOpen(e.currentTarget.open)}><summary>Session controls and simulated marks</summary>
       <div className="desk-tools">
       {s.kind==="account"&&s.ownedParties&&s.ownedParties.length>1&&<Field label="Account party" hint="Only parties authorized for your account are listed."><select value={s.party} disabled={busy||!!s.pendingCommand?.()} onChange={e=>switchParty(e.target.value)}>{s.ownedParties.map(p=><option key={p} value={p}>{partyLabel(p)}</option>)}</select></Field>}
-      {sandboxModeEnabled() && <div className="demo-controls"><Field label="Local demo party" hint="Development only. Each party reads its own ledger view."><select value={s.kind === "sandbox" ? s.party : ""} disabled={busy} onChange={(e) => { if (e.target.value) switchParty(e.target.value); }}>
+      {sandboxModeEnabled() && !deployment().publicDesk && (s.kind==="browse"||s.kind==="sandbox") && <div className="demo-controls"><Field label="Local demo party" hint="Development only. Each party reads its own ledger view."><select value={s.kind === "sandbox" ? s.party : ""} disabled={busy} onChange={(e) => { if (e.target.value) switchParty(e.target.value); }}>
         <option value="">Choose a seeded demo party</option>{demoParties.map((p) => <option key={p} value={p}>{partyLabel(p)}</option>)}
       </select></Field>{!demoParties.length && <p className="sm muted">No seeded parties found. Start and seed the local Canton sandbox, then reload.</p>}</div>}
       <div className="session-tools">
-      {trading && <details className="party-detail"><summary>Your full party ID</summary><code>{s.party}</code></details>}
+      {connected && <details className="party-detail"><summary>Your full party ID</summary><code>{s.party}</code></details>}
       <div className="ledger-status"><span className="sm muted">{readAt ? `Last ledger read ${readAt.toLocaleTimeString()} · Times shown in ${Intl.DateTimeFormat().resolvedOptions().timeZone}` : s.kind==="browse"&&!s.ledgerRead?"Connect to load your private ledger view":"Reading ledger…"}</span><button className="ghost sm" disabled={busy||s.kind==="browse"&&!s.ledgerRead} onClick={() => void refresh()}>Refresh</button></div>
       </div></div>
       {st && !!st.feeds.length && <div className="marks-strip"><span className="marks-tag">Simulated marks</span>{latestFeeds(st.feeds).map(({ contractId, payload: f }) => <span className="mark" key={contractId} title={`Oracle ${f.oracle}; issuer ${f.instrumentIssuer}; ${fmtTime(f.asOf)}`}>
@@ -589,19 +610,26 @@ function Workspace({ session: s, connect, demoParties, switchParty, disconnect }
       {error && <div className="ledger-error" role="alert"><strong>Ledger unavailable</strong><p>{error}</p><p className="sm">Showing the last successful read. Trading is paused until refresh succeeds. Check the participant connection and wallet permissions.</p></div>}
       <div className="receipt-region" aria-live="polite" aria-atomic="true">{receipt && <div className={`transaction-receipt ${receipt.phase}`}>
         <strong>{receipt.phase === "pending" ? "Pending" : receipt.phase === "succeeded" ? "Confirmed" : receipt.phase==="unconfirmed"?"Unconfirmed":"Failed"} · {receipt.label}</strong>
-        {receipt.detail && <p>{receipt.detail}</p>}{receipt.updateId && <details><summary>Ledger update receipt</summary><code>{receipt.updateId}</code></details>}
+        {receipt.detail && <p>{receipt.detail}</p>}{receipt.updateId && <details><summary>Ledger update receipt</summary><code>{receipt.updateId}</code>{receipt.ledger&&<><dl className="terms"><div><dt>Command ID</dt><dd><code>{receipt.ledger.commandId}</code></dd></div><div><dt>Ledger offset</dt><dd>{receipt.ledger.offset}</dd></div><div><dt>Recorded</dt><dd>{receipt.ledger.recordTime}</dd></div><div><dt>Synchronizer</dt><dd><code>{receipt.ledger.synchronizerId}</code></dd></div></dl><button className="ghost sm" onClick={()=>downloadReceipt(receipt.ledger!)}>Download receipt</button></>}</details>}
       </div>}</div>
       {s.pendingCommand?.()&&<div className="ledger-error" role="status"><strong>Check the original transaction</strong><p>New submissions are paused until this command is confirmed or rejected.</p><code>{s.pendingCommand!()!.commandId}</code><button className="ghost sm" disabled={busy} onClick={()=>{
-        void s.reconcilePending?.().then(async result=>{setReceipt({phase:result.status==="committed"?"succeeded":result.status==="failed"?"failed":"unconfirmed",label:"Original transaction status",updateId:result.updateId,detail:result.status==="pending"?"No completion was found yet. Keep checking the original command.":undefined});await refresh();}).catch(e=>setReceipt({phase:"unconfirmed",label:"Original transaction status",detail:e.message}));
+        void s.reconcilePending?.().then(async result=>{
+          const ledger=s.lastReceipt?.();
+          setReceipt({phase:result.status==="committed"?"succeeded":result.status==="failed"?"failed":"unconfirmed",
+            label:"Original transaction status",updateId:result.updateId,
+            ...(result.status==="committed"&&ledger&&ledger.updateId===result.updateId?{ledger}:{}),
+            detail:result.status==="pending"?"No completion was found yet. Keep checking the original command.":undefined});
+          await refresh();
+        }).catch(e=>setReceipt({phase:"unconfirmed",label:"Original transaction status",detail:e.message}));
       }}>Check ledger status</button></div>}
-      {s.kind==="browse"&&deployment().publicDesk?<PublicMarket onConnect={connect}/>:<MarketOverview state={st} party={s.party} connected={trading} mode={oracle ? "oracle" : tab} onConnect={connect} onRequestPair={setRequestedPair} />}
-      {trading&&<PublicAccess session={s} state={st} busy={transactions.busy} run={run}/>}
+      {s.kind==="browse"&&deployment().publicDesk?<PublicMarket onConnect={connect}/>:<MarketOverview state={st} party={s.party} connected={connected} tradingEnabled={trading&&!error} pauseReason={error?"Trading is paused until the ledger connection recovers. Refresh to try again.":undefined} mode={oracle ? "oracle" : tab} onConnect={connect} onRequestPair={setRequestedPair} />}
+      {trading&&<PublicAccess session={s} state={st} busy={transactions.busy} borrowerMode={tab==="borrow"&&!oracle} run={run}/>}
       <PublicDeskSetup session={s} onRefresh={refresh}/>
-      {!trading && <section className="open-desk"><img src="/brand/logo-mark.png" alt="" width="54" height="54" /><h2>Your private financing desk</h2><p>Connect your account to get DevNet assets, request a funded quote, and manage repayment.</p><div className="acts wrap"><button className="seal" onClick={connect}>Connect</button><a className="ghost" href="https://symbolon.gitbook.io/symbolon-docs/">Read the docs</a></div><p className="sm muted">Canton DevNet uses simulated assets. MainNet trading is not enabled.</p></section>}
-      {trading && !st && !error && <p role="status" className="empty-state">Loading your party’s ledger view…</p>}
-      {trading && st && <><div className="work-heading"><div><span>Deal workspace</span><h2>{oracle ? "Keep collateral marks current" : tab === "borrow" ? "From private quote to settlement" : "Price and manage your requests"}</h2></div><p>{oracle ? "Only the agreed oracle can publish marks for these pairs." : "Every action below is scoped to your connected party and confirmed on the ledger."}</p></div>
+      {!connected && <section className="open-desk"><img src="/brand/logo-mark.png" alt="" width="54" height="54" /><h2>Your private financing desk</h2><p>Connect your account to access your quotes, collateral and repayment.</p><div className="acts wrap"><button className="seal" onClick={connect}>Connect</button><a className="ghost" href="https://symbolon.gitbook.io/symbolon-docs/">Read the docs</a></div><p className="sm muted">Canton DevNet uses simulated assets. MainNet trading is not enabled.</p></section>}
+      {connected && !st && !error && <p role="status" className="empty-state">Loading your party’s ledger view…</p>}
+      {connected && st && <><div className="work-heading"><div><span>Deal workspace</span><h2>{!trading ? "Your authorized ledger view" : oracle ? "Keep collateral marks current" : tab === "borrow" ? "From private quote to settlement" : "Price and manage your requests"}</h2></div><p>{!trading ? "You are connected in read-only mode. Transactions remain disabled." : oracle ? "Only the agreed oracle can publish marks for these pairs." : "Every action below is scoped to your connected party and confirmed on the ledger."}</p></div>
         <div className={`board ${oracle ? "board-oracle" : tab === "borrow" ? "board-borrow" : "board-lend"}`}>{oracle ? <Panel id="oracle-marks" title="Publish simulated marks" description="You are the oracle party. Prices are entered manually; each update receives a current timestamp.">{st.feeds.filter((f) => f.payload.oracle === s.party).map((f) => <OracleMark key={feedIdentity(f.payload)} feed={f} s={s} />)}</Panel>
-        : tab === "borrow" ? <><ReceivedQuotes s={s} st={st} /><BorrowRequest s={s} st={st} demoParties={s.kind === "sandbox" ? demoParties : []} initialPair={requestedPair} /><Balances st={st} party={s.party} /></>
+        : tab === "borrow" ? <><ReceivedQuotes s={s} st={st} />{trading && <BorrowRequest s={s} st={st} demoParties={s.kind === "sandbox" ? demoParties : []} initialPair={requestedPair} />}<Balances st={st} party={s.party} /></>
           : <LendPanel s={s} st={st} />}</div><div className="board-foot"><Positions s={s} st={st} /></div></>}
     </main></div>
   </div></Transactions.Provider>;
@@ -627,8 +655,8 @@ export default function DeskApp() {
     void (async () => {
       try {
         const restored = await restoreSession();
-        if (active && restored) setSession((current) => canTrade(current) ? current : restored);
-        else { const party = await publicReadParty(); if (active && party) setSession((current) => canTrade(current) ? current : browseSession(party)); }
+        if (active && restored) setSession((current) => current.kind !== "browse" ? current : restored);
+        else { const party = await publicReadParty(); if (active && party) setSession((current) => current.kind !== "browse" ? current : browseSession(party)); }
       } catch (e) { if (active) setSessionError((e as Error).message); }
     })();
     if (sandboxModeEnabled()) void listSandboxParties().then((p) => { if (active) setDemoParties(p); }).catch(() => {});

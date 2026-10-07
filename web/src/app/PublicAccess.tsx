@@ -5,11 +5,11 @@ import { claimDevnetAssets, createPublicDesk, publicDeploymentFromContract, refr
 import { balanceOf, fmtAmount, partyLabel, type DeskState } from "../ledger/symbolon";
 import { uploadPublicAccessPackage } from "../ledger/account";
 
-export function PublicAccess({session,state,busy,run}: {
-  session:Session;state:DeskState|null;busy:boolean;run(label:string,action:()=>Promise<string>):Promise<boolean>;
+export function PublicAccess({session,state,busy,borrowerMode,run}: {
+  session:Session;state:DeskState|null;busy:boolean;borrowerMode:boolean;run(label:string,action:()=>Promise<string>):Promise<boolean>;
 }) {
   const d=deployment();
-  if(!d.publicDesk||session.kind==="browse"||session.party===d.publicDesk.operator)return null;
+  if(!d.publicDesk||session.kind==="browse"||session.kind==="sandbox"||session.party===d.publicDesk.operator)return null;
   const collateral=balanceOf(state?.holdings??[],session.party,"cBTC-demo",d.publicDesk.operator);
   const cash=balanceOf(state?.holdings??[],session.party,"USDCx-demo",d.publicDesk.operator);
   const feed=(state?.feeds??[]).filter(f=>f.payload.oracle===d.publicDesk!.operator
@@ -22,7 +22,7 @@ export function PublicAccess({session,state,busy,run}: {
       <div><span>Available cash</span><strong>{fmtAmount(cash)} USDCx-demo</strong></div></div>
     <div className="acts wrap"><button className="seal sm" disabled={busy} onClick={()=>void run("DevNet assets issued",()=>claimDevnetAssets(session))}>Get DevNet assets</button>
       {feed&&<button className="ghost sm" disabled={busy} onClick={()=>void run("Reference mark refreshed",()=>refreshReferenceMark(session,feed.contractId))}>Refresh reference mark</button>}
-      {feed&&<a className="quiet" href="#request-repo">Request financing</a>}</div>
+      {feed&&borrowerMode&&<a className="quiet" href="#request-repo">Request financing</a>}</div>
     <p className="sm muted">The reference mark is simulated. Your private quote sets the fixed rate and repayment amount.</p>
   </section>;
 }
