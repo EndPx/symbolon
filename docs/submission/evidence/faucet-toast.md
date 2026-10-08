@@ -38,3 +38,25 @@ read-only/unconnected/unavailable-ledger/busy Faucet states and non-dismissible
 pending/uncertain notices. Independent source/visual review found no material
 transaction-state or network-boundary regression. The ledger/action builders,
 Daml and deployment identities were unchanged by this UI revision.
+
+## Request preparation follow-up
+
+Borrow has no manual reference-refresh banner, and Account omits the normal
+Trading enabled row. In a later public browser run, the selected reference
+was actually Stale. With a one-minute age requirement, one Review request click
+prepared the exact simulated reference on the ledger, changed the displayed
+mark to Current, and opened the review with Send private request enabled.
+The reviewed 100 USDCx-demo request required 0.0025000000 cBTC-demo. No RFQ or
+repo was submitted during this preparation-only check.
+
+Preparation receipt: update
+`12204155d11df8066ba5733b256e2f18e1daafe28e377a1ebd647bc1189537a7f074`,
+command `symbolon-public-3851b4f9-751d-41f4-bcb4-0c55920ffe61`, offset
+`2396908`, recorded `2026-10-08T05:31:43.463984Z` on the same shared DevNet.
+
+53 frontend tests and the build pass for this follow-up. Automatic preparation
+is restricted to the caller-readable exact public DevNet demo identity.
+Private/committee, LocalNet, MainNet and future/invalid marks retain their
+guards. Independent source review also checked the changed-price collateral
+case: expired 36,000 versus fixed reference 60,000 uses a clearly labelled
+estimate before preparation and actual fresh pricing at final review.

@@ -27,7 +27,7 @@ export function Faucet({ session, state, connected, trading, busy, readError, on
       : readError ? <p className="empty-state" role="status">The ledger view is unavailable. Faucet transactions are paused until the connection recovers.</p>
       : session.party === d.publicDesk!.operator ? <p className="empty-state">This is the faucet operator account. Use a borrower or lender account to claim test assets.</p>
       : !state ? <p className="empty-state" role="status">Reading your account…</p>
-      : <PublicAccess session={session} state={state} busy={busy} borrowerMode run={run}/>}
+      : <PublicAccess session={session} state={state} busy={busy} run={run}/>}
     </div>
   </section>;
 }

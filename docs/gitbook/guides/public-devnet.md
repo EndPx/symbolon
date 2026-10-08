@@ -70,6 +70,13 @@ receipt and download. Pending or uncertain commands remain visible with their
 original-status check; dismissing a notification never releases a submission
 guard. Opening a receipt or focusing the toast pauses its dismissal timer.
 
+Borrow no longer requires a manual reference-refresh step. When the caller's
+exact public DevNet reference has expired, **Review request** prepares a current
+mark through the existing PublicDesk choice, reads its confirmed replacement,
+and opens the review with actual collateral requirements. This click-triggered
+preparation applies only to the simulated public reference. Private/committee
+oracles and production prices retain their own freshness and authorization.
+
 Connect the account, select an authorized borrower party distinct from the dealer,
 claim DevNet assets, request a quote, review the fixed annualized rate and full
 repurchase amount, settle, then repay. Peer dealers can use their actual issued

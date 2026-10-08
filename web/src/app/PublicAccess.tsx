@@ -1,36 +1,23 @@
 import { useState } from "react";
 import { deployment } from "../ledger/deployment";
 import type { Session } from "../ledger/session";
-import { claimDevnetAssets, createPublicDesk, publicDeploymentFromContract, refreshReferenceMark } from "../ledger/public-desk";
-import { balanceOf, DEFAULT_PRICE_AGE_SECONDS, fmtAmount, isFresh, partyLabel, type DeskState } from "../ledger/symbolon";
+import { claimDevnetAssets, createPublicDesk, publicDeploymentFromContract } from "../ledger/public-desk";
+import { balanceOf, fmtAmount, partyLabel, type DeskState } from "../ledger/symbolon";
 import { uploadPublicAccessPackage } from "../ledger/account";
 
-export function PublicAccess({session,state,busy,borrowerMode,run,compact=false}: {
-  session:Session;state:DeskState|null;busy:boolean;borrowerMode:boolean;compact?:boolean;run(label:string,action:()=>Promise<string>):Promise<boolean>;
+export function PublicAccess({session,state,busy,run}: {
+  session:Session;state:DeskState|null;busy:boolean;run(label:string,action:()=>Promise<string>):Promise<boolean>;
 }) {
   const d=deployment();
   if(d.network!=="devnet"||!d.publicDesk||session.kind==="browse"||session.kind==="sandbox"||session.party===d.publicDesk.operator)return null;
   const collateral=balanceOf(state?.holdings??[],session.party,"cBTC-demo",d.publicDesk.operator);
   const cash=balanceOf(state?.holdings??[],session.party,"USDCx-demo",d.publicDesk.operator);
-  const feed=(state?.feeds??[]).filter(f=>f.payload.oracle===d.publicDesk!.operator
-    && f.payload.instrumentIssuer===d.publicDesk!.operator&&f.payload.cashIssuer===d.publicDesk!.operator
-    && f.payload.instrument==="cBTC-demo"&&f.payload.cashInstrument==="USDCx-demo")
-    .sort((a,b)=>Date.parse(b.payload.asOf)-Date.parse(a.payload.asOf))[0];
-  if(compact) {
-    if(collateral>0&&feed&&isFresh(feed.payload,DEFAULT_PRICE_AGE_SECONDS))return null;
-    return <section className="terminal-onboarding" aria-label="Prepare DevNet borrowing">
-      <p>{collateral<=0?"Get ledger-issued test collateral to request your first private offer.":!feed?"Prepare a simulated reference mark for this account before requesting an offer.":"Refresh the simulated reference mark before requesting an offer."}</p>
-      <div className="acts wrap"><button className="seal sm" disabled={busy} onClick={()=>void run("DevNet assets issued",()=>claimDevnetAssets(session))}>Get DevNet assets</button>
-        {feed&&<button className="ghost sm" disabled={busy} onClick={()=>void run("Reference mark refreshed",()=>refreshReferenceMark(session,feed.contractId))}>Refresh reference mark</button>}</div>
-    </section>;
-  }
   return <section className="panel public-access" aria-labelledby="public-access-title">
     <h2 id="public-access-title">Your DevNet balance</h2>
     <p className="panel-lede">Get ledger-issued test assets, then request a funded quote from {d.publicDesk.label.replace(/\bdealer\b/gi,"lender")}. These assets have no monetary value.</p>
     <div className="public-access-balances"><div><span>Available collateral</span><strong>{fmtAmount(collateral,4)} cBTC-demo</strong></div>
       <div><span>Available cash</span><strong>{fmtAmount(cash)} USDCx-demo</strong></div></div>
     <div className="acts wrap"><button className="seal sm" disabled={busy} onClick={()=>void run("DevNet assets issued",()=>claimDevnetAssets(session))}>Get DevNet assets</button>
-      {feed&&<button className="ghost sm" disabled={busy} onClick={()=>void run("Reference mark refreshed",()=>refreshReferenceMark(session,feed.contractId))}>Refresh reference mark</button>}
       </div>
     <p className="sm muted">The reference mark is simulated. Your private quote sets the fixed rate and repayment amount.</p>
   </section>;

@@ -20,10 +20,11 @@ import { deploymentFailure, tradingBlocker } from "../ledger/deployment";
 import { deployment, networkLabel } from "../ledger/deployment";
 import { startAccountConnection } from "../ledger/account";
 import { SubmissionUncertain, type CommittedReceipt } from "../ledger/canton-v2";
-import { completePublicRequests, requestPublicQuote } from "../ledger/public-desk";
-import { PublicAccess, PublicDeskSetup } from "./PublicAccess";
+import { completePublicRequests, refreshReferenceMark, requestPublicQuote } from "../ledger/public-desk";
+import { PublicDeskSetup } from "./PublicAccess";
 import { Faucet } from "./Faucet";
 import { NotificationRegion, TransactionToast, type Receipt } from "./TransactionToast";
+import { canPrepareReference, preparedReference } from "./market-preparation";
 
 function useDesk(session: Session) {
   const [state, setState] = useState<DeskState | null>(null);
@@ -300,15 +301,21 @@ function BorrowRequest({ s, st, demoParties, initialPair, onSubmitted, onPairCha
   const [maxAge, setMaxAge] = useState("60");
   const [dealersText, setDealersText] = useState(() => deployment().publicDesk?.operator ?? demoParties.find(p => p.startsWith("dealer") && p !== s.party) ?? "");
   const [review, setReview] = useState(false);
-  const selected = feeds.find((f) => feedIdentity(f.payload) === chosen);
+  const [prepared, setPrepared] = useState<Contract<PriceFeed> | null>(null);
+  const [preparing, setPreparing] = useState(false);
+  const [preparationError, setPreparationError] = useState<string | null>(null);
+  const visibleFeed = feeds.find((f) => feedIdentity(f.payload) === chosen);
+  const selected = prepared && feedIdentity(prepared.payload) === chosen && (!visibleFeed || Date.parse(prepared.payload.asOf) > Date.parse(visibleFeed.payload.asOf)) ? prepared : visibleFeed;
   const feed = selected?.payload;
   const purchase = Number(amount);
   const cover = Number(cushion) / 100;
   const margin = Number(threshold) / 100;
   const ageSeconds = Math.round(Number(maxAge) * 60);
   const fresh = !!feed && isFresh(feed, ageSeconds);
+  const automatic = !!feed && canPrepareReference(s,feed);
+  const priceForPreview = automatic && !fresh ? num(deployment().publicDesk!.referencePrice) : feed ? num(feed.price) : 0;
   // Round up to the contract's Numeric 10 scale so rounding cannot underfund cover.
-  const pledge = feed && purchase > 0 ? Math.ceil(purchase * cover / num(feed.price) * 1e10) / 1e10 : 0;
+  const pledge = priceForPreview > 0 && purchase > 0 ? Math.ceil(purchase * cover / priceForPreview * 1e10) / 1e10 : 0;
   const available = feed ? balanceOf(st.holdings, s.party, feed.instrument, feed.instrumentIssuer) : 0;
   const entries = dealersText.split(/\n/).map((line) => line.trim()).filter(Boolean).map((line) => {
     const pieces = line.split("|").map((x) => x.trim());
@@ -321,6 +328,22 @@ function BorrowRequest({ s, st, demoParties, initialPair, onSubmitted, onPairCha
   const validNumbers = purchase > 0 && Number.isFinite(purchase) && Number.isInteger(Number(term)) && Number(term) >= 1 && Number(term) <= 365 &&
     cover >= margin && margin >= 1 && margin <= 2 && Number(cure) >= 1 / 60 && Number(cure) <= 10080 && ageSeconds >= 1 && ageSeconds <= 86400;
   const ready = fresh && validNumbers && pledge <= available && validParties;
+  const canReview = (fresh || automatic) && validNumbers && pledge <= available && validParties;
+  const openReview = async () => {
+    if (busy || preparing || !canReview || !selected || !feed) return;
+    setPreparationError(null);
+    if (fresh) { setReview(true); return; }
+    setPreparing(true);
+    try {
+      const succeeded = await run("Market prepared",() => refreshReferenceMark(s,selected.contractId));
+      if (!succeeded) return;
+      const next = preparedReference(deskState(await s.read()),feed,ageSeconds);
+      if (!next) throw new Error("The current market price is not available yet. Refresh your account before reviewing.");
+      setPrepared(next);
+      setReview(true);
+    } catch (e) { setPreparationError((e as Error).message); }
+    finally { setPreparing(false); }
+  };
   const submit = async () => {
     if (!ready || !feed) return;
     const succeeded = await run("Private quote requests submitted", async () => {
@@ -339,10 +362,10 @@ function BorrowRequest({ s, st, demoParties, initialPair, onSubmitted, onPairCha
     if (succeeded) { setReview(false); onSubmitted(); }
   };
   return <Panel id="request-repo" title="Borrow against collateral">
-    <form className="desk-form" onSubmit={(e) => { e.preventDefault(); if (ready) setReview(true); }}>
+    <form className="desk-form" onSubmit={(e) => { e.preventDefault(); void openReview(); }}>
       <Field label="Borrow amount" hint={feed?.cashInstrument}><input type="number" required min="0.01" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} /></Field>
       <Field label="Duration (days)" hint="1–365 days from settlement"><input type="number" min="1" max="365" step="1" required value={term} onChange={(e) => setTerm(e.target.value)} /></Field>
-      <div className="terminal-collateral-summary"><Term label="Collateral required">{fmtAmount(pledge, 4)} {feed?.instrument ?? "—"}</Term>
+      <div className="terminal-collateral-summary"><Term label={automatic && !fresh ? "Estimated collateral" : "Collateral required"}>{fmtAmount(pledge, 4)} {feed?.instrument ?? "—"}</Term>
         <Term label="Available">{fmtAmount(available, 4)} {feed?.instrument ?? "—"}</Term>
         <Term label="Lender">{dealers.length === 1 ? partyDisplayName(dealers[0]) : `${dealers.length} selected`}</Term></div>
       <details className="terms-disclosure"><summary>Advanced terms</summary><div className="desk-form">
@@ -361,12 +384,13 @@ function BorrowRequest({ s, st, demoParties, initialPair, onSubmitted, onPairCha
       {demoParties.some((p) => p.startsWith("dealer")) && <div className="chip-row" aria-label="Add a seeded test lender">{demoParties.filter((p) => p.startsWith("dealer") && p !== s.party).map((p) =>
         <button className="chip" type="button" key={p} disabled={selectedDealers.has(p)} onClick={() => setDealersText((text) => `${text}${text ? "\n" : ""}${partyLabel(p)} | ${p}`)}>Add {partyDisplayName(p)}</button>)}</div>}
       </div></details>
-      {!feeds.length && <p className="empty-state">No authorized price feed is available yet.</p>}
-      {selected && !fresh && <p className="err">The selected mark is stale or future-dated. Ask the oracle to publish a current mark.</p>}
-      {pledge > available && <p className="err">The request needs more available collateral than this party holds.</p>}
+      {!feeds.length && <p className="empty-state">{deployment().publicDesk ? "Get test assets from Faucet to start borrowing." : "No authorized price feed is available yet."}</p>}
+      {selected && !fresh && !automatic && <p className="err">The selected mark is stale or future-dated. Ask the oracle to publish a current mark.</p>}
+      {pledge > available && <p className="err">{automatic ? "Not enough test collateral. Get assets from Faucet." : "The request needs more available collateral than this party holds."}</p>}
+      {preparationError && <p className="err" role="alert">{preparationError}</p>}
       {!!dealersText && !validParties && <p className="err">Use full Canton party IDs containing “::”, and do not address a request to yourself.</p>}
       <p className="terminal-trade-note">The lender’s offer sets your fixed rate and exact repayment. Review it before settlement.</p>
-      <button type="submit" className="seal" disabled={busy || !ready}>{busy ? "Awaiting ledger…" : "Review request"}</button>
+      <button type="submit" className="seal" disabled={busy || preparing || !canReview}>{preparing ? "Preparing market…" : busy ? "Awaiting ledger…" : "Review request"}</button>
     </form>
     {review && feed && <Dialog title="Review financing request" close={() => setReview(false)} busy={busy}>
       <div className="review-terms"><Term label="Requested amount">{fmtAmount(purchase)} {feed.cashInstrument}</Term>
@@ -377,6 +401,7 @@ function BorrowRequest({ s, st, demoParties, initialPair, onSubmitted, onPairCha
       <details className="party-detail"><summary>Full contract identities</summary><p>Collateral issuer<code>{feed.instrumentIssuer}</code></p>
         <p>Cash issuer<code>{feed.cashIssuer}</code></p><p>Oracle<code>{feed.oracle}</code></p>{dealers.map(party => <p key={party}>Lender<code>{party}</code></p>)}</details>
       <p className="decision-note">This sends a private request. Accepting a funded offer later transfers collateral title to the lender. The agreed repayment is due in full even when repurchasing early; an uncured margin call or maturity default may release the pledged collateral to the lender.</p>
+      {!ready && <p className="err" role="alert">{!fresh ? "The market price expired. Close this review and review the request again." : pledge > available ? "Not enough available collateral at the current price. Get test assets from Faucet." : "The request terms have changed. Close this review to check the inputs."}</p>}
       <button className="seal" disabled={busy || !ready} onClick={() => void submit()}>{busy ? "Awaiting ledger…" : "Send private request"}</button>
     </Dialog>}
   </Panel>;
@@ -708,7 +733,7 @@ function Workspace({ session: s, connect, demoParties, switchParty, disconnect, 
           {!connected ? <Panel title="Borrow against collateral"><p>Connect to request a private funded offer.</p><button className="seal" onClick={connectionAction}>Connect</button></Panel>
             : !st ? <p className="empty-state" role="status">{error ? "The ledger view is unavailable." : "Loading your account…"}</p>
             : !feed ? <p className="empty-state" role="status">Selected market no longer available. Open All markets to choose a visible pair.</p>
-            : <>{trading && <PublicAccess session={s} state={st} busy={transactions.busy} borrowerMode compact run={run}/>}<BorrowRequest s={s} st={st} demoParties={s.kind === "sandbox" ? demoParties : []} initialPair={selectedId} onSubmitted={() => setContent("offers")} onPairChange={setSelectedId}/>{unavailable && <p className="terminal-trade-note" role="status">{unavailable}</p>}</>}
+            : <><BorrowRequest s={s} st={st} demoParties={s.kind === "sandbox" ? demoParties : []} initialPair={selectedId} onSubmitted={() => setContent("offers")} onPairChange={setSelectedId}/>{unavailable && <p className="terminal-trade-note" role="status">{unavailable}</p>}</>}
         </div>
         <div className="terminal-trade-panel" role="tabpanel" id="trade-panel-lend" aria-labelledby="trade-tab-lend" hidden={side !== "lend"}>
           {!connected ? <Panel title="Quote a private request"><p>Connect to view requests addressed to your account.</p><button className="seal" onClick={connectionAction}>Connect</button></Panel>
@@ -719,7 +744,7 @@ function Workspace({ session: s, connect, demoParties, switchParty, disconnect, 
     </main>
     {receiptViewing && <Dialog title="Transaction receipt" close={() => setReceiptViewing(null)}><ReceiptDetails receipt={receiptViewing}/></Dialog>}
     {accountOpen && <Dialog title="Account" close={() => setAccountOpen(false)} className="terminal-account-dialog">
-      <div className="review-terms"><Term label="Account">{connected ? accountLabel : "Not connected"}</Term><Term label="Network">Canton {networkLabel()}</Term><Term label="Access">{connected ? trading ? "Trading enabled" : "Read-only" : "Public market information"}</Term></div>
+      <div className="review-terms"><Term label="Account">{connected ? accountLabel : "Not connected"}</Term><Term label="Network">Canton {networkLabel()}</Term>{connected && !trading && <Term label="Access">Read-only</Term>}</div>
       {connected && <details className="party-detail"><summary>Full account identity</summary><code>{s.party}</code><p>{s.wallet ?? (s.kind === "account" ? "Hosted HackCanton account" : "LocalNet test account")}</p></details>}
       <div className="ledger-status"><span className="sm muted">{readAt ? `Last ledger read ${readAt.toLocaleTimeString()} · ${Intl.DateTimeFormat().resolvedOptions().timeZone}` : s.kind === "browse" && !s.ledgerRead ? "Connect to read your private ledger view" : error ? "Ledger read failed" : "Reading ledger…"}</span><button className="ghost sm" disabled={busy || s.kind === "browse" && !s.ledgerRead} onClick={() => void refresh()}>Refresh</button></div>
       {receipt && <details className="terms-disclosure"><summary>Latest transaction</summary><ReceiptDetails receipt={receipt}/></details>}

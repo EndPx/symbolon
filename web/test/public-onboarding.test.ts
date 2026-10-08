@@ -8,7 +8,7 @@ import { defaultDeployment, deployment, loadDeployment } from "../src/ledger/dep
 import type { Session } from "../src/ledger/session.ts";
 import type { DeskState, PriceFeed } from "../src/ledger/symbolon.ts";
 
-test("public Borrow onboarding appears for missing exact assets or usable marks and disappears when ready", async () => {
+test("Faucet balances stay issuer-scoped and claims require an enabled account", async () => {
   const previous = deployment(), fetchBefore = globalThis.fetch, operator = "lender::public", party = "borrower::account", hash = "a".repeat(64);
   const profile = {...defaultDeployment,publicPackageId:hash,synchronizerId:"sync::test",
     assets:{collateral:{...defaultDeployment.assets.collateral,admin:operator,symbol:"cBTC-demo"},cash:{...defaultDeployment.assets.cash,admin:operator,symbol:"USDCx-demo"}},
@@ -17,20 +17,20 @@ test("public Borrow onboarding appears for missing exact assets or usable marks 
   const empty: DeskState = {holdings:[],feeds:[],requests:[],quotes:[],positions:[],proposals:[],closed:[]};
   const mark: PriceFeed = {oracle:operator,instrumentIssuer:operator,instrument:"cBTC-demo",cashIssuer:operator,cashInstrument:"USDCx-demo",price:"60000",asOf:new Date().toISOString(),readers:[party]};
   const ready: DeskState = {...empty,holdings:[{contractId:"holding",templateId:"holding",payload:{issuer:operator,owner:party,instrument:"cBTC-demo",amount:"1",viewers:[],lockParties:[]}}],feeds:[{contractId:"mark",templateId:"feed",payload:mark}]};
-  const render = (state: DeskState, busy = false) => renderToStaticMarkup(createElement(PublicAccess,{session,state,busy,borrowerMode:true,compact:true,run:async()=>true}));
+  const render = (state: DeskState, busy = false) => renderToStaticMarkup(createElement(PublicAccess,{session,state,busy,run:async()=>true}));
   try {
     globalThis.fetch = async () => new Response(JSON.stringify(profile));
     await loadDeployment();
     assert.match(render(empty),/>Get DevNet assets<\/button>/);
-    assert.doesNotMatch(render(empty),/public-access-title|Available collateral/);
-    assert.equal(render(ready),"");
+    assert.match(render(empty),/0\.0000 cBTC-demo/);
+    assert.match(render(ready),/1\.0000 cBTC-demo/);
     const wrongIssuer = {...ready,holdings:ready.holdings.map(item => ({...item,payload:{...item.payload,issuer:"issuer::other"}}))};
-    assert.match(render(wrongIssuer),/>Get DevNet assets<\/button>/);
+    assert.match(render(wrongIssuer),/0\.0000 cBTC-demo/);
     const wrongMark = {...ready,feeds:ready.feeds.map(item => ({...item,payload:{...item.payload,cashIssuer:"issuer::other"}}))};
-    assert.match(render(wrongMark),/Prepare a simulated reference mark/);
+    assert.match(render(wrongMark),/1\.0000 cBTC-demo/);
     assert.doesNotMatch(render(wrongMark),/Refresh reference mark/);
     const stale = {...ready,feeds:ready.feeds.map(item => ({...item,payload:{...item.payload,asOf:new Date(Date.now()-7200_000).toISOString()}}))};
-    assert.match(render(stale),/>Refresh reference mark<\/button>/);
+    assert.doesNotMatch(render(stale),/Refresh reference mark/);
     assert.match(render(stale,true),/disabled=""[^>]*>Get DevNet assets<\/button>/);
     const faucet = (connected: boolean, trading: boolean, busy = false, readError: string | null = null) => renderToStaticMarkup(createElement(Faucet,{session,state:ready,connected,trading,busy,readError,onConnect:()=>{},run:async()=>true}));
     assert.match(faucet(false,false),/>Connect<\/button>/);
