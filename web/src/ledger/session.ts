@@ -8,6 +8,7 @@ import { activeAccountContext, accountResumePreference, rememberAccountParty, di
 import { resumedParty } from "./account-resume";
 import { CantonV2Client, type CommittedReceipt, type PendingCommand } from "./canton-v2";
 import type { WalletBalanceSnapshot } from "./wallet-balances";
+import { attachSendLedger } from "./send-ledger";
 
 export interface Session {
   readonly kind: "browse" | "sandbox" | "wallet" | "account";
@@ -128,6 +129,7 @@ async function partyLayer(network: string): Promise<PartyLayerClient> {
     clientNetwork = network;
     client = import("@partylayer/sdk").then(mod => mod.createPartyLayer({
       network, networkEnforcement: "strict", app: { name: "Symbolon" },
+      adapters: [...mod.getBuiltinAdapters(), new mod.SendAdapter()],
     }));
   }
   return client;
@@ -210,6 +212,7 @@ function walletSession(c: PartyLayerClient, s: WalletSession, network: string): 
     async disconnect() { session.dispose?.(); if (currentSession === session) remember(null); await c.disconnect(); },
   };
   remember({ kind: "wallet", walletId: s.walletId, network });
+  if (s.walletId === "send") attachSendLedger(session, verifyBound, invalidate);
   return activate(session);
 }
 /** Ignore a late connection response without revoking the user's wallet permission. */

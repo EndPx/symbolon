@@ -27,11 +27,19 @@ export const normalizeNetwork = (value?: string) => {
   const name = value?.toLowerCase();
   if (name === "localnet") return "localnet";
   if (["devnet", "canton:da-devnet", "canton:devnet", "canton_network_dev"].includes(name ?? "")) return "devnet";
+  if (["testnet", "canton:da-testnet", "canton:testnet", "canton_network_test"].includes(name ?? "")) return "testnet";
   if (["mainnet", "canton:da-mainnet", "canton:mainnet", "canton_network"].includes(name ?? "")) return "mainnet";
   return name;
 };
 export const networkLabel = (network: string = active.network): string =>
-  (({ localnet: "LocalNet", devnet: "DevNet", mainnet: "MainNet" } as Record<string, string>)[normalizeNetwork(network) ?? ""] ?? network);
+  (({ localnet: "LocalNet", devnet: "DevNet", testnet: "TestNet", mainnet: "MainNet" } as Record<string, string>)[normalizeNetwork(network) ?? ""] ?? network);
+export function walletConnectionError(error: unknown) {
+  const mismatch = error as { actual?: unknown; expected?: unknown };
+  if (typeof mismatch?.actual === "string" && typeof mismatch.expected === "string") {
+    return `Your wallet is on Canton ${networkLabel(mismatch.actual)}. Symbolon is on Canton ${networkLabel(mismatch.expected)}. Switch the wallet to ${networkLabel(mismatch.expected)}, then reconnect.`;
+  }
+  return error instanceof Error ? error.message : "The wallet connection could not be completed. Open your wallet and try again.";
+}
 const packageHash = /^[a-f0-9]{64}$/;
 export function parseDeployment(value: unknown): Deployment {
   if (!value || typeof value !== "object") throw new Error("Missing deployment configuration.");

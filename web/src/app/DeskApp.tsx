@@ -18,7 +18,7 @@ import { publicMarket } from "./market-summary";
 import { TerminalPanels, TerminalTabs } from "./TerminalTabs";
 import { marketDesk, partyQuotes, partyRequests, type ContentTab, type TradeSide } from "./terminal-state";
 import { deploymentFailure, tradingBlocker } from "../ledger/deployment";
-import { deployment, networkLabel } from "../ledger/deployment";
+import { deployment, networkLabel, walletConnectionError } from "../ledger/deployment";
 import { startAccountConnection } from "../ledger/account";
 import { SubmissionUncertain, type CommittedReceipt } from "../ledger/canton-v2";
 import { completePublicRequests, refreshReferenceMark, requestPublicQuote } from "../ledger/public-desk";
@@ -170,7 +170,7 @@ function ConnectDialog({ connected, close, walletOnly = false }: { connected(s: 
       pendingConnection.current = false;
       connected(session);
     }
-    catch (e) { if (revision === connectionAttempt.current) setError((e as Error).message); }
+    catch (e) { if (revision === connectionAttempt.current) setError(walletConnectionError(e)); }
     finally { if (revision === connectionAttempt.current) { pendingConnection.current = false; setBusy(null); } }
   };
   const cancel = () => {
@@ -785,11 +785,13 @@ function Workspace({ session: s, connect, connectBalanceWallet, demoParties, swi
           {!connected ? <Panel title="Borrow against collateral"><p>Request a private quote, review its fixed repayment, then accept to receive cash against collateral.</p><button className="seal" onClick={connectionAction}>Connect</button></Panel>
             : !st ? <p className="empty-state" role="status">{error ? "The ledger view is unavailable." : "Loading your account…"}</p>
             : !feed ? <p className="empty-state" role="status">Selected market no longer available. Open All markets to choose a visible pair.</p>
+            : !selected && publicMarket(feed,deployment()) ? <Panel title="Start borrowing"><p>Get test collateral and cash for this wallet. Faucet also creates your authorized price feed.</p><button className="seal" disabled={!trading || !!error || busy} onClick={()=>setView("faucet")}>Get test assets</button></Panel>
             : <><BorrowRequest key={`${selectedId}:${JSON.stringify(draftScope)}`} draftScope={draftScope} s={s} st={st} demoParties={s.kind === "sandbox" ? demoParties : []} initialPair={selectedId} onSubmitted={() => setContent("offers")} onPairChange={setSelectedId}/>{unavailable && <p className="terminal-trade-note" role="status">{unavailable}</p>}</>}
         </div>
         <div className="terminal-trade-panel" role="tabpanel" id="trade-panel-lend" aria-labelledby="trade-tab-lend" hidden={side !== "lend"}>
           {!connected ? <Panel title="Quote a private request"><p>Connect to view requests addressed to your account.</p><button className="seal" onClick={connectionAction}>Connect</button></Panel>
             : !scoped ? <p className="empty-state" role="status">{st && !feed ? "Selected market no longer available. Open All markets to choose a visible pair." : error ? "The ledger view is unavailable." : "Loading your account…"}</p>
+            : !selected && feed && publicMarket(feed,deployment()) ? <Panel title="Start lending"><p>Get test cash for this wallet, then quote requests addressed to your party.</p><button className="seal" disabled={!trading || !!error || busy} onClick={()=>setView("faucet")}>Get test assets</button></Panel>
             : <><LendRequest s={s} st={scoped} onSubmitted={() => setContent("offers")}/>{unavailable && <p className="terminal-trade-note" role="status">{unavailable}</p>}</>}
         </div>
       </aside><section ref={marketDetailsRef} className="terminal-main" aria-label="Market details">
