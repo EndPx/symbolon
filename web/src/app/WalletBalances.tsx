@@ -3,7 +3,7 @@ import type { Session } from "../ledger/session";
 import type { WalletBalanceSnapshot } from "../ledger/wallet-balances";
 import { displayDecimal } from "./financing-display";
 
-export function WalletBalances({ session: s, connect }: { session: Session; connect(): void }) {
+export function WalletBalances({ session: s, connect, connectionDisabled = false }: { session: Session; connect(): void; connectionDisabled?: boolean }) {
   const [snapshot, setSnapshot] = useState<WalletBalanceSnapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -27,9 +27,9 @@ export function WalletBalances({ session: s, connect }: { session: Session; conn
     return () => { sequence.current++; off?.(); };
   }, [s, attempt]);
   return <section className="wallet-balances" aria-labelledby="wallet-balances-title">
-    <header><div><h2 id="wallet-balances-title">Wallet balances</h2><p>{s.kind === "wallet" ? `${s.wallet ?? s.label} · Canton ${s.networkId ?? "network unavailable"}` : "Connect a Canton wallet to view its token balances."}</p></div>
+    <header><div><h2 id="wallet-balances-title">Wallet balances</h2><p>{s.kind === "wallet" ? `${s.wallet ?? s.label} · Canton ${s.networkId ?? "network unavailable"}` : s.kind === "account" ? "HackCanton account connected. Your demo holdings are listed below." : "LocalNet test account. Demo holdings are listed below."}</p></div>
       {s.kind === "wallet" && s.walletBalances ? <button type="button" className="ghost sm" disabled={loading} onClick={() => setAttempt(a => a + 1)}>{loading ? "Reading…" : "Refresh balances"}</button>
-        : s.kind !== "wallet" && <button type="button" className="ghost sm" onClick={connect}>Connect wallet</button>}
+        : s.kind === "account" && <button type="button" className="ghost sm" disabled={connectionDisabled} onClick={connect}>Connect Console Wallet</button>}
     </header>
     {s.kind === "wallet" && !s.walletBalances && <p className="sm muted">This wallet connection does not expose token balances to Symbolon.</p>}
     {loading && <p role="status" className="sm muted">Reading balances from your wallet…</p>}

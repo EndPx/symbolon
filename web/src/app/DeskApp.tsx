@@ -141,13 +141,14 @@ function ConnectionMark({ icon, account = false }: { icon?: string; account?: bo
   </svg></span>;
 }
 
-function ConnectDialog({ connected, close }: { connected(s: Session): void; close(): void }) {
+function ConnectDialog({ connected, close, walletOnly = false }: { connected(s: Session): void; close(): void; walletOnly?: boolean }) {
   const [wallets, setWallets] = useState<WalletOption[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [attempt, setAttempt] = useState(0);
   const connectionAttempt = useRef(0);
   const pendingConnection = useRef(false);
+  const availableWallets = walletOnly ? wallets?.filter(wallet => wallet.id === "console") ?? wallets : wallets;
   useEffect(() => () => {
     connectionAttempt.current++;
     if (pendingConnection.current) cancelWalletConnection();
@@ -181,20 +182,20 @@ function ConnectDialog({ connected, close }: { connected(s: Session): void; clos
     <p className="panel-lede">Open Account, then Advanced account controls to choose a seeded LocalNet party.</p>
     <p className="connection-network">LocalNet · Demo assets and simulated oracle marks · No real funds</p>
   </Dialog>;
-  return <Dialog title="Connect to Symbolon" close={dismiss} busy={busy === "account"}>
-    <p className="panel-lede">Connect on Canton {networkLabel()} to access your private quotes and positions.</p>
-    {deployment().network === "devnet" && <button className="wallet-row account-connect" disabled={busy !== null} onClick={()=>{
+  return <Dialog title={walletOnly ? "Connect Console Wallet" : "Connect to Symbolon"} close={dismiss} busy={busy === "account"}>
+    <p className="panel-lede">{walletOnly ? `Connect Console Wallet on Canton ${networkLabel()} to read its token balances. The wallet party becomes your Symbolon account.` : <>Connect on Canton {networkLabel()} to access your private quotes and positions.</>}</p>
+    {!walletOnly && deployment().network === "devnet" && <button className="wallet-row account-connect" disabled={busy !== null} onClick={()=>{
       setBusy("account");void startAccountConnection().catch(e=>{setError(e.message);setBusy(null);});
     }}><ConnectionMark account/><span className="wallet-name">HackCanton account<small>Sign in to your hosted DevNet party</small></span><span className="wallet-note">{busy==="account"?"Redirecting…":"Sign in"}</span></button>}
     <p className="connection-section">Browser wallets</p>
     {wallets === null && <p className="empty-state" role="status">Discovering wallets…</p>}
-    <ul className="wallet-list">{wallets?.map((w) => <li key={w.id}>
+    <ul className="wallet-list">{availableWallets?.map((w) => <li key={w.id}>
       <button className="wallet-row" disabled={busy !== null || !w.installed || !!w.unavailableReason} onClick={() => void connect(w.id)}>
         <ConnectionMark icon={w.icon}/>
         <span className="wallet-name">{w.name}<small>{w.unavailableReason ?? (w.id === "grofty" ? `Canton MainNet · v${w.minimumVersion}+ required` : w.installed ? "Open your wallet to approve the connection" : "Wallet extension not detected")}</small></span>
         <span className="wallet-note">{busy === w.id ? "Connecting…" : w.unavailableReason ? "Unavailable" : w.installed ? "Connect" : "Not detected"}</span>
       </button></li>)}</ul>
-    {wallets?.length === 0 && <p className="empty-state">No supported wallet was discovered. Open your Canton wallet on the configured network, then retry.</p>}
+    {availableWallets?.length === 0 && <p className="empty-state">No supported wallet was discovered. Open your Canton wallet on the configured network, then retry.</p>}
     {error && <p className="err" role="alert">{error}</p>}
     {pendingConnection.current && <p className="connection-help" role="status">Check the wallet window and approve the connection. You can cancel if it does not open.</p>}
     <div className="acts"><button className="ghost sm" disabled={busy !== null} onClick={() => setAttempt((a) => a + 1)}>Refresh wallets</button>
@@ -652,8 +653,8 @@ function OracleMark({ feed, s }: { feed: Contract<PriceFeed>; s: Session }) {
   </article>;
 }
 
-function Workspace({ session: s, connect, demoParties, switchParty, disconnect, viewChoice, setView, sessionError, clearSessionError }: {
-  session: Session; connect(): void; demoParties: string[]; switchParty(p: string): void; disconnect(): void;
+function Workspace({ session: s, connect, connectBalanceWallet, demoParties, switchParty, disconnect, viewChoice, setView, sessionError, clearSessionError }: {
+  session: Session; connect(): void; connectBalanceWallet(): void; demoParties: string[]; switchParty(p: string): void; disconnect(): void;
   viewChoice: WorkspaceView | null; setView(view: WorkspaceView): void; sessionError: string | null; clearSessionError(): void;
 }) {
   const { state: st, error, refresh, readAt } = useDesk(s);
@@ -769,7 +770,7 @@ function Workspace({ session: s, connect, demoParties, switchParty, disconnect, 
           : !st ? <p className="empty-state" role="status">{error ? "The ledger view is unavailable." : "Loading your authorized ledger view…"}</p>
           : <><TerminalTabs<"positions" | "holdings" | "activity"> id="portfolio" label="Portfolio content" value={portfolio} onChange={setPortfolio} options={[{value:"positions",label:"Positions",count:st.positions.filter(p=>p.payload.borrower===s.party||p.payload.dealer===s.party).length},{value:"holdings",label:"Holdings",count:holdingBalances(st,s.party).length},{value:"activity",label:"Activity",count:st.closed.filter(p=>p.payload.borrower===s.party||p.payload.dealer===s.party).length}]}/>
             <TerminalPanels id="portfolio" value={portfolio} values={["positions","holdings","activity"]}>
-              {portfolio === "positions" ? <Positions s={s} st={st} onRepurchased={() => setPortfolio("activity")} onBrowse={()=>setView("markets")}/> : portfolio === "holdings" ? <><WalletBalances session={s} connect={connect}/><Balances st={st} party={s.party}/></> : <Activity s={s} st={st}/>}</TerminalPanels></>}
+              {portfolio === "positions" ? <Positions s={s} st={st} onRepurchased={() => setPortfolio("activity")} onBrowse={()=>setView("markets")}/> : portfolio === "holdings" ? <><WalletBalances session={s} connect={connectBalanceWallet} connectionDisabled={busy || !!s.pendingCommand?.()}/><Balances st={st} party={s.party}/></> : <Activity s={s} st={st}/>}</TerminalPanels></>}
       </section>}
       {view === "detail" && <div className="terminal-layout" role="region" aria-label="Selected market">
         <div className="terminal-market-header"><div><button type="button" className="terminal-pair-back" onClick={() => setView("markets")}>All markets</button>
@@ -844,7 +845,7 @@ export default function DeskApp() {
   const [restoring, setRestoring] = useState(true);
   const sessionRef = useRef(session);
   useLayoutEffect(() => { sessionRef.current = session; }, [session]);
-  const [connecting, setConnecting] = useState(false);
+  const [connecting, setConnecting] = useState<false | "account" | "wallet">(false);
   const [demoParties, setDemoParties] = useState<string[]>([]);
   const [sessionError, setSessionError] = useState<string | null>(null);
   useEffect(() => {
@@ -881,8 +882,8 @@ export default function DeskApp() {
   };
   if (restoring) return <div className="terminal"><main className="terminal-empty" role="status" aria-busy="true"><h1>Restoring your connection…</h1></main></div>;
   return <>
-    <Workspace key={`${session.kind}:${session.party}`} session={session} connect={() => setConnecting(true)} demoParties={demoParties} switchParty={switchParty} disconnect={() => void disconnect()}
+    <Workspace key={`${session.kind}:${session.party}`} session={session} connect={() => setConnecting("account")} connectBalanceWallet={() => setConnecting("wallet")} demoParties={demoParties} switchParty={switchParty} disconnect={() => void disconnect()}
       viewChoice={viewChoice} setView={setView} sessionError={sessionError} clearSessionError={() => setSessionError(null)} />
-    {connecting && <ConnectDialog close={() => setConnecting(false)} connected={(s) => { setSession(s); setConnecting(false); setSessionError(null); }} />}
+    {connecting && <ConnectDialog walletOnly={connecting === "wallet"} close={() => setConnecting(false)} connected={(s) => { setSession(s); setConnecting(false); setSessionError(null); }} />}
   </>;
 }
