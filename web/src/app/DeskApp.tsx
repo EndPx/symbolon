@@ -336,7 +336,8 @@ function BorrowRequest({ s, st, demoParties, initialPair, draftScope, onSubmitte
   });
   const dealers = [...new Set(entries.map((d) => d.party))];
   const selectedDealers = new Set(dealers);
-  const referenceEstimate = feed && publicMarket(feed,deployment()) && dealers.length===1 && dealers[0]===deployment().publicDesk?.operator && purchase>0 && Number.isInteger(Number(term)) && Number(term)>=1 && Number(term)<=365 ? repurchaseAmount({cashAmount:amount,rate:deployment().publicDesk!.rate,termDays:term}) : null;
+  // Indicative display only; accepted quotes and ledger accounting remain authoritative.
+  const referenceEstimate = feed && publicMarket(feed,deployment()) && dealers.length===1 && dealers[0]===deployment().publicDesk?.operator && purchase>0 && Number.isInteger(Number(term)) && Number(term)>=1 && Number(term)<=365 ? purchase*(1+num(deployment().publicDesk!.rate)*Number(term)/360) : null;
   const validParties = dealers.length > 0 && dealers.every((p) => p.includes("::") && p !== s.party);
   const validNumbers = purchase > 0 && Number.isFinite(purchase) && Number.isInteger(Number(term)) && Number(term) >= 1 && Number(term) <= 365 &&
     cover >= margin && margin >= 1 && margin <= 2 && Number(cure) >= 1 / 60 && Number(cure) <= 10080 && ageSeconds >= 1 && ageSeconds <= 86400;
