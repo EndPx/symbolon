@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { PublicAccess } from "../src/app/PublicAccess.tsx";
+import { Faucet } from "../src/app/Faucet.tsx";
 import { defaultDeployment, deployment, loadDeployment } from "../src/ledger/deployment.ts";
 import type { Session } from "../src/ledger/session.ts";
 import type { DeskState, PriceFeed } from "../src/ledger/symbolon.ts";
@@ -31,6 +32,14 @@ test("public Borrow onboarding appears for missing exact assets or usable marks 
     const stale = {...ready,feeds:ready.feeds.map(item => ({...item,payload:{...item.payload,asOf:new Date(Date.now()-7200_000).toISOString()}}))};
     assert.match(render(stale),/>Refresh reference mark<\/button>/);
     assert.match(render(stale,true),/disabled=""[^>]*>Get DevNet assets<\/button>/);
+    const faucet = (connected: boolean, trading: boolean, busy = false, readError: string | null = null) => renderToStaticMarkup(createElement(Faucet,{session,state:ready,connected,trading,busy,readError,onConnect:()=>{},run:async()=>true}));
+    assert.match(faucet(false,false),/>Connect<\/button>/);
+    assert.doesNotMatch(faucet(false,false),/>Get DevNet assets<\/button>/);
+    assert.match(faucet(true,false),/read-only/);
+    assert.doesNotMatch(faucet(true,false),/>Get DevNet assets<\/button>/);
+    assert.match(faucet(true,true,true),/disabled=""[^>]*>Get DevNet assets<\/button>/);
+    assert.match(faucet(true,true,false,"Unavailable"),/ledger view is unavailable/);
+    assert.doesNotMatch(faucet(true,true,false,"Unavailable"),/>Get DevNet assets<\/button>/);
   } finally {
     globalThis.fetch = async () => new Response(JSON.stringify(previous));
     await loadDeployment();

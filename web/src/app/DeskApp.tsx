@@ -22,6 +22,8 @@ import { startAccountConnection } from "../ledger/account";
 import { SubmissionUncertain, type CommittedReceipt } from "../ledger/canton-v2";
 import { completePublicRequests, requestPublicQuote } from "../ledger/public-desk";
 import { PublicAccess, PublicDeskSetup } from "./PublicAccess";
+import { Faucet } from "./Faucet";
+import { NotificationRegion, TransactionToast, type Receipt } from "./TransactionToast";
 
 function useDesk(session: Session) {
   const [state, setState] = useState<DeskState | null>(null);
@@ -55,7 +57,7 @@ function useDesk(session: Session) {
   return { state, error, refresh, readAt };
 }
 
-type Receipt = { phase: "pending" | "succeeded" | "failed" | "unconfirmed"; label: string; detail?: string; updateId?: string; ledger?: CommittedReceipt };
+type WorkspaceView = "markets" | "detail" | "portfolio" | "faucet";
 type Transaction = { busy: boolean; run(label: string, action: () => Promise<string>): Promise<boolean> };
 const Transactions = createContext<Transaction>({ busy: false, run: async () => false });
 
@@ -89,6 +91,16 @@ function downloadReceipt(receipt: CommittedReceipt) {
   const url = URL.createObjectURL(new Blob([JSON.stringify(receipt,null,2)],{type:"application/json"}));
   const link=document.createElement("a");link.href=url;link.download=`symbolon-receipt-${receipt.offset}.json`;
   link.click();window.setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+function ReceiptDetails({ receipt }: { receipt: Receipt }) {
+  return <><p><strong>{receipt.phase === "succeeded" ? "Confirmed" : receipt.phase === "unconfirmed" ? "Unconfirmed" : receipt.phase === "pending" ? "Pending" : "Failed"} · {receipt.label}</strong></p>
+    {receipt.detail && <p className="decision-note">{receipt.detail}</p>}
+    {receipt.updateId && <dl className="terms"><div><dt>Update ID</dt><dd><code>{receipt.updateId}</code></dd></div>
+      {receipt.ledger && <><div><dt>Command ID</dt><dd><code>{receipt.ledger.commandId}</code></dd></div><div><dt>Ledger offset</dt><dd>{receipt.ledger.offset}</dd></div><div><dt>Recorded</dt><dd>{receipt.ledger.recordTime}</dd></div><div><dt>Synchronizer</dt><dd><code>{receipt.ledger.synchronizerId}</code></dd></div></>}
+    </dl>}
+    {receipt.ledger && <button className="ghost" onClick={() => downloadReceipt(receipt.ledger!)}>Download receipt</button>}
+  </>;
 }
 
 function Dialog({ title, children, close, busy = false, className = "" }: { title: string; children: ReactNode; close(): void; busy?: boolean; className?: string }) {
@@ -548,7 +560,7 @@ function Activity({ s, st }: { s: Session; st: DeskState }) {
   const closed = st.closed.filter((p) => p.payload.borrower === s.party || p.payload.dealer === s.party)
     .sort((a, b) => Date.parse(b.payload.closedAt) - Date.parse(a.payload.closedAt));
   return <Panel id="closed-repos" title="Closed repos" description="Ledger closeouts visible to this account.">
-    {!closed.length && <p className="empty-state">No closed repos yet. Confirmed command receipts appear above the workspace.</p>}
+    {!closed.length && <p className="empty-state">No closed repos yet. Your latest transaction receipt is available in Account.</p>}
     {closed.map(({ contractId, payload: p }) => <div className="row" key={contractId}>
     <div><strong>{fmtAmount(p.collateralAmount, 4)} {p.collateralInstrument}</strong><p className="sm muted"><Party party={p.borrower} /> ↔ <Party party={p.dealer} /> · {fmtTime(p.closedAt)}{p.outcome === "Liquidated" && p.closeoutHealthFactor != null ? ` · HF ${fmtAmount(p.closeoutHealthFactor)}` : ""}</p></div>
     <span className={p.outcome === "Repurchased" ? "ok" : "warn"}>{p.outcome}</span>
@@ -569,9 +581,14 @@ function OracleMark({ feed, s }: { feed: Contract<PriceFeed>; s: Session }) {
   </article>;
 }
 
-function Workspace({ session: s, connect, demoParties, switchParty, disconnect }: { session: Session; connect(): void; demoParties: string[]; switchParty(p: string): void; disconnect(): void }) {
+function Workspace({ session: s, connect, demoParties, switchParty, disconnect, viewChoice, setView, sessionError, clearSessionError }: {
+  session: Session; connect(): void; demoParties: string[]; switchParty(p: string): void; disconnect(): void;
+  viewChoice: WorkspaceView | null; setView(view: WorkspaceView): void; sessionError: string | null; clearSessionError(): void;
+}) {
   const { state: st, error, refresh, readAt } = useDesk(s);
   const [receipt, setReceipt] = useState<Receipt | null>(null);
+  const [dismissedReceipt, setDismissedReceipt] = useState<Receipt | null>(null);
+  const [receiptViewing, setReceiptViewing] = useState<Receipt | null>(null);
   const lock = useRef(false);
   const publicDesk = deployment().publicDesk;
   const publicPair: PriceFeed | undefined = publicDesk ? {
@@ -579,7 +596,6 @@ function Workspace({ session: s, connect, demoParties, switchParty, disconnect }
     cashIssuer: publicDesk.operator, cashInstrument: "USDCx-demo", price: "", asOf: "", readers: [],
   } : undefined;
   const [side, setSide] = useState<TradeSide>("borrow");
-  const [viewChoice, setView] = useState<"markets" | "detail" | "portfolio" | null>(publicDesk ? "detail" : null);
   const [content, setContent] = useState<ContentTab>("overview");
   const [portfolio, setPortfolio] = useState<"positions" | "holdings" | "activity">("positions");
   const [chosenPair, setSelectedId] = useState(() => publicPair ? marketIdentity(publicPair) : "");
@@ -633,19 +649,18 @@ function Workspace({ session: s, connect, demoParties, switchParty, disconnect }
   return <Transactions.Provider value={transactions}><div className="desk terminal">
     <a className="skip-link" href="#desk-content">Skip to desk</a>
     <header className="terminal-head"><a className="brand" href="/" aria-label="Symbolon home"><img src="/brand/logo-mark.png" alt="" width="24" height="24"/><span>SYMBOLON</span></a>
-      <nav className="terminal-nav" aria-label="Main navigation"><button type="button" className={view !== "portfolio" ? "on" : ""} aria-current={view !== "portfolio" ? "page" : undefined} onClick={() => setView("markets")}>Markets</button>
-        <button type="button" className={view === "portfolio" ? "on" : ""} aria-current={view === "portfolio" ? "page" : undefined} onClick={() => setView("portfolio")}>Portfolio</button></nav>
+      <nav className="terminal-nav" aria-label="Main navigation"><button type="button" className={view === "markets" || view === "detail" ? "on" : ""} aria-current={view === "markets" || view === "detail" ? "page" : undefined} onClick={() => setView("markets")}>Markets</button>
+        <button type="button" className={view === "portfolio" ? "on" : ""} aria-current={view === "portfolio" ? "page" : undefined} onClick={() => setView("portfolio")}>Portfolio</button>
+        <button type="button" className={view === "faucet" ? "on" : ""} aria-current={view === "faucet" ? "page" : undefined} onClick={() => setView("faucet")}>Faucet</button></nav>
       <button type="button" className="terminal-account-button" onClick={() => setAccountOpen(true)} aria-haspopup="dialog"><span>{accountLabel}</span><small>{networkLabel()}{connected && !trading ? " · Read-only" : ""}</small></button>
     </header>
     <main className="terminal-workspace" id="desk-content">
-      <div className="terminal-notices">
+      <div className="terminal-notices" role="region" aria-label="Notifications">
+        {sessionError && <div className="session-error" role="alert"><div className="toast-heading"><strong>Session</strong><button className="toast-close" onClick={clearSessionError} aria-label="Dismiss session notification">×</button></div><p>{sessionError}</p></div>}
         {deploymentFailure() && <p className="session-error" role="alert">Deployment configuration unavailable. Remote signing is paused. {deploymentFailure()}</p>}
         {["wallet", "account"].includes(s.kind) && !trading && <p className="session-error" role="status">{tradingBlocker(s.networkId)}</p>}
         {error && <div className="ledger-error" role="alert"><strong>Ledger unavailable</strong><p>{error}</p><p className="sm">{st ? "Showing the last successful read." : "No ledger data is available yet."} Trading is paused until refresh succeeds.</p><button className="ghost sm" disabled={busy} onClick={() => void refresh()}>Retry ledger read</button></div>}
-        <div className="receipt-region" aria-live="polite" aria-atomic="true">{receipt && <div className={`transaction-receipt ${receipt.phase}`}>
-          <strong>{receipt.phase === "pending" ? "Pending" : receipt.phase === "succeeded" ? "Confirmed" : receipt.phase === "unconfirmed" ? "Unconfirmed" : "Failed"} · {receipt.label}</strong>
-          {receipt.detail && <p>{receipt.detail}</p>}{receipt.updateId && <details><summary>Ledger update receipt</summary><code>{receipt.updateId}</code>{receipt.ledger && <><dl className="terms"><div><dt>Command ID</dt><dd><code>{receipt.ledger.commandId}</code></dd></div><div><dt>Ledger offset</dt><dd>{receipt.ledger.offset}</dd></div><div><dt>Recorded</dt><dd>{receipt.ledger.recordTime}</dd></div><div><dt>Synchronizer</dt><dd><code>{receipt.ledger.synchronizerId}</code></dd></div></dl><button className="ghost sm" onClick={() => downloadReceipt(receipt.ledger!)}>Download receipt</button></>}</details>}
-        </div>}</div>
+        <NotificationRegion>{receipt && receipt !== dismissedReceipt && <TransactionToast receipt={receipt} onDismiss={setDismissedReceipt} onView={() => setReceiptViewing(receipt)} paused={receiptViewing === receipt}/>}</NotificationRegion>
         {s.pendingCommand?.() && <div className="ledger-error" role="status"><strong>Check the original transaction</strong><p>New submissions are paused until this command is confirmed or rejected.</p><details><summary>Pending command</summary><code>{s.pendingCommand!()!.commandId}</code></details><button className="ghost sm" disabled={busy} onClick={() => {
           void s.reconcilePending?.().then(async result => {
             const ledger = s.lastReceipt?.();
@@ -657,6 +672,7 @@ function Workspace({ session: s, connect, demoParties, switchParty, disconnect }
           }).catch(e => setReceipt({phase:"unconfirmed",label:"Original transaction status",detail:e.message}));
         }}>Check ledger status</button></div>}
       </div>
+      {view === "faucet" && <Faucet session={s} state={st} connected={connected} trading={trading} busy={transactions.busy} readError={error} onConnect={connectionAction} run={run}/>}
       {view === "markets" && <MarketOverview state={st} party={s.party} connected={connected} tradingEnabled={trading && !error}
         pauseReason={error ? "Trading paused until the ledger connection recovers." : undefined} mode={side} onConnect={connectionAction} onRequestPair={openPair} selectedPairId={selectedId} onSelectPair={openPair}/>}
       {view === "portfolio" && <section className="terminal-portfolio"><div className="terminal-market-header"><div><h1>Portfolio</h1><p>Your private positions and issuer-separated holdings.</p></div></div>
@@ -701,10 +717,12 @@ function Workspace({ session: s, connect, demoParties, switchParty, disconnect }
         </div>
       </aside></div>}
     </main>
+    {receiptViewing && <Dialog title="Transaction receipt" close={() => setReceiptViewing(null)}><ReceiptDetails receipt={receiptViewing}/></Dialog>}
     {accountOpen && <Dialog title="Account" close={() => setAccountOpen(false)} className="terminal-account-dialog">
       <div className="review-terms"><Term label="Account">{connected ? accountLabel : "Not connected"}</Term><Term label="Network">Canton {networkLabel()}</Term><Term label="Access">{connected ? trading ? "Trading enabled" : "Read-only" : "Public market information"}</Term></div>
       {connected && <details className="party-detail"><summary>Full account identity</summary><code>{s.party}</code><p>{s.wallet ?? (s.kind === "account" ? "Hosted HackCanton account" : "LocalNet test account")}</p></details>}
       <div className="ledger-status"><span className="sm muted">{readAt ? `Last ledger read ${readAt.toLocaleTimeString()} · ${Intl.DateTimeFormat().resolvedOptions().timeZone}` : s.kind === "browse" && !s.ledgerRead ? "Connect to read your private ledger view" : error ? "Ledger read failed" : "Reading ledger…"}</span><button className="ghost sm" disabled={busy || s.kind === "browse" && !s.ledgerRead} onClick={() => void refresh()}>Refresh</button></div>
+      {receipt && <details className="terms-disclosure"><summary>Latest transaction</summary><ReceiptDetails receipt={receipt}/></details>}
       {!connected && deployment().network !== "localnet" && <button className="seal" onClick={() => { setAccountOpen(false); connect(); }}>Connect account</button>}
       <details className="terms-disclosure"><summary>Advanced account controls</summary><div className="desk-form">
         {s.kind === "account" && s.ownedParties && s.ownedParties.length > 1 && <Field label="Authorized account party" hint="Switching changes the signing identity. Borrow/Lend uses the current account."><select value={s.party} disabled={busy || !!s.pendingCommand?.()} onChange={event => switchParty(event.target.value)}>{s.ownedParties.map(party => <option key={party} value={party}>{partyDisplayName(party)}</option>)}</select></Field>}
@@ -713,12 +731,23 @@ function Workspace({ session: s, connect, demoParties, switchParty, disconnect }
         {trading && <PublicDeskSetup session={s} onRefresh={refresh}/>}
         {!!ownFeeds.length && <details className="terms-disclosure"><summary>Oracle administration</summary><p className="sm muted">This party owns these feeds and may publish simulated marks.</p>{ownFeeds.map(item => <OracleMark key={feedIdentity(item.payload)} feed={item} s={s}/>)}</details>}
       </div></details>
-      {trading && publicDesk && s.kind !== "browse" && s.kind !== "sandbox" && s.party !== publicDesk.operator && <details className="terms-disclosure"><summary>DevNet test assets</summary><PublicAccess session={s} state={st} busy={transactions.busy} borrowerMode={side === "borrow"} run={run}/></details>}
+      {deployment().network === "devnet" && publicDesk && <button className="ghost" onClick={() => { setAccountOpen(false); setView("faucet"); }}>Open faucet</button>}
       {connected && <button className="ghost sm" disabled={busy || !!s.pendingCommand?.()} onClick={disconnect}>Disconnect account</button>}
     </Dialog>}
   </div></Transactions.Provider>;
 }
 export default function DeskApp() {
+  const [viewChoice, setView] = useState<WorkspaceView | null>(() => {
+    try {
+      const saved = sessionStorage.getItem("symbolon:workspace-view");
+      if (saved && ["markets","detail","portfolio","faucet"].includes(saved)) return saved as WorkspaceView;
+    } catch { /* Browsing still works when preference storage is unavailable. */ }
+    return deployment().publicDesk ? "detail" : null;
+  });
+  useEffect(() => {
+    if (!viewChoice) return;
+    try { sessionStorage.setItem("symbolon:workspace-view",viewChoice); } catch { /* Optional UI preference only. */ }
+  }, [viewChoice]);
   const [session, setSession] = useState<Session>(() => browseSession());
   const sessionRef = useRef(session);
   useLayoutEffect(() => { sessionRef.current = session; }, [session]);
@@ -756,8 +785,9 @@ export default function DeskApp() {
     if (!sandboxModeEnabled() || !demoParties.includes(party)) return;
     setSession(connectSandbox(party)); setSessionError(null);
   };
-  return <>{sessionError && <p className="session-error" role="alert">Session: {sessionError}</p>}
-    <Workspace key={`${session.kind}:${session.party}`} session={session} connect={() => setConnecting(true)} demoParties={demoParties} switchParty={switchParty} disconnect={() => void disconnect()} />
+  return <>
+    <Workspace key={`${session.kind}:${session.party}`} session={session} connect={() => setConnecting(true)} demoParties={demoParties} switchParty={switchParty} disconnect={() => void disconnect()}
+      viewChoice={viewChoice} setView={setView} sessionError={sessionError} clearSessionError={() => setSessionError(null)} />
     {connecting && <ConnectDialog close={() => setConnecting(false)} connected={(s) => { setSession(s); setConnecting(false); setSessionError(null); }} />}
   </>;
 }

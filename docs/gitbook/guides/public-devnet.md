@@ -58,6 +58,18 @@ Private repo contracts and holding visibility keep their original stakeholders.
 
 ## User flow
 
+Open **Faucet** in the main navigation and connect your account. **Get DevNet
+assets** issues 0.1 cBTC-demo and 5,000 USDCx-demo per claim through the existing
+ledger contract. The balances shown are available holdings from the configured
+issuer. These are test assets with no monetary value; LocalNet uses seeded
+balances and MainNet has no public test-asset claim.
+
+Transaction feedback appears at the bottom right. Confirmed notifications close
+automatically, while **Account → Latest transaction** retains the correlated
+receipt and download. Pending or uncertain commands remain visible with their
+original-status check; dismissing a notification never releases a submission
+guard. Opening a receipt or focusing the toast pauses its dismissal timer.
+
 Connect the account, select an authorized borrower party distinct from the dealer,
 claim DevNet assets, request a quote, review the fixed annualized rate and full
 repurchase amount, settle, then repay. Peer dealers can use their actual issued

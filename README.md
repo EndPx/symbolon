@@ -41,6 +41,8 @@ The **8 October market-terminal revision** replaces scrolling section navigation
 
 The application keeps Symbolon's parchment/ink/gold identity: paper information surfaces, a navy Borrow/Lend ticket, warm ink text, Courier Prime figures and the gold seal action. Morpho informs the compact workspace and tab behavior; Symbolon's own palette and flat print-financial rules govern the visual design.
 
+**Faucet** in the main navigation issues 0.1 cBTC-demo and 5,000 USDCx-demo per claim on the configured public DevNet. These assets have no monetary value. Notifications appear at the bottom right without moving the workspace; confirmed toasts close automatically while Account retains the latest receipt. Pending and uncertain submissions retain their original-status check. This revision passes **51 frontend tests** and the production build.
+
 Prerequisites: PowerShell 7, `dpm` with Daml SDK **3.5.2**, Java compatible with the bundled Canton runtime, Node.js/npm. The verified local Canton runtime is **3.5.6**. Run from the repository root:
 
 ```powershell
