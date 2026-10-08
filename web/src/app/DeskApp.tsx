@@ -213,7 +213,7 @@ function Balances({ st, party }: { st: DeskState; party: string }) {
   const amounts = holdingBalances(st,party);
   const [detail,setDetail] = useState<HoldingBalance | null>(null);
   const current = detail ? amounts.find(row=>row.key===detail.key) : undefined;
-  return <Panel title="Holdings" description="Available balances exclude locked collateral and reserved cash.">
+  return <Panel title="Holdings" description="Owned balances only. Borrower collateral transfers to the lender; see Positions for pledged amounts.">
     {!amounts.length ? <div className="portfolio-empty"><h3>No assets yet</h3><p>Get test assets from Faucet to try your first deal.</p></div>
       : <table className="portfolio-table holdings-table"><caption className="sr-only">Your holdings, separated by asset issuer</caption><thead><tr><th scope="col">Asset</th><th scope="col">Issuer</th><th scope="col" className="numeric">Available</th><th scope="col" className="numeric">Locked</th><th scope="col"><span className="sr-only">Actions</span></th></tr></thead>
         <tbody>{amounts.map(row=><tr key={row.key}><th scope="row" data-label="Asset">{row.instrument}</th><td data-label="Issuer"><Party party={row.issuer}/></td><td data-label="Available" className="numeric">{fmtAmount(row.available,4)}</td><td data-label="Locked" className="numeric">{fmtAmount(row.locked,4)}</td><td className="table-action"><button className="ghost sm" onClick={()=>setDetail(row)} aria-label={`View ${row.instrument} from ${partyDisplayName(row.issuer)} details`}>Details</button></td></tr>)}</tbody>
@@ -413,7 +413,7 @@ function BorrowRequest({ s, st, demoParties, initialPair, draftScope, onSubmitte
       {preparationError && <p className="err" role="alert">{preparationError}</p>}
       {!!dealersText && !validParties && <p className="err">Use full Canton party IDs containing “::”, and do not address a request to yourself.</p>}
       {referenceEstimate!==null&&Number.isFinite(referenceEstimate)&&<div className="financing-estimate"><Term label="Estimated repayment">{fmtAmount(referenceEstimate,4)} {feed!.cashInstrument}</Term><p>At {fmtPct(num(deployment().publicDesk!.rate))} reference APR, ACT/360. Final offer terms apply; network fees are separate.</p></div>}
-      <p className="terminal-trade-note">{automatic&&dealers.length===1?"This DevNet test lender can return a funded offer after your request is confirmed.":"Your lender returns a funded offer for you to review before settlement."}</p>
+      <p className="terminal-trade-note">{automatic&&dealers.length===1&&dealers[0]===deployment().publicDesk?.operator?"This DevNet test lender can return a funded offer after your request is confirmed.":"Your lender returns a funded offer for you to review before settlement."}</p>
       <button type="submit" className="seal" disabled={busy || preparing || !canReview}>{preparing ? "Preparing market…" : busy ? "Awaiting ledger…" : "Review quote request"}</button>
     </form>
     {review && feed && <Dialog title="Review financing request" close={() => setReview(false)} busy={busy}>
@@ -438,7 +438,8 @@ function LenderRequest({ request, s, st, onSubmitted }: { request: Contract<Quot
   const [validity, setValidity] = useState("60");
   const [review, setReview] = useState(false);
   const r = request.payload;
-  const funded = balanceOf(st.holdings, s.party, r.cashInstrument, r.cashIssuer) >= num(r.cashAmount);
+  const availableCash = balanceOf(st.holdings, s.party, r.cashInstrument, r.cashIssuer);
+  const funded = availableCash >= num(r.cashAmount);
   const valid = rate !== "" && Number.isFinite(Number(rate)) && Number(rate) >= 0 && Number(rate) <= 100 && Number(validity) >= 1 && Number(validity) <= 1440;
   const submit = async () => {
     if (!valid || !funded || !st.requests.some(item => item.contractId === request.contractId)) return;
@@ -446,7 +447,7 @@ function LenderRequest({ request, s, st, onSubmitted }: { request: Contract<Quot
     if (succeeded) { setReview(false); onSubmitted(); }
   };
   return <article className="rfq"><div className="rfq-head"><strong><Party party={r.borrower} /></strong><span className="sm">{r.termDays} days</span></div>
-    <dl className="rfq-terms"><div><dt>Cash to reserve</dt><dd>{fmtAmount(r.cashAmount)} {r.cashInstrument}</dd></div><div><dt>Collateral</dt><dd>{fmtAmount(r.collateralAmount, 4)} {r.collateralInstrument}</dd></div></dl>
+    <dl className="rfq-terms"><div><dt>Cash to reserve</dt><dd>{fmtAmount(r.cashAmount)} {r.cashInstrument}</dd></div><div><dt>Available from this issuer</dt><dd>{fmtAmount(availableCash)} {r.cashInstrument}</dd></div><div><dt>Collateral</dt><dd>{fmtAmount(r.collateralAmount, 4)} {r.collateralInstrument}</dd></div></dl>
     <details className="terms-disclosure"><summary>Request terms and identities</summary><div className="review-terms">
       <Term label="Maintenance margin">{fmtPct(num(r.marginThresholdPct), 2)}</Term><Term label="Cure window">{fmtDuration(num(r.cureSeconds))}</Term>
       <Term label="Maximum mark age">{fmtDuration(num(r.maxPriceAgeSeconds))}</Term><Term label="Borrower"><Party party={r.borrower}/></Term>
@@ -455,19 +456,19 @@ function LenderRequest({ request, s, st, onSubmitted }: { request: Contract<Quot
     <form className="desk-form" onSubmit={(e) => { e.preventDefault(); if (valid && funded) setReview(true); }}>
       <div className="field-pair"><Field label="Annualized rate (%)" hint="Simple interest · ACT/360"><input type="number" min="0" max="100" step="0.01" required value={rate} onChange={(e) => setRate(e.target.value)} /></Field>
         <Field label="Quote valid (minutes)"><input type="number" min="1" max="1440" step="1" required value={validity} onChange={(e) => setValidity(e.target.value)} /></Field></div>
-      {valid && <p className="sm">Repurchase price: <strong>{fmtAmount(num(r.cashAmount) * (1 + Number(rate) / 100 * num(r.termDays) / 360), 6)} {r.cashInstrument}</strong></p>}
+      {valid && <p className="sm">Borrower repays: <strong>{fmtAmount(num(r.cashAmount) * (1 + Number(rate) / 100 * num(r.termDays) / 360), 6)} {r.cashInstrument}</strong></p>}
       {!funded && <p className="err">Not enough available {r.cashInstrument} from the agreed cash issuer.</p>}
       <div className="acts"><button type="submit" className="seal sm" disabled={busy || !valid || !funded}>Review funded offer</button>
         <button className="ghost sm" type="button" disabled={busy} onClick={() => void run("Request passed", () => act.passRequest(s, request.contractId))}>Pass</button></div>
     </form>
     {review && <Dialog title="Review funded offer" close={() => setReview(false)} busy={busy}>
-      <div className="review-terms"><Term label="Borrower"><Party party={r.borrower}/></Term><Term label="Cash reserved">{fmtAmount(r.cashAmount)} {r.cashInstrument}</Term>
+      <div className="review-terms"><Term label="Borrower"><Party party={r.borrower}/></Term><Term label="Cash to reserve">{fmtAmount(r.cashAmount)} {r.cashInstrument}</Term>
         <Term label="Collateral">{fmtAmount(r.collateralAmount, 10)} {r.collateralInstrument}</Term><Term label="Annualized rate">{rate}% · ACT/360</Term>
-        <Term label="Duration">{r.termDays} days from settlement</Term><Term label="Repurchase price">{fmtAmount(num(r.cashAmount) * (1 + Number(rate) / 100 * num(r.termDays) / 360), 10)} {r.cashInstrument}</Term>
+        <Term label="Duration">{r.termDays} days from settlement</Term><Term label="Borrower repays">{fmtAmount(num(r.cashAmount) * (1 + Number(rate) / 100 * num(r.termDays) / 360), 10)} {r.cashInstrument}</Term>
         <Term label="Offer validity">{validity} minutes from submission</Term><Term label="Maintenance margin">{fmtPct(num(r.marginThresholdPct), 2)}</Term>
         <Term label="Cure window">{fmtDuration(num(r.cureSeconds))}</Term><Term label="Maximum mark age">{fmtDuration(num(r.maxPriceAgeSeconds))}</Term></div>
       <details className="party-detail"><summary>Full contract identities</summary><p>Borrower<code>{r.borrower}</code></p><p>Collateral issuer<code>{r.collateralIssuer}</code></p><p>Cash issuer<code>{r.cashIssuer}</code></p><p>Oracle<code>{r.oracle}</code></p></details>
-      <p className="decision-note">Your cash is reserved until the borrower accepts, declines, or you revoke the offer. Expiry does not release it automatically. Acceptance transfers collateral title and pays the borrower in one ledger transaction.</p>
+      <p className="decision-note">Sending this offer reserves your cash until the borrower accepts, declines, or you revoke it. Expiry does not release it automatically. Acceptance transfers collateral title and pays the borrower in one ledger transaction.</p>
       <button className="seal" disabled={busy || !valid || !funded || !st.requests.some(item => item.contractId === request.contractId)} onClick={() => void submit()}>{busy ? "Awaiting ledger…" : "Reserve cash and send offer"}</button>
     </Dialog>}
   </article>;
@@ -490,7 +491,7 @@ function LendRequest({ s, st, onSubmitted }: { s: Session; st: DeskState; onSubm
 function SentOffers({ s, st }: { s: Session; st: DeskState }) {
   const { busy, run } = useContext(Transactions);
   const quotes = st.quotes.filter((q) => q.payload.dealer === s.party);
-  return <Panel title="Sent offers" description="Cash stays reserved until acceptance, rejection, or revocation.">
+  return <Panel title="Sent offers" description="Cash stays reserved until this offer is accepted, declined or revoked. Another lender's settlement does not release your unused offer.">
     {!quotes.length && <p className="empty-state">No active quotes. Price an incoming request to reserve cash and send one.</p>}
     {quotes.map((q) => <article className="rfq" key={q.contractId}><div className="rfq-head"><Party party={q.payload.borrower} /><strong className="rate">{fmtPct(num(q.payload.rate))}</strong></div>
       <p>{fmtAmount(q.payload.cashAmount)} {q.payload.cashInstrument} reserved</p><p className="sm muted">{Date.now() >= Date.parse(q.payload.validUntil) ? "Expired" : "Valid until"} · {fmtTime(q.payload.validUntil)} · {Intl.DateTimeFormat().resolvedOptions().timeZone}</p>
@@ -545,10 +546,10 @@ function PositionCard({ position, s, st, onRepurchased }: { position: Contract<R
   };
   return <article className="position"><header><div><strong>{fmtAmount(p.cashAmount)} {p.cashInstrument}</strong><span className="muted"> against </span><strong>{fmtAmount(p.collateralAmount, 4)} {p.collateralInstrument}</strong></div>
     <div className="pos-meta"><span className="rate">{fmtPct(num(p.rate))}</span><span className="sm muted">{borrower ? "Lender" : "Borrower"} <Party party={borrower ? p.dealer : p.borrower} /></span></div></header>
-    <div className="health" role="group" aria-label="Collateral health"><p className="health-row"><strong>Health factor {h.priceKnown ? fmtAmount(h.factor) : "unavailable"}</strong><span>Margin threshold 1.00</span></p>
+    <div className="health" role="group" aria-label="Collateral health"><p className="health-row"><strong>Health factor {h.priceKnown ? fmtAmount(h.factor) : "unavailable"}</strong><span>Health-factor cutoff 1.00</span></p>
       <div className="health-track" role={h.priceKnown ? "meter" : undefined} aria-label={h.priceKnown ? "Health factor" : undefined} aria-valuemin={h.priceKnown ? 0 : undefined} aria-valuemax={h.priceKnown ? Math.max(1.6, h.factor) : undefined} aria-valuenow={h.priceKnown ? h.factor : undefined} aria-valuetext={h.priceKnown ? `${fmtAmount(h.factor)}; ${h.healthy ? "margin covered" : "below required margin"}` : undefined}><div className={`health-fill ${h.priceKnown ? h.healthy ? "ok" : "bad" : "unknown"}`} style={{ transform: `scaleX(${Math.min(1.6, Math.max(0, h.factor)) / 1.6})` }} /><div className="health-mark" style={{ left: "62.5%" }} /></div>
       <p className="health-row">{h.priceKnown ? `${fmtAmount(h.collateralValue)} / ${fmtAmount(h.requiredValue)} ${p.cashInstrument} required${h.shortfallValue > 0 ? ` · ${fmtAmount(h.shortfallValue)} shortfall` : ""}` : h.stale ? "Agreed oracle mark is stale or future-dated" : "No mark from the agreed oracle"}</p></div>
-    <dl className="terms"><div><dt>Repurchase price</dt><dd>{fmtAmount(p.repurchasePrice, 6)} {p.cashInstrument}</dd></div><div><dt>Maturity</dt><dd>{fmtTime(p.maturity)}</dd></div>
+    <dl className="terms"><div><dt>Amount to repay</dt><dd>{fmtAmount(p.repurchasePrice, 6)} {p.cashInstrument}</dd></div><div><dt>Maturity</dt><dd>{fmtTime(p.maturity)} · {Intl.DateTimeFormat().resolvedOptions().timeZone}</dd></div>
       <div><dt>Rate convention</dt><dd>Annualized ACT/360</dd></div><div><dt>Status</dt><dd className={elapsed || isUnderCall(p) || !h.healthy ? "warn" : ""}>{positionStatus}</dd></div></dl>
     <p className="sm muted">Oracle <Party party={p.oracle} /> · {feed ? `simulated mark ${fmtTime(feed.payload.asOf)}` : "mark unavailable"} · maximum age {fmtDuration(num(p.maxPriceAgeSeconds))}</p>
     {elapsed && <p className="decision-note">Repurchase, top-up and substitution are closed. At maturity the lender may declare default. After an uncured margin call, liquidation needs an agreed mark published after the cure deadline with health factor below 1.00.</p>}
@@ -573,6 +574,8 @@ function PositionCard({ position, s, st, onRepurchased }: { position: Contract<R
       {!matured && !cureExpired && <span className="sm muted">Liquidation requires an expired margin call, a post-cure mark, and health factor below 1.00. Maturity default is separate.</span>}</div>}
     {repayReview && <Dialog title="Review repayment" close={() => setRepayReview(false)} busy={busy}>
       <Term label="You pay">{fmtAmount(p.repurchasePrice, 10)} {p.cashInstrument}</Term><Term label="You receive">{fmtAmount(p.collateralAmount, 10)} {p.collateralInstrument}</Term>
+      <Term label="Symbolon protocol fee">0 {p.cashInstrument}</Term><Term label="Network fee">Not quoted · separate from repayment</Term>
+      <p className="sm muted">Amounts are shown to 10 decimals; lists round for readability. Ledger-confirmed values apply.</p>
       <p className="decision-note">The full repurchase price is due, including when closing early. Payment and return of collateral settle together.</p>
       <button className="seal" disabled={busy || elapsed || cash < num(p.repurchasePrice)} onClick={() => void repurchase()}>Repay and recover collateral</button>
     </Dialog>}
@@ -590,7 +593,7 @@ function Positions({ s, st, onRepurchased, onBrowse }: { s: Session; st: DeskSta
   const { busy, run } = useContext(Transactions);
   const mine = st.positions.filter((p) => p.payload.borrower === s.party || p.payload.dealer === s.party);
   const proposals = st.proposals.filter((p) => p.payload.borrower === s.party || p.payload.dealer === s.party);
-  return <><Panel id="open-positions" title={mine.length ? "Open positions" : undefined}>
+  return <><Panel id="open-positions" title={mine.length ? "Open positions" : undefined} description={mine.length?`Maturity times shown in ${Intl.DateTimeFormat().resolvedOptions().timeZone}.`:undefined}>
     {!mine.length ? <div className="portfolio-empty"><h2>No open positions</h2><p>A position appears when an offer settles cash against collateral.</p><p className="sm">Its Details show health factor, repayment and maturity. Borrowers can top up, propose a replacement, or repay; lenders manage margin calls and closeout.</p>{onBrowse && <button className="seal" onClick={onBrowse}>Browse markets</button>}</div>
       : <div className="position-list"><div className="position-columns" aria-hidden="true"><span>Position</span><span>Fixed rate</span><span>Health</span><span>Repayment</span><span>Maturity</span><span></span></div>
         {mine.map(position=>{const p=position.payload,h=health(p,st.feeds);const rowStatus=Date.now()>=Date.parse(p.maturity)?"Matured":cureElapsed(p)?"Cure deadline reached":isUnderCall(p)?`Margin call · ${cureLeft(cureDeadline(p)!)} to cure`:!h.priceKnown?"Price unavailable":!h.healthy?"Below margin":"Active";return <details className="position-item" key={position.contractId}><summary className="position-summary">
@@ -654,6 +657,8 @@ function Workspace({ session: s, connect, demoParties, switchParty, disconnect, 
   const [dismissedReceipt, setDismissedReceipt] = useState<Receipt | null>(null);
   const [receiptViewing, setReceiptViewing] = useState<Receipt | null>(null);
   const lock = useRef(false);
+  const marketDetailsRef=useRef<HTMLElement>(null);
+  const terminalHeaderRef=useRef<HTMLElement>(null);
   const publicDesk = deployment().publicDesk;
   const publicPair: PriceFeed | undefined = publicDesk ? {
     oracle: publicDesk.operator, instrumentIssuer: publicDesk.operator, instrument: "cBTC-demo",
@@ -707,6 +712,17 @@ function Workspace({ session: s, connect, demoParties, switchParty, disconnect, 
   const positions = connected ? scoped?.positions.filter(({payload}) => payload.borrower === s.party || payload.dealer === s.party) ?? [] : [];
   const ownRequests = connected ? partyRequests(scoped?.requests??[],s.party,side) : [];
   const openPair = (id: string) => { setSelectedId(id); setView("detail"); setContent("overview"); };
+  const jumpToContent=(value:ContentTab)=>{
+    setContent(value);
+    requestAnimationFrame(()=>{
+      const panel=marketDetailsRef.current,header=terminalHeaderRef.current;
+      if(!panel)return;
+      const offset=header&&getComputedStyle(header).position==="sticky"?header.getBoundingClientRect().height:0;
+      panel.style.setProperty("--market-jump-offset",`${offset+12}px`);
+      panel.scrollIntoView({block:"start"});
+      panel.querySelector<HTMLButtonElement>(`#market-tab-${value}`)?.focus({preventScroll:true});
+    });
+  };
   const contentOptions = [
     {value: "overview" as const, label: "Overview"}, {value: "offers" as const, label: "Offers", count: ownQuotes.length},
     {value: "positions" as const, label: "Positions", count: positions.length}, {value: "activity" as const, label: "Activity"},
@@ -717,7 +733,7 @@ function Workspace({ session: s, connect, demoParties, switchParty, disconnect, 
 
   return <Transactions.Provider value={transactions}><div className="desk terminal">
     <a className="skip-link" href="#desk-content">Skip to desk</a>
-    <header className="terminal-head"><a className="brand" href="/" target="_blank" rel="noopener noreferrer" aria-label="Symbolon home" title="Open Symbolon home in a new tab"><img src="/brand/logo-mark.png" alt="" width="24" height="24"/><span>SYMBOLON</span></a>
+    <header ref={terminalHeaderRef} className="terminal-head"><a className="brand" href="/" target="_blank" rel="noopener noreferrer" aria-label="Symbolon home" title="Open Symbolon home in a new tab"><img src="/brand/logo-mark.png" alt="" width="24" height="24"/><span>SYMBOLON</span></a>
       <nav className="terminal-nav" aria-label="Main navigation"><button type="button" className={view === "markets" || view === "detail" ? "on" : ""} aria-current={view === "markets" || view === "detail" ? "page" : undefined} onClick={() => setView("markets")}>Markets</button>
         <button type="button" className={view === "portfolio" ? "on" : ""} aria-current={view === "portfolio" ? "page" : undefined} onClick={() => setView("portfolio")}>Portfolio</button>
         <button type="button" className={view === "faucet" ? "on" : ""} aria-current={view === "faucet" ? "page" : undefined} onClick={() => setView("faucet")}>Faucet</button></nav>
@@ -753,7 +769,7 @@ function Workspace({ session: s, connect, demoParties, switchParty, disconnect, 
       </section>}
       {view === "detail" && <div className="terminal-layout" role="region" aria-label="Selected market">
         <div className="terminal-market-header"><div><button type="button" className="terminal-pair-back" onClick={() => setView("markets")}>All markets</button>
-          <h1>{feed ? `${feed.instrument} / ${feed.cashInstrument}` : "Select a market"}</h1><p className="terminal-pair-meta">Canton {networkLabel()} · Test assets · Private bilateral repo</p></div></div>
+          <h1>{feed ? `${feed.instrument} / ${feed.cashInstrument}` : "Select a market"}</h1><p className="terminal-pair-meta">Canton {networkLabel()} · Test assets{feed&&<> · {feed.instrumentIssuer===feed.cashIssuer?<>Issuer <Party party={feed.instrumentIssuer}/></>:<>Collateral by <Party party={feed.instrumentIssuer}/> · Cash by <Party party={feed.cashIssuer}/></>}</>}</p></div><nav className="terminal-mobile-jumps" aria-label="Jump to market content">{(["offers","positions","activity"] as const).map(value=><button type="button" className="ghost sm" key={value} aria-controls={`market-panel-${value}`} aria-pressed={content===value} onClick={()=>jumpToContent(value)}>{value[0].toUpperCase()+value.slice(1)}</button>)}</nav></div>
         <div className="terminal-stats"><div className="terminal-metric"><span>{bestRate===null&&publishedRate!==null?"Reference APR":side==="lend"?"Lowest sent offer APR":"Lowest received offer APR"}</span><strong>{bestRate===null?(publishedRate===null?"On request":fmtPct(publishedRate)):fmtPct(bestRate)}</strong></div>
           <div className="terminal-metric"><span>Simulated collateral mark</span><strong>{selected ? fmtAmount(selected.payload.price) : "—"}</strong><small>{selected ? selected.payload.cashInstrument : connected ? "Awaiting authorized feed" : "Connect to view"}</small></div>
           <div className="terminal-metric"><span>Mark status</span><strong>{selected ? isFresh(selected.payload, DEFAULT_PRICE_AGE_SECONDS) ? "Current" : "Stale" : "Unavailable"}</strong><small>{selected&&!isFresh(selected.payload,DEFAULT_PRICE_AGE_SECONDS)?"Settlement needs a fresh agreed mark":"Offer terms set the permitted price age"}</small></div>
@@ -771,7 +787,7 @@ function Workspace({ session: s, connect, demoParties, switchParty, disconnect, 
             : !scoped ? <p className="empty-state" role="status">{st && !feed ? "Selected market no longer available. Open All markets to choose a visible pair." : error ? "The ledger view is unavailable." : "Loading your account…"}</p>
             : <><LendRequest s={s} st={scoped} onSubmitted={() => setContent("offers")}/>{unavailable && <p className="terminal-trade-note" role="status">{unavailable}</p>}</>}
         </div>
-      </aside><section className="terminal-main" aria-label="Market details">
+      </aside><section ref={marketDetailsRef} className="terminal-main" aria-label="Market details">
         <TerminalTabs<ContentTab> id="market" label="Market content" value={content} options={contentOptions} onChange={setContent}/>
         <TerminalPanels id="market" value={content} values={["overview","offers","positions","activity"]}>
           {content === "overview" ? <div className="terminal-overview"><Panel title="Market overview"><p className="overview-intro">Private financing with a fixed repayment agreed before settlement. Choose Borrow to request an offer, or Lend to price a request addressed to you.</p>

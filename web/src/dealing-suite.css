@@ -718,6 +718,7 @@
 .field-help:hover { color: var(--terminal-text); background: var(--terminal-soft); }
 .financing-stage-note { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--terminal-muted); font-size: 12px; margin-bottom: 8px !important; }
 .market-guide-button { flex: none; }
+.terminal-mobile-jumps { display: none; }
 .financing-estimate { padding: 12px; border-top: 1px solid var(--terminal-border); border-bottom: 1px solid var(--terminal-border); }
 .financing-estimate p { font-size: 12px; color: var(--terminal-muted); margin-top: 8px; }
 .lender-onboarding { display: grid; gap: 12px; font-size: 14px; }
@@ -930,6 +931,7 @@
 .terminal .desk-dialog .review-terms .tr-val, .terminal-dialog .review-terms .tr-val { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
 .terminal-dialog .dialog-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
 .terminal-dialog .dialog-heading h2 { font: 600 18px "Libre Franklin", sans-serif; margin: 0; }
+.terminal .dialog-heading, .terminal-dialog .dialog-heading { position: sticky; top: 0; z-index: 3; background: var(--terminal-surface); }
 .terminal-dialog { --terminal-control-border: rgba(34,28,25,.52); }
 .terminal-dialog .ghost { min-height: 44px; padding: 10px 16px; border-radius: var(--terminal-control-radius); border: 1px solid var(--terminal-control-border); color: var(--terminal-text); font: 500 13px "Libre Franklin", sans-serif; background: var(--terminal-surface); }
 .terminal-dialog .wallet-row { min-height: 72px; border-color: var(--terminal-border); color: var(--terminal-text); }
@@ -958,7 +960,12 @@
 }
 @media (max-width: 820px) {
   .terminal { height: auto; min-height: 100dvh; overflow: visible; }
-  .terminal-head { flex-wrap: wrap; height: auto; min-height: 64px; gap: 8px 12px; padding: 12px 16px; }
+  .terminal-head { position: sticky; top: 0; z-index: 20; flex-wrap: wrap; height: auto; min-height: 64px; gap: 8px 12px; padding: 12px 16px; }
+  .terminal-market-header { flex-wrap: wrap; }
+  .terminal-mobile-jumps { display: flex; width: 100%; gap: 8px; margin-top: 8px; }
+  .terminal-mobile-jumps button { flex: 1; min-height: 44px; }
+  .terminal-mobile-jumps button[aria-pressed=true] { background: var(--terminal-soft); }
+  .terminal-main { scroll-margin-top: var(--market-jump-offset,12px); }
   .terminal-head .brand { margin-right: auto; }
   .terminal-nav { order: 3; width: 100%; height: 44px; }
   .terminal-head .terminal-network { margin-left: 0; }
