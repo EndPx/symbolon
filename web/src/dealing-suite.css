@@ -631,11 +631,12 @@
 
 /* Compact market terminal. Tokens and anatomy: DESIGN.md, 8 October UX contract. */
 .terminal {
-  --terminal-canvas: #f4f5f7; --terminal-surface: #fff; --terminal-soft: #fafbfc;
-  --terminal-text: #202733; --terminal-muted: #69727f; --terminal-border: #e1e4e8;
-  --terminal-radius: 12px; --terminal-control-radius: 8px; --terminal-motion: 150ms;
+  --terminal-canvas: var(--parchment, #f4e9ce); --terminal-surface: var(--desk-paper, #f9f2de);
+  --terminal-soft: rgba(216,200,158,.18); --terminal-text: #221c19; --terminal-muted: #4a3a26;
+  --terminal-border: rgba(34,28,25,.26); --terminal-control-border: rgba(34,28,25,.52); --terminal-radius: 0px; --terminal-control-radius: 0px; --terminal-motion: 150ms;
   height: 100dvh; min-height: 0; display: flex; flex-direction: column; overflow: hidden;
-  background: var(--terminal-canvas); color: var(--terminal-text); font: 14px/1.5 "Libre Franklin", sans-serif;
+  background: var(--terminal-canvas) url("/brand/grain.png"); background-size: 640px; background-blend-mode: soft-light;
+  color: var(--terminal-text); font: 14px/1.5 "Libre Franklin", sans-serif;
   --ink-warm: var(--terminal-text); --ink-soft: var(--terminal-muted);
 }
 .terminal *, .terminal *::before, .terminal *::after { box-sizing: border-box; }
@@ -648,21 +649,22 @@
 .terminal button, .terminal input, .terminal select, .terminal textarea { font-family: "Libre Franklin", sans-serif; letter-spacing: 0; }
 .terminal button { cursor: pointer; text-transform: none; }
 .terminal button:disabled { cursor: not-allowed; opacity: .5; }
-.terminal button:focus-visible, .terminal a:focus-visible, .terminal input:focus-visible, .terminal select:focus-visible, .terminal textarea:focus-visible { outline: 2px solid var(--antique-gold, #c9a227); outline-offset: 3px; }
+.terminal button:focus-visible, .terminal a:focus-visible, .terminal input:focus-visible, .terminal select:focus-visible, .terminal textarea:focus-visible { outline: 2px solid var(--terminal-text); outline-offset: 3px; }
 .terminal .seal, .terminal .ghost { min-height: 44px; border-radius: var(--terminal-control-radius); padding: 10px 16px; font-size: 13px; font-weight: 600; letter-spacing: 0; text-transform: none; transition: background-color var(--terminal-motion), color var(--terminal-motion); }
-.terminal .seal { background: var(--ink-navy, #0b1220); color: #fff; border: 1px solid var(--ink-navy, #0b1220); }
-.terminal .seal:hover:not(:disabled) { background: #202733; }
-.terminal .ghost { color: var(--terminal-text); border: 1px solid var(--terminal-border); background: var(--terminal-surface); }
+.terminal .seal { background: #221c19; color: var(--antique-gold, #c9a227); border: 1px solid #221c19; }
+.terminal .seal:hover:not(:disabled) { background: var(--ink-navy, #0b1220); }
+.terminal .ghost { color: var(--terminal-text); border: 1px solid var(--terminal-control-border); background: var(--terminal-surface); }
 .terminal .ghost:hover:not(:disabled) { background: var(--terminal-soft); }
-.terminal .chip { padding: 8px 12px; border: 1px solid var(--terminal-border); border-radius: var(--terminal-control-radius); background: var(--terminal-soft); font: inherit; min-height: 40px; }
+.terminal .chip { padding: 8px 12px; border: 1px solid var(--terminal-control-border); border-radius: var(--terminal-control-radius); background: var(--terminal-soft); color: var(--terminal-text); font: inherit; min-height: 40px; }
 .terminal .quiet { color: var(--terminal-text); text-decoration: underline; text-underline-offset: 3px; }
-.terminal-head { height: 64px; min-height: 64px; flex: 0 0 auto; display: flex; align-items: center; gap: 32px; padding: 0 24px; background: var(--ink-navy, #0b1220); color: #fff; }
-.terminal-head .brand { display: inline-flex; align-items: center; gap: 12px; color: #f4e9ce; font: 16px "Marcellus", serif; letter-spacing: .12em; white-space: nowrap; }
+.terminal-head { height: 64px; min-height: 64px; flex: 0 0 auto; display: flex; align-items: center; gap: 32px; padding: 0 24px; background: var(--ink-navy, #0b1220); color: var(--parchment, #f4e9ce); }
+.terminal-head .brand { display: inline-flex; align-items: center; gap: 12px; color: var(--parchment, #f4e9ce); font: 16px "Marcellus", serif; letter-spacing: .12em; white-space: nowrap; }
 .terminal-head .brand img { width: 24px; height: 24px; }
 .terminal-nav { display: flex; align-items: center; height: 100%; gap: 8px; }
-.terminal-nav button, .terminal-nav a { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 8px 16px; border: 0; border-radius: 8px; font: 500 14px "Libre Franklin", sans-serif; color: #d8c89e; background: transparent; text-decoration: none; }
-.terminal-nav button[aria-current], .terminal-nav button.active, .terminal-nav a[aria-current] { background: rgba(255,255,255,.08); color: #fff; }
-.terminal-account-button { margin-left: auto; min-height: 40px; display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; color: #fff; border: 1px solid rgba(255,255,255,.2); border-radius: 8px; background: transparent; font: 13px "Libre Franklin", sans-serif; }
+.terminal-nav button, .terminal-nav a { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 8px 16px; border: 0; border-radius: 0; font: 500 14px "Libre Franklin", sans-serif; color: var(--parchment-dim, #d8c89e); background: transparent; text-decoration: none; }
+.terminal-nav button[aria-current], .terminal-nav button.active, .terminal-nav a[aria-current] { background: rgba(244,233,206,.08); color: var(--parchment, #f4e9ce); }
+.terminal-account-button { margin-left: auto; min-height: 40px; display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; color: var(--parchment, #f4e9ce); border: 1px solid rgba(216,200,158,.5); border-radius: 0; background: transparent; font: 13px "Libre Franklin", sans-serif; }
+.terminal-head button:focus-visible, .terminal-head a:focus-visible { outline-color: var(--antique-gold, #c9a227); }
 .terminal-account-button svg { width: 16px; height: 16px; }
 .terminal-head .terminal-network { margin-left: auto; color: #d8c89e; font-size: 12px; white-space: nowrap; }
 .terminal-head .terminal-network + .terminal-account-button { margin-left: 0; }
@@ -685,18 +687,22 @@
 .terminal-overview-summary dd { margin: 0; text-align: right; }
 .terminal-tabs { display: flex; flex-wrap: wrap; gap: 20px; align-items: center; padding: 0 20px; border-bottom: 1px solid var(--terminal-border); background: var(--terminal-surface); }
 .terminal-tabs button { position: relative; min-height: 48px; padding: 12px 0; border: 0; border-bottom: 2px solid transparent; background: transparent; font: 500 14px "Libre Franklin", sans-serif; color: var(--terminal-muted); white-space: nowrap; }
-.terminal-tabs button[aria-selected=true], .terminal-tabs button.active { color: var(--terminal-text); border-bottom-color: var(--antique-gold, #c9a227); }
+.terminal-tabs button[aria-selected=true], .terminal-tabs button.active { color: var(--terminal-text); border-bottom-color: var(--terminal-text); }
 .terminal-tabs button:hover { color: var(--terminal-text); }
-.terminal-tabs button small { display: inline-flex; margin-left: 6px; min-width: 18px; justify-content: center; background: var(--terminal-canvas); border-radius: 8px; }
+.terminal-tabs button small { display: inline-flex; margin-left: 6px; min-width: 18px; justify-content: center; background: var(--terminal-canvas); border-radius: 0; }
 .terminal-tab-panel { min-height: 0; overflow: auto; flex: 1; }
 .terminal [hidden] { display: none !important; }
 .terminal-main > .terminal-tab-panel { background: var(--terminal-surface); border: 1px solid var(--terminal-border); border-top: 0; border-radius: 0 0 var(--terminal-radius) var(--terminal-radius); }
 .terminal-main > .terminal-tabs { margin-bottom: -16px; border: 1px solid var(--terminal-border); border-radius: var(--terminal-radius) var(--terminal-radius) 0 0; }
-.terminal-tab-count { display: inline-flex; justify-content: center; min-width: 18px; margin-left: 6px; padding-inline: 4px; font-size: 11px; border-radius: 6px; background: var(--terminal-canvas); }
+.terminal-tab-count { display: inline-flex; justify-content: center; min-width: 18px; margin-left: 6px; padding-inline: 4px; font-size: 11px; border-radius: 0; background: var(--terminal-canvas); }
 .terminal .terminal-account-button, .terminal .terminal-pair-back { min-height: 44px; }
 .terminal-tab-panel[hidden], .terminal-trade-panel[hidden] { display: none !important; }
 .terminal-content { display: flex; flex: 1; min-height: 0; flex-direction: column; border: 1px solid var(--terminal-border); border-radius: var(--terminal-radius); background: var(--terminal-surface); overflow: hidden; }
 .terminal-trade { min-height: 0; min-width: 0; overflow: auto; border: 1px solid var(--terminal-border); border-radius: var(--terminal-radius); background: var(--terminal-surface); align-self: stretch; }
+.terminal-trade { --terminal-canvas: #0b1220; --terminal-surface: #0b1220; --terminal-soft: var(--desk-ink-raised, #172334); --terminal-text: var(--parchment, #f4e9ce); --terminal-muted: var(--parchment-dim, #d8c89e); --terminal-border: var(--desk-rule-on-ink); --terminal-control-border: rgba(216,200,158,.5); }
+.terminal-trade { color: var(--terminal-text); }
+.terminal-trade :is(button,a,input,select,textarea):focus-visible { outline-color: var(--antique-gold, #c9a227); }
+.terminal-trade input[type=number], .terminal-trade .tr-val { color: var(--antique-gold, #c9a227); }
 .terminal-trade-tabs { display: grid; grid-template-columns: 1fr 1fr; padding: 0 16px; border-bottom: 1px solid var(--terminal-border); }
 .terminal-trade-tabs button { min-height: 56px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--terminal-muted); font: 500 15px "Libre Franklin", sans-serif; }
 .terminal-trade-tabs button[aria-selected=true], .terminal-trade-tabs button.active { color: var(--terminal-text); border-bottom-color: var(--antique-gold, #c9a227); }
@@ -713,8 +719,8 @@
 .terminal .desk-form { display: grid; gap: 16px; }
 .terminal label.field, .terminal .field { display: flex; flex-direction: column; gap: 8px; color: var(--terminal-text); font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none; }
 .terminal .field small { font-weight: 400; color: var(--terminal-muted); }
-.terminal input:not([type=checkbox]), .terminal select, .terminal textarea { width: 100%; min-width: 0; min-height: 44px; padding: 12px; border: 1px solid var(--terminal-border); border-radius: var(--terminal-control-radius); background: var(--terminal-soft); color: var(--terminal-text); font: 14px/1.5 "Libre Franklin", sans-serif; }
-.terminal input[type=number] { font-variant-numeric: tabular-nums; }
+.terminal input:not([type=checkbox]), .terminal select, .terminal textarea { width: 100%; min-width: 0; min-height: 44px; padding: 12px; border: 1px solid var(--terminal-control-border); border-radius: var(--terminal-control-radius); background: var(--terminal-soft); color: var(--terminal-text); font: 14px/1.5 "Libre Franklin", sans-serif; }
+.terminal input[type=number] { font-family: "Courier Prime", monospace; font-variant-numeric: tabular-nums; }
 .terminal textarea { min-height: 72px; font-size: 12px; }
 .terminal .field-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .terminal .terms-disclosure, .terminal details.terminal-details { border-top: 1px solid var(--terminal-border); border-bottom: 0; padding: 12px 0; margin: 0; }
@@ -726,8 +732,9 @@
 .terminal .ticket-row .tr-val { white-space: nowrap; }
 .terminal details > summary { min-height: 44px; padding-block: 12px; }
 .terminal .terms-disclosure:not([open]) { padding-block: 0; }
-.terminal .tr-val { color: var(--terminal-text); font-family: inherit; font-variant-numeric: tabular-nums; }
-.terminal-collateral-summary { padding: 12px; border: 1px solid var(--terminal-border); border-radius: 8px; background: var(--terminal-soft); display: grid; gap: 4px; font-size: 12px; }
+.terminal .tr-val { color: var(--terminal-text); font-family: "Courier Prime", monospace; font-variant-numeric: tabular-nums; }
+.terminal-trade .tr-val { color: var(--antique-gold, #c9a227); }
+.terminal-collateral-summary { padding: 12px; border: 1px solid var(--terminal-border); border-radius: 0; background: var(--terminal-soft); display: grid; gap: 4px; font-size: 12px; }
 .terminal-collateral-summary strong { font-size: 16px; font-variant-numeric: tabular-nums; }
 .terminal-trade-note { margin-top: 12px !important; font-size: 12px; color: var(--terminal-muted); }
 .terminal .acts { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -750,11 +757,11 @@
 .terminal .balance-row small { color: var(--terminal-muted); }
 .terminal .bal-amt { color: var(--terminal-text); font: 500 16px "Libre Franklin", sans-serif; font-variant-numeric: tabular-nums; }
 .terminal .party-name { font-family: inherit; font-size: inherit; overflow-wrap: anywhere; }
-.terminal-status { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 8px; font-size: 12px; background: var(--terminal-canvas); color: var(--terminal-muted); }
-.terminal-status.stale { color: #7a2f1c; background: #fff3e8; }
-.terminal-status.fresh { color: #28604a; background: #edf6f1; }
-.terminal-inline-error { padding: 12px 16px; color: #7a2f1c; background: #fff3e8; font-size: 12px; }
-.terminal .transaction-receipt, .terminal .ledger-error, .terminal .session-error { margin: 0 0 12px; padding: 12px 16px; border: 1px solid var(--terminal-border); border-radius: 8px; background: var(--terminal-surface); color: var(--terminal-text); font-size: 12px; }
+.terminal-status { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 0; font-size: 12px; background: var(--terminal-soft); color: var(--terminal-muted); }
+.terminal-status.stale { color: var(--desk-danger, #7a2f1c); }
+.terminal-status.fresh { color: var(--terminal-text); }
+.terminal-inline-error { padding: 12px 16px; color: var(--desk-danger, #7a2f1c); background: var(--terminal-soft); font-size: 12px; }
+.terminal .transaction-receipt, .terminal .ledger-error, .terminal .session-error { margin: 0 0 12px; padding: 12px 16px; border: 1px solid var(--terminal-border); border-radius: 0; background: var(--terminal-surface); color: var(--terminal-text); font-size: 12px; }
 .terminal .transaction-receipt strong { font-size: 13px; }
 .terminal .transaction-receipt code { font-size: 11px; overflow-wrap: anywhere; }
 .terminal .transaction-receipt details { margin-top: 4px; }
@@ -780,9 +787,9 @@
 .terminal-market-pair { display: grid; gap: 6px; }
 .terminal-market-pair > small { margin-left: 54px; }
 .terminal-pair-icons { display: inline-flex; align-items: center; gap: 0; min-width: 0; }
-.terminal-token { width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; color: #fff; flex: 0 0 auto; }
-.terminal-token.collateral { background: #c9a227; }
-.terminal-token.cash { background: #0b1220; border: 2px solid var(--terminal-surface); margin-left: -8px; }
+.terminal-token { width: 28px; height: 28px; border-radius: 0; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; flex: 0 0 auto; }
+.terminal-token.collateral { background: var(--ink-navy, #0b1220); color: var(--antique-gold, #c9a227); }
+.terminal-token.cash { background: var(--terminal-surface); color: var(--terminal-text); border: 1px solid var(--terminal-border); margin-left: -8px; }
 .terminal-token-names { margin-left: 12px; color: var(--terminal-text); font-size: 14px; font-weight: 600; }
 .terminal-token-names > span { margin-left: 4px; font-weight: 400; }
 .terminal-open { color: var(--terminal-text); font-size: 12px; text-align: right; }
@@ -792,12 +799,12 @@
 .terminal-list-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .terminal-portfolio { display: flex; flex-direction: column; height: 100%; background: var(--terminal-surface); border: 1px solid var(--terminal-border); border-radius: var(--terminal-radius); overflow: hidden; }
 .terminal-portfolio .terminal-tab-panel { padding: 4px 0; }
-.terminal .desk-dialog { max-width: min(620px,calc(100vw - 32px)); max-height: calc(100dvh - 40px); overflow: auto; padding: 24px; border: 1px solid var(--terminal-border); border-radius: 12px; color: var(--terminal-text); background: var(--terminal-surface); }
+.terminal .desk-dialog { max-width: min(620px,calc(100vw - 32px)); max-height: calc(100dvh - 40px); overflow: auto; padding: 24px; border: 1px solid var(--terminal-border); border-radius: 0; color: var(--terminal-text); background: var(--terminal-surface); }
 .terminal .desk-dialog::backdrop { background: rgba(11,18,32,.48); }
 .terminal .dialog-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
 .terminal .dialog-heading h2 { font: 600 18px "Libre Franklin", sans-serif; }
 .terminal .review-terms { display: grid; gap: 0; padding: 12px 0; }
-.terminal .decision-note { margin: 12px 0; padding: 12px; background: var(--terminal-soft); border-radius: 8px; font-size: 12px; }
+.terminal .decision-note { margin: 12px 0; padding: 12px; background: var(--terminal-soft); border-radius: 0; font-size: 12px; }
 .terminal .party-detail { padding: 8px 0; }
 .terminal .party-detail code, .terminal-account-dialog code { font-size: 11px; overflow-wrap: anywhere; display: block; }
 .terminal .wallet-row { min-height: 72px; border-bottom: 1px solid var(--terminal-border); color: var(--terminal-text); }
@@ -806,16 +813,28 @@
 .terminal .connection-network, .terminal .connection-help { font-size: 12px; color: var(--terminal-muted); }
 .terminal .public-access { margin: 0; }
 .terminal .public-access-balances { gap: 24px; }
-.terminal-onboarding { padding: 12px; margin-bottom: 16px; border: 1px solid var(--terminal-border); border-radius: 8px; background: var(--terminal-soft); }
+.terminal-onboarding { padding: 12px; margin-bottom: 16px; border: 1px solid var(--terminal-border); border-radius: 0; background: var(--terminal-soft); }
 .terminal-onboarding p { color: var(--terminal-muted); font-size: 12px; margin-bottom: 12px; }
 .terminal-onboarding .acts { gap: 8px; }
-.terminal-dialog { --ink-warm: #202733; --ink-soft: #69727f; max-width: min(620px,calc(100vw - 32px)); max-height: calc(100dvh - 40px); overflow: auto; padding: 24px; border: 1px solid #e1e4e8; border-radius: 12px; color: #202733; background: #fff; font: 14px/1.5 "Libre Franklin", sans-serif; }
+.terminal-dialog { --ink-warm: #221c19; --ink-soft: #4a3a26; --terminal-canvas: #f4e9ce; --terminal-surface: #f9f2de; --terminal-soft: rgba(216,200,158,.18); --terminal-text: #221c19; --terminal-muted: #4a3a26; --terminal-border: rgba(34,28,25,.26); max-width: min(620px,calc(100vw - 32px)); max-height: calc(100dvh - 40px); overflow: auto; padding: 24px; border: 1px solid var(--terminal-border); border-radius: 0; color: var(--terminal-text); background: var(--terminal-surface); font: 14px/1.5 "Libre Franklin", sans-serif; }
 .terminal-dialog::backdrop { background: rgba(11,18,32,.48); }
 .terminal-dialog .dialog-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
 .terminal-dialog .dialog-heading h2 { font: 600 18px "Libre Franklin", sans-serif; margin: 0; }
-.terminal-dialog .ghost { min-height: 44px; padding: 10px 16px; border-radius: 8px; border: 1px solid #e1e4e8; color: #202733; font: 500 13px "Libre Franklin", sans-serif; background: #fff; }
-.terminal-dialog .wallet-row { min-height: 72px; border-color: #e1e4e8; color: #202733; }
-.terminal-dialog .connection-help, .terminal-dialog .connection-network, .terminal-dialog .wallet-name small, .terminal-dialog .wallet-note { color: #69727f; font: 12px/1.5 "Libre Franklin", sans-serif; }
+.terminal-dialog { --terminal-control-border: rgba(34,28,25,.52); }
+.terminal-dialog .ghost { min-height: 44px; padding: 10px 16px; border-radius: 0; border: 1px solid var(--terminal-control-border); color: var(--terminal-text); font: 500 13px "Libre Franklin", sans-serif; background: var(--terminal-surface); }
+.terminal-dialog .wallet-row { min-height: 72px; border-color: var(--terminal-border); color: var(--terminal-text); }
+.terminal-dialog .connection-help, .terminal-dialog .connection-network, .terminal-dialog .wallet-name small, .terminal-dialog .wallet-note { color: var(--terminal-muted); font: 12px/1.5 "Libre Franklin", sans-serif; }
+.terminal-dialog :is(button,a,input,select,textarea):focus-visible { outline: 2px solid var(--terminal-text); outline-offset: 3px; }
+.terminal .terminal-metric:nth-child(1) strong, .terminal .terminal-metric:nth-child(2) strong, .terminal .terminal-metric:nth-child(4) strong,
+.terminal .rate, .terminal .bal-amt, .terminal .terms dd, .terminal .rfq-terms dd { font-family: "Courier Prime", monospace; }
+.terminal-trade .rfq-terms dd, .terminal-trade .rfq p strong { color: var(--antique-gold, #c9a227); font-family: "Courier Prime", monospace; }
+.terminal .terminal-market-row > strong { font-family: "Courier Prime", monospace; }
+.terminal .transaction-receipt.succeeded { border-left: 3px solid var(--antique-gold, #c9a227); }
+.terminal .transaction-receipt.failed, .terminal .transaction-receipt.unconfirmed, .terminal .ledger-error { border-left: 3px solid var(--desk-danger, #7a2f1c); }
+.terminal .terminal-trade input[type=number] { color: var(--antique-gold, #c9a227); }
+.terminal-collateral-summary .ticket-row:last-child .tr-val { color: var(--terminal-text); font-family: "Libre Franklin", sans-serif; }
+.terminal .terminal-dialog .tr-val, .terminal .terminal-dialog input[type=number] { color: var(--terminal-text); }
+.terminal-trade .err { color: var(--parchment, #f4e9ce); border-left: 2px solid var(--antique-gold, #c9a227); padding-left: 12px; }
 @media (max-width: 1100px) {
   .terminal-layout { grid-template-columns: minmax(0,1fr) 330px; }
   .terminal-head { gap: 16px; padding-inline: 20px; }
