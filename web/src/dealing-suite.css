@@ -700,13 +700,12 @@
 .terminal-tab-panel[hidden], .terminal-trade-panel[hidden] { display: none !important; }
 .terminal-content { display: flex; flex: 1; min-height: 0; flex-direction: column; border: 1px solid var(--terminal-border); border-radius: var(--terminal-radius); background: var(--terminal-surface); overflow: hidden; }
 .terminal-trade { min-height: 0; min-width: 0; overflow: auto; border: 1px solid var(--terminal-border); border-radius: var(--terminal-radius); background: var(--terminal-surface); align-self: stretch; }
-.terminal-trade { --terminal-canvas: #0b1220; --terminal-surface: #0b1220; --terminal-soft: var(--desk-ink-raised, #172334); --terminal-text: var(--parchment, #f4e9ce); --terminal-muted: var(--parchment-dim, #d8c89e); --terminal-border: var(--desk-rule-on-ink); --terminal-control-border: rgba(216,200,158,.5); }
 .terminal-trade { color: var(--terminal-text); }
-.terminal-trade :is(button,a,input,select,textarea):focus-visible { outline-color: var(--antique-gold, #c9a227); }
-.terminal-trade input[type=number], .terminal-trade .tr-val { color: var(--antique-gold, #c9a227); }
+.terminal-trade .seal { background: var(--ink-navy, #0b1220); border-color: var(--ink-navy, #0b1220); }
+.terminal-trade .seal:hover:not(:disabled) { background: var(--desk-ink-raised, #172334); border-color: var(--desk-ink-raised, #172334); }
 .terminal-trade-tabs { display: grid; grid-template-columns: 1fr 1fr; padding: 0 16px; border-bottom: 1px solid var(--terminal-border); }
 .terminal-trade-tabs button { min-height: 56px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--terminal-muted); font: 500 15px "Libre Franklin", sans-serif; }
-.terminal-trade-tabs button[aria-selected=true], .terminal-trade-tabs button.active { color: var(--terminal-text); border-bottom-color: var(--antique-gold, #c9a227); }
+.terminal-trade-tabs button[aria-selected=true], .terminal-trade-tabs button.active { color: var(--terminal-text); border-bottom-color: var(--terminal-text); }
 .terminal-trade-panel { padding: 20px; }
 .terminal .panel { padding: 20px; margin: 0; border: 0; box-shadow: none; border-radius: 0; background: transparent; color: var(--terminal-text); min-width: 0; }
 .terminal .panel h2 { margin: 0 0 12px; }
@@ -734,7 +733,6 @@
 .terminal details > summary { min-height: 44px; padding-block: 12px; }
 .terminal .terms-disclosure:not([open]) { padding-block: 0; }
 .terminal .tr-val { color: var(--terminal-text); font-family: "Courier Prime", monospace; font-variant-numeric: tabular-nums; }
-.terminal-trade .tr-val { color: var(--antique-gold, #c9a227); }
 .terminal-collateral-summary { padding: 12px; border: 1px solid var(--terminal-border); border-radius: var(--terminal-control-radius); background: var(--terminal-soft); display: grid; gap: 4px; font-size: 12px; }
 .terminal-collateral-summary strong { font-size: 16px; font-variant-numeric: tabular-nums; }
 .terminal-trade-note { margin-top: 12px !important; font-size: 12px; color: var(--terminal-muted); }
@@ -890,14 +888,13 @@
 .terminal-dialog :is(button,a,input,select,textarea):focus-visible { outline: 2px solid var(--terminal-text); outline-offset: 3px; }
 .terminal .terminal-metric:nth-child(1) strong, .terminal .terminal-metric:nth-child(2) strong, .terminal .terminal-metric:nth-child(4) strong,
 .terminal .rate, .terminal .bal-amt, .terminal .terms dd, .terminal .rfq-terms dd { font-family: "Courier Prime", monospace; }
-.terminal-trade .rfq-terms dd, .terminal-trade .rfq p strong { color: var(--antique-gold, #c9a227); font-family: "Courier Prime", monospace; }
+.terminal-trade .rfq-terms dd, .terminal-trade .rfq p strong { color: var(--terminal-text); font-family: "Courier Prime", monospace; }
 .terminal .terminal-market-row > strong { font-family: "Courier Prime", monospace; }
 .terminal .transaction-receipt.succeeded { border-left: 3px solid var(--antique-gold, #c9a227); }
 .terminal .transaction-receipt.failed, .terminal .transaction-receipt.unconfirmed, .terminal .ledger-error { border-left: 3px solid var(--desk-danger, #7a2f1c); }
-.terminal .terminal-trade input[type=number] { color: var(--antique-gold, #c9a227); }
 .terminal-collateral-summary .ticket-row:last-child .tr-val { color: var(--terminal-text); font-family: "Libre Franklin", sans-serif; }
 .terminal .terminal-dialog .tr-val, .terminal .terminal-dialog input[type=number] { color: var(--terminal-text); }
-.terminal-trade .err { color: var(--parchment, #f4e9ce); border-left: 2px solid var(--antique-gold, #c9a227); padding-left: 12px; }
+.terminal-trade .err { color: var(--desk-danger, #7a2f1c); border-left: 2px solid var(--desk-danger, #7a2f1c); padding-left: 12px; }
 @media (max-width: 1150px) {
   .terminal-market-columns, .terminal-market-row { grid-template-columns: minmax(180px,1.4fr) .8fr .7fr 1fr 1fr .7fr 16px; gap: 12px; padding-inline: 16px; }
 }
