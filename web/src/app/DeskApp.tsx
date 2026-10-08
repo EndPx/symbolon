@@ -14,6 +14,7 @@ import {
 } from "../ledger/symbolon";
 import * as act from "./actions";
 import MarketOverview, { latestPairs, marketIdentity } from "./MarketOverview";
+import { publicMarket } from "./market-summary";
 import { TerminalPanels, TerminalTabs } from "./TerminalTabs";
 import { marketDesk, type ContentTab, type TradeSide } from "./terminal-state";
 import { deploymentFailure, tradingBlocker } from "../ledger/deployment";
@@ -664,6 +665,7 @@ function Workspace({ session: s, connect, demoParties, switchParty, disconnect, 
   const ownQuotes = connected ? scoped?.quotes.filter(({payload}) => payload.borrower === s.party || payload.dealer === s.party) ?? [] : [];
   const liveQuotes = ownQuotes.filter(({payload}) => Date.parse(payload.validUntil) > Date.now());
   const bestRate = liveQuotes.length ? Math.min(...liveQuotes.map(({payload}) => num(payload.rate))) : null;
+  const publishedRate = feed && publicMarket(feed,deployment()) ? num(publicDesk!.rate) : null;
   const positions = connected ? scoped?.positions.filter(({payload}) => payload.borrower === s.party || payload.dealer === s.party) ?? [] : [];
   const ownRequests = connected ? scoped?.requests.filter(({payload}) => payload.borrower === s.party || payload.dealer === s.party) ?? [] : [];
   const openPair = (id: string) => { setSelectedId(id); setView("detail"); setContent("overview"); };
@@ -704,7 +706,7 @@ function Workspace({ session: s, connect, demoParties, switchParty, disconnect, 
       {view === "faucet" && <Faucet session={s} state={st} connected={connected} trading={trading} busy={transactions.busy} readError={error} onConnect={connectionAction} run={run}/>}
       {view === "markets" && <MarketOverview state={st} party={s.party} connected={connected} tradingEnabled={trading && !error}
         pauseReason={error ? "Trading paused until the ledger connection recovers." : undefined} mode={side} onConnect={connectionAction} onRequestPair={openPair} selectedPairId={selectedId} onSelectPair={openPair}/>}
-      {view === "portfolio" && <section className="terminal-portfolio"><div className="portfolio-heading"><div><h1>Portfolio</h1><p>Your positions, balances and completed deals.</p></div></div>
+      {view === "portfolio" && <section className="terminal-portfolio" aria-labelledby="portfolio-title"><h1 id="portfolio-title" className="sr-only">Portfolio</h1>
         {!connected ? <div className="terminal-empty"><h2>Connect to view your portfolio</h2><p>Your holdings and repo positions stay scoped to your account.</p><button className="seal" onClick={connectionAction}>Connect</button></div>
           : !st ? <p className="empty-state" role="status">{error ? "The ledger view is unavailable." : "Loading your authorized ledger view…"}</p>
           : <><TerminalTabs<"positions" | "holdings" | "activity"> id="portfolio" label="Portfolio content" value={portfolio} onChange={setPortfolio} options={[{value:"positions",label:"Positions",count:st.positions.filter(p=>p.payload.borrower===s.party||p.payload.dealer===s.party).length},{value:"holdings",label:"Holdings",count:holdingBalances(st,s.party).length},{value:"activity",label:"Activity",count:st.closed.filter(p=>p.payload.borrower===s.party||p.payload.dealer===s.party).length}]}/>
@@ -714,7 +716,7 @@ function Workspace({ session: s, connect, demoParties, switchParty, disconnect, 
       {view === "detail" && <div className="terminal-layout"><section className="terminal-main" aria-label="Selected market">
         <div className="terminal-market-header"><div><button type="button" className="terminal-pair-back" onClick={() => setView("markets")}>All markets</button>
           <h1>{feed ? `${feed.instrument} / ${feed.cashInstrument}` : "Select a market"}</h1><p className="terminal-pair-meta">Canton {networkLabel()} · Test assets · Private bilateral repo</p></div></div>
-        <div className="terminal-stats"><div className="terminal-metric"><span>Your quoted rate</span><strong>{bestRate === null ? "On request" : fmtPct(bestRate)}</strong></div>
+        <div className="terminal-stats"><div className="terminal-metric"><span>{bestRate===null&&publishedRate!==null?"Reference APR":"Your quoted APR"}</span><strong>{bestRate===null?(publishedRate===null?"On request":fmtPct(publishedRate)):fmtPct(bestRate)}</strong></div>
           <div className="terminal-metric"><span>Simulated collateral mark</span><strong>{selected ? fmtAmount(selected.payload.price) : "—"}</strong><small>{selected ? selected.payload.cashInstrument : connected ? "Awaiting authorized feed" : "Connect to view"}</small></div>
           <div className="terminal-metric"><span>Mark status</span><strong>{selected ? isFresh(selected.payload, DEFAULT_PRICE_AGE_SECONDS) ? "Current" : "Stale" : "Unavailable"}</strong></div>
           <div className="terminal-metric"><span>Your open repos</span><strong>{connected ? positions.length : "—"}</strong></div></div>

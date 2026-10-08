@@ -633,7 +633,7 @@
 .terminal {
   --terminal-canvas: var(--parchment, #f4e9ce); --terminal-surface: var(--desk-paper, #f9f2de);
   --terminal-soft: rgba(216,200,158,.18); --terminal-text: #221c19; --terminal-muted: #4a3a26;
-  --terminal-border: rgba(34,28,25,.26); --terminal-control-border: rgba(34,28,25,.52); --terminal-radius: 0px; --terminal-control-radius: 0px; --terminal-motion: 150ms;
+  --terminal-border: rgba(34,28,25,.26); --terminal-control-border: rgba(34,28,25,.52); --terminal-radius: 16px; --terminal-control-radius: 8px; --terminal-motion: 150ms;
   height: 100dvh; min-height: 0; display: flex; flex-direction: column; overflow: hidden;
   background: var(--terminal-canvas) url("/brand/grain.png"); background-size: 640px; background-blend-mode: soft-light;
   color: var(--terminal-text); font: 14px/1.5 "Libre Franklin", sans-serif;
@@ -653,17 +653,18 @@
 .terminal .seal, .terminal .ghost { min-height: 44px; border-radius: var(--terminal-control-radius); padding: 10px 16px; font-size: 13px; font-weight: 600; letter-spacing: 0; text-transform: none; transition: background-color var(--terminal-motion), color var(--terminal-motion); }
 .terminal .seal { background: #221c19; color: var(--antique-gold, #c9a227); border: 1px solid #221c19; }
 .terminal .seal:hover:not(:disabled) { background: var(--ink-navy, #0b1220); }
+.terminal .seal::after, .terminal-dialog .seal::after { border-radius: calc(var(--terminal-control-radius) - 4px); }
 .terminal .ghost { color: var(--terminal-text); border: 1px solid var(--terminal-control-border); background: var(--terminal-surface); }
 .terminal .ghost:hover:not(:disabled) { background: var(--terminal-soft); }
 .terminal .chip { padding: 8px 12px; border: 1px solid var(--terminal-control-border); border-radius: var(--terminal-control-radius); background: var(--terminal-soft); color: var(--terminal-text); font: inherit; min-height: 40px; }
 .terminal .quiet { color: var(--terminal-text); text-decoration: underline; text-underline-offset: 3px; }
 .terminal-head { height: 64px; min-height: 64px; flex: 0 0 auto; display: flex; align-items: center; gap: 32px; padding: 0 24px; background: var(--ink-navy, #0b1220); color: var(--parchment, #f4e9ce); }
-.terminal-head .brand { display: inline-flex; align-items: center; gap: 12px; color: var(--parchment, #f4e9ce); font: 16px "Marcellus", serif; letter-spacing: .12em; white-space: nowrap; }
+.terminal-head .brand { display: inline-flex; align-items: center; gap: 12px; margin: 0; color: var(--parchment, #f4e9ce); font: 16px "Marcellus", serif; letter-spacing: .12em; white-space: nowrap; }
 .terminal-head .brand img { width: 24px; height: 24px; }
 .terminal-nav { display: flex; align-items: center; height: 100%; gap: 8px; }
-.terminal-nav button, .terminal-nav a { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 8px 16px; border: 0; border-radius: 0; font: 500 14px "Libre Franklin", sans-serif; color: var(--parchment-dim, #d8c89e); background: transparent; text-decoration: none; }
+.terminal-nav button, .terminal-nav a { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 8px 16px; border: 0; border-radius: var(--terminal-control-radius); font: 500 14px "Libre Franklin", sans-serif; color: var(--parchment-dim, #d8c89e); background: transparent; text-decoration: none; }
 .terminal-nav button[aria-current], .terminal-nav button.active, .terminal-nav a[aria-current] { background: rgba(244,233,206,.08); color: var(--parchment, #f4e9ce); }
-.terminal-account-button { margin-left: auto; min-height: 40px; display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; color: var(--parchment, #f4e9ce); border: 1px solid rgba(216,200,158,.5); border-radius: 0; background: transparent; font: 13px "Libre Franklin", sans-serif; }
+.terminal-account-button { margin-left: auto; min-height: 40px; display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; color: var(--parchment, #f4e9ce); border: 1px solid rgba(216,200,158,.5); border-radius: var(--terminal-control-radius); background: transparent; font: 13px "Libre Franklin", sans-serif; }
 .terminal-head button:focus-visible, .terminal-head a:focus-visible { outline-color: var(--antique-gold, #c9a227); }
 .terminal-account-button svg { width: 16px; height: 16px; }
 .terminal-head .terminal-network { margin-left: auto; color: #d8c89e; font-size: 12px; white-space: nowrap; }
@@ -694,7 +695,7 @@
 .terminal [hidden] { display: none !important; }
 .terminal-main > .terminal-tab-panel { background: var(--terminal-surface); border: 1px solid var(--terminal-border); border-top: 0; border-radius: 0 0 var(--terminal-radius) var(--terminal-radius); }
 .terminal-main > .terminal-tabs { margin-bottom: -16px; border: 1px solid var(--terminal-border); border-radius: var(--terminal-radius) var(--terminal-radius) 0 0; }
-.terminal-tab-count { display: inline-flex; justify-content: center; min-width: 18px; margin-left: 6px; padding-inline: 4px; font-size: 11px; border-radius: 0; background: var(--terminal-canvas); }
+.terminal-tab-count { display: inline-flex; justify-content: center; min-width: 18px; margin-left: 6px; padding-inline: 4px; font-size: 11px; border-radius: var(--terminal-control-radius); background: var(--terminal-canvas); }
 .terminal .terminal-account-button, .terminal .terminal-pair-back { min-height: 44px; }
 .terminal-tab-panel[hidden], .terminal-trade-panel[hidden] { display: none !important; }
 .terminal-content { display: flex; flex: 1; min-height: 0; flex-direction: column; border: 1px solid var(--terminal-border); border-radius: var(--terminal-radius); background: var(--terminal-surface); overflow: hidden; }
@@ -734,7 +735,7 @@
 .terminal .terms-disclosure:not([open]) { padding-block: 0; }
 .terminal .tr-val { color: var(--terminal-text); font-family: "Courier Prime", monospace; font-variant-numeric: tabular-nums; }
 .terminal-trade .tr-val { color: var(--antique-gold, #c9a227); }
-.terminal-collateral-summary { padding: 12px; border: 1px solid var(--terminal-border); border-radius: 0; background: var(--terminal-soft); display: grid; gap: 4px; font-size: 12px; }
+.terminal-collateral-summary { padding: 12px; border: 1px solid var(--terminal-border); border-radius: var(--terminal-control-radius); background: var(--terminal-soft); display: grid; gap: 4px; font-size: 12px; }
 .terminal-collateral-summary strong { font-size: 16px; font-variant-numeric: tabular-nums; }
 .terminal-trade-note { margin-top: 12px !important; font-size: 12px; color: var(--terminal-muted); }
 .terminal .acts { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -757,11 +758,11 @@
 .terminal .balance-row small { color: var(--terminal-muted); }
 .terminal .bal-amt { color: var(--terminal-text); font: 500 16px "Libre Franklin", sans-serif; font-variant-numeric: tabular-nums; }
 .terminal .party-name { font-family: inherit; font-size: inherit; overflow-wrap: anywhere; }
-.terminal-status { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 0; font-size: 12px; background: var(--terminal-soft); color: var(--terminal-muted); }
+.terminal-status { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: var(--terminal-control-radius); font-size: 12px; background: var(--terminal-soft); color: var(--terminal-muted); }
 .terminal-status.stale { color: var(--desk-danger, #7a2f1c); }
 .terminal-status.fresh { color: var(--terminal-text); }
 .terminal-inline-error { padding: 12px 16px; color: var(--desk-danger, #7a2f1c); background: var(--terminal-soft); font-size: 12px; }
-.terminal .transaction-receipt, .terminal .ledger-error, .terminal .session-error { margin: 0 0 12px; padding: 12px 16px; border: 1px solid var(--terminal-border); border-radius: 0; background: var(--terminal-surface); color: var(--terminal-text); font-size: 12px; }
+.terminal .transaction-receipt, .terminal .ledger-error, .terminal .session-error { margin: 0 0 12px; padding: 12px 16px; border: 1px solid var(--terminal-border); border-radius: var(--terminal-radius); background: var(--terminal-surface); color: var(--terminal-text); font-size: 12px; }
 .terminal .transaction-receipt strong { font-size: 13px; }
 .terminal .transaction-receipt code { font-size: 11px; overflow-wrap: anywhere; }
 .terminal .transaction-receipt details { margin-top: 4px; }
@@ -781,7 +782,7 @@
 @keyframes toast-arrive { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 .terminal .terminal-notices .transaction-receipt { margin-bottom: 0; }
 .terminal-faucet { width: 100%; min-width: 0; }
-.faucet-sheet { max-width: 960px; border: 1px solid var(--terminal-border); background: var(--terminal-surface); }
+.faucet-sheet { max-width: 960px; border: 1px solid var(--terminal-border); border-radius: var(--terminal-radius); overflow: hidden; background: var(--terminal-surface); }
 .faucet-grant { padding: 24px; background: var(--ink-navy,#0b1220); color: var(--parchment,#f4e9ce); }
 .faucet-grant .muted { color: var(--parchment-dim,#d8c89e); font-size: 12px; }
 .faucet-assets { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 24px; margin: 20px 0; }
@@ -793,39 +794,45 @@
 .terminal-faucet > .faucet-sheet > .empty-state { padding: 24px; }
 .terminal-page-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
 .terminal-page-heading p { margin-top: 8px; color: var(--terminal-muted); }
-.terminal-market-browser { width: 100%; min-width: 0; }
-.terminal-market-filters { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+.terminal-market-browser { width: 100%; min-width: 0; border: 1px solid var(--terminal-border); border-radius: var(--terminal-radius); overflow: hidden; background: var(--terminal-surface); }
+.terminal-market-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 12px 20px; border-bottom: 1px solid var(--terminal-border); }
+.terminal-market-toolbar > .terminal-status { margin-left: auto; }
+.terminal-market-filters { display: flex; flex-wrap: wrap; gap: 8px; }
 .terminal-market-filters label { display: grid; gap: 4px; font-size: 12px; }
-.terminal-market-filters select { width: auto; min-width: 160px; }
-.terminal-market-table { border: 1px solid var(--terminal-border); border-radius: var(--terminal-radius); overflow: hidden; background: var(--terminal-surface); }
-.terminal-market-columns, .terminal-market-row { display: grid; grid-template-columns: minmax(180px,1.5fr) 1fr 1.2fr .7fr 110px; align-items: center; gap: 20px; padding: 16px 24px; }
+.terminal-market-filters select { width: auto; min-width: 140px; padding: 8px 12px; }
+.terminal-market-table { overflow: hidden; background: var(--terminal-surface); }
+.terminal-market-columns, .terminal-market-row { display: grid; grid-template-columns: minmax(230px,1.6fr) minmax(110px,.8fr) minmax(100px,.7fr) minmax(130px,1fr) minmax(150px,1fr) minmax(90px,.7fr) 24px; align-items: center; gap: 16px; padding: 12px 20px; }
 .terminal-market-columns { color: var(--terminal-muted); font-size: 12px; border-bottom: 1px solid var(--terminal-border); background: var(--terminal-soft); }
-.terminal-market-row { width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--terminal-border); border-radius: 0; background: var(--terminal-surface); color: var(--terminal-text); font: 14px "Libre Franklin", sans-serif; min-height: 84px; transition: background-color 150ms; }
+.terminal-market-row { position: relative; width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--terminal-border); border-radius: 0; background: var(--terminal-surface); color: var(--terminal-text); font: 13px "Libre Franklin", sans-serif; min-height: 76px; transition: background-color 150ms; }
 .terminal-market-row:last-child { border-bottom: 0; }
 .terminal-market-row:hover { background: var(--terminal-soft); }
+.terminal .terminal-market-row:focus-visible { outline-offset: -3px; }
 .terminal-market-row > span, .terminal-market-row > strong { min-width: 0; }
 .terminal-market-row small { display: block; color: var(--terminal-muted); font-size: 12px; }
+.terminal-market-rate strong { font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.terminal-market-rate small, .terminal-market-amount small { margin-top: 4px; }
+.terminal-market-amount { font-family: "Courier Prime",monospace; font-variant-numeric: tabular-nums; }
+.terminal-market-amount small { font-family: "Libre Franklin",sans-serif; }
 .terminal-market-pair { display: grid; gap: 6px; }
 .terminal-market-pair > small { margin-left: 54px; }
 .terminal-pair-icons { display: inline-flex; align-items: center; gap: 0; min-width: 0; }
-.terminal-token { width: 28px; height: 28px; border-radius: 0; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; flex: 0 0 auto; }
+.terminal-token { width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; flex: 0 0 auto; }
 .terminal-token.collateral { background: var(--ink-navy, #0b1220); color: var(--antique-gold, #c9a227); }
 .terminal-token.cash { background: var(--terminal-surface); color: var(--terminal-text); border: 1px solid var(--terminal-border); margin-left: -8px; }
 .terminal-token-names { margin-left: 12px; color: var(--terminal-text); font-size: 14px; font-weight: 600; }
-.terminal-token-names > span { margin-left: 4px; font-weight: 400; }
+.terminal-token-names > span { display: inline-block; margin-left: 4px; font-weight: 400; white-space: nowrap; }
 .terminal-open { color: var(--terminal-text); font-size: 12px; text-align: right; }
 .terminal-empty { padding: 32px 20px; display: grid; gap: 12px; justify-items: start; }
 .terminal-empty p { color: var(--terminal-muted); max-width: 48ch; }
 .terminal .empty-state { padding: 16px 0; color: var(--terminal-muted); font-size: 13px; line-height: 1.5; }
 .terminal-list-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-.terminal-portfolio { display: flex; flex-direction: column; gap: 20px; width: min(1040px,100%); min-height: 0; flex: 0 0 auto; background: transparent; }
+.terminal-portfolio { display: flex; flex-direction: column; gap: 0; width: min(1040px,100%); min-height: 0; flex: 0 0 auto; border: 1px solid var(--terminal-border); border-radius: var(--terminal-radius); background: var(--terminal-surface); overflow: hidden; }
 .terminal .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); clip-path: inset(50%); white-space: nowrap; border: 0; }
-.portfolio-heading { padding: 4px 0; }
-.portfolio-heading p { margin-top: 8px; color: var(--terminal-muted); font-size: 13px; }
-.terminal-portfolio > .terminal-tabs { border: 1px solid var(--terminal-border); padding-inline: 20px; }
-.terminal-portfolio .terminal-tab-panel { padding: 0; flex: none; max-height: none; overflow: visible; background: var(--terminal-surface); border: 1px solid var(--terminal-border); }
-.terminal-portfolio .terminal-tab-panel:has(.portfolio-empty) { max-width: 640px; }
-.terminal-portfolio .portfolio-empty { padding: 12px 4px; }
+.terminal-portfolio > .terminal-tabs { padding-inline: 20px; }
+.terminal-portfolio .terminal-tab-panel { padding: 0; flex: none; max-height: none; overflow: visible; background: transparent; border: 0; }
+.terminal-portfolio .portfolio-empty { min-height: 220px; padding: 40px 20px; align-content: center; justify-items: center; text-align: center; }
+.terminal-portfolio > .terminal-empty { padding: 40px 20px; }
+.terminal-portfolio > .empty-state { padding: 24px; }
 .portfolio-empty { padding: 28px 12px; display: grid; gap: 12px; justify-items: start; }
 .terminal .portfolio-empty h2 { margin: 0; }
 .portfolio-empty p { color: var(--terminal-muted); max-width: 45ch; }
@@ -840,7 +847,7 @@
 .portfolio-table .table-action { text-align: right; width: 100px; }
 .portfolio-table .table-action button { min-width: 72px; }
 .portfolio-table small { display: block; margin-top: 4px; color: var(--terminal-muted); }
-.portfolio-outcome { display: inline-flex; padding: 4px 8px; border: 1px solid var(--terminal-border); font-size: 12px; }
+.portfolio-outcome { display: inline-flex; padding: 4px 8px; border: 1px solid var(--terminal-border); border-radius: var(--terminal-control-radius); font-size: 12px; }
 .terminal .figure { font-family: "Courier Prime",monospace; font-variant-numeric: tabular-nums; }
 .position-columns, .terminal .position-summary { display: grid; grid-template-columns: minmax(180px,1.5fr) .6fr .6fr 1fr 1fr 72px; gap: 16px; align-items: center; }
 .position-columns { padding: 12px 20px; border-bottom: 1px solid var(--terminal-border); color: var(--terminal-muted); background: var(--terminal-soft); font-size: 12px; }
@@ -858,12 +865,12 @@
 .terminal .position-detail .position { padding: 0; border: 0; }
 .position-detail .position-controls { max-width: 580px; }
 .terminal .position-summary:focus-visible { outline: 2px solid var(--terminal-text); outline-offset: -3px; }
-.terminal .desk-dialog { max-width: min(620px,calc(100vw - 32px)); max-height: calc(100dvh - 40px); overflow: auto; padding: 24px; border: 1px solid var(--terminal-border); border-radius: 0; color: var(--terminal-text); background: var(--terminal-surface); }
+.terminal .desk-dialog { max-width: min(620px,calc(100vw - 32px)); max-height: calc(100dvh - 40px); overflow: auto; padding: 24px; border: 1px solid var(--terminal-border); border-radius: var(--terminal-radius); color: var(--terminal-text); background: var(--terminal-surface); }
 .terminal .desk-dialog::backdrop { background: rgba(11,18,32,.48); }
 .terminal .dialog-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
 .terminal .dialog-heading h2 { font: 600 18px "Libre Franklin", sans-serif; }
 .terminal .review-terms { display: grid; gap: 0; padding: 12px 0; }
-.terminal .decision-note { margin: 12px 0; padding: 12px; background: var(--terminal-soft); border-radius: 0; font-size: 12px; }
+.terminal .decision-note { margin: 12px 0; padding: 12px; background: var(--terminal-soft); border-radius: var(--terminal-control-radius); font-size: 12px; }
 .terminal .party-detail { padding: 8px 0; }
 .terminal .party-detail code, .terminal-account-dialog code { font-size: 11px; overflow-wrap: anywhere; display: block; }
 .terminal .wallet-row { min-height: 72px; border-bottom: 1px solid var(--terminal-border); color: var(--terminal-text); }
@@ -872,12 +879,12 @@
 .terminal .connection-network, .terminal .connection-help { font-size: 12px; color: var(--terminal-muted); }
 .terminal .public-access { margin: 0; }
 .terminal .public-access-balances { gap: 24px; }
-.terminal-dialog { --ink-warm: #221c19; --ink-soft: #4a3a26; --terminal-canvas: #f4e9ce; --terminal-surface: #f9f2de; --terminal-soft: rgba(216,200,158,.18); --terminal-text: #221c19; --terminal-muted: #4a3a26; --terminal-border: rgba(34,28,25,.26); max-width: min(620px,calc(100vw - 32px)); max-height: calc(100dvh - 40px); overflow: auto; padding: 24px; border: 1px solid var(--terminal-border); border-radius: 0; color: var(--terminal-text); background: var(--terminal-surface); font: 14px/1.5 "Libre Franklin", sans-serif; }
+.terminal-dialog { --ink-warm: #221c19; --ink-soft: #4a3a26; --terminal-canvas: #f4e9ce; --terminal-surface: #f9f2de; --terminal-soft: rgba(216,200,158,.18); --terminal-text: #221c19; --terminal-muted: #4a3a26; --terminal-border: rgba(34,28,25,.26); --terminal-radius: 16px; --terminal-control-radius: 8px; max-width: min(620px,calc(100vw - 32px)); max-height: calc(100dvh - 40px); overflow: auto; padding: 24px; border: 1px solid var(--terminal-border); border-radius: var(--terminal-radius); color: var(--terminal-text); background: var(--terminal-surface); font: 14px/1.5 "Libre Franklin", sans-serif; }
 .terminal-dialog::backdrop { background: rgba(11,18,32,.48); }
 .terminal-dialog .dialog-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
 .terminal-dialog .dialog-heading h2 { font: 600 18px "Libre Franklin", sans-serif; margin: 0; }
 .terminal-dialog { --terminal-control-border: rgba(34,28,25,.52); }
-.terminal-dialog .ghost { min-height: 44px; padding: 10px 16px; border-radius: 0; border: 1px solid var(--terminal-control-border); color: var(--terminal-text); font: 500 13px "Libre Franklin", sans-serif; background: var(--terminal-surface); }
+.terminal-dialog .ghost { min-height: 44px; padding: 10px 16px; border-radius: var(--terminal-control-radius); border: 1px solid var(--terminal-control-border); color: var(--terminal-text); font: 500 13px "Libre Franklin", sans-serif; background: var(--terminal-surface); }
 .terminal-dialog .wallet-row { min-height: 72px; border-color: var(--terminal-border); color: var(--terminal-text); }
 .terminal-dialog .connection-help, .terminal-dialog .connection-network, .terminal-dialog .wallet-name small, .terminal-dialog .wallet-note { color: var(--terminal-muted); font: 12px/1.5 "Libre Franklin", sans-serif; }
 .terminal-dialog :is(button,a,input,select,textarea):focus-visible { outline: 2px solid var(--terminal-text); outline-offset: 3px; }
@@ -891,13 +898,14 @@
 .terminal-collateral-summary .ticket-row:last-child .tr-val { color: var(--terminal-text); font-family: "Libre Franklin", sans-serif; }
 .terminal .terminal-dialog .tr-val, .terminal .terminal-dialog input[type=number] { color: var(--terminal-text); }
 .terminal-trade .err { color: var(--parchment, #f4e9ce); border-left: 2px solid var(--antique-gold, #c9a227); padding-left: 12px; }
+@media (max-width: 1150px) {
+  .terminal-market-columns, .terminal-market-row { grid-template-columns: minmax(180px,1.4fr) .8fr .7fr 1fr 1fr .7fr 16px; gap: 12px; padding-inline: 16px; }
+}
 @media (max-width: 1100px) {
   .terminal-layout { grid-template-columns: minmax(0,1fr) 330px; }
   .terminal-head { gap: 16px; padding-inline: 20px; }
   .terminal-workspace { padding: 16px; }
   .terminal-tabs { gap: 16px; padding-inline: 16px; }
-  .terminal-market-columns, .terminal-market-row { grid-template-columns: minmax(160px,1.5fr) 1fr 1fr .7fr; gap: 12px; padding-inline: 16px; }
-  .terminal-market-columns > :last-child, .terminal-market-row > :last-child { display: none; }
   .terminal-overview-summary { grid-template-columns: 1fr; }
   .terminal-metric { padding: 12px; }
   .terminal-metric strong { font-size: 18px; }
@@ -919,13 +927,16 @@
   .terminal-layout .terminal-main > .terminal-tabs { order: 3; }
   .terminal-layout .terminal-main > .terminal-tab-panel { order: 4; }
   .terminal-content { min-height: 280px; }
+  .terminal-market-columns { display: none; }
+  .terminal-market-row { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; padding: 20px; }
+  .terminal-market-pair { grid-column: 1 / -1; padding-right: 24px; }
+  .terminal .terminal-market-row .terminal-market-label { position: static; display: block; width: auto; height: auto; padding: 0; margin: 0 0 4px; overflow: visible; clip: auto; clip-path: none; white-space: normal; color: var(--terminal-muted); font: 400 12px "Libre Franklin",sans-serif; }
+  .terminal-market-row .terminal-open { position: absolute; top: 24px; right: 20px; }
   .terminal-tab-panel { max-height: 520px; }
   .terminal-trade-panel { padding: 20px; }
   .terminal-portfolio { height: auto; min-height: 0; }
 }
 @media (max-width: 760px) {
-  .portfolio-heading { padding: 0; }
-  .terminal-portfolio { gap: 16px; }
   .portfolio-table thead { display: none; }
   .portfolio-table, .portfolio-table tbody { display: block; width: 100%; }
   .portfolio-table tbody tr { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px 16px; padding: 16px 0; border-bottom: 1px solid var(--terminal-border); }
@@ -960,9 +971,9 @@
   .terminal-tabs { gap: 12px; padding-inline: 12px; }
   .terminal-tabs button { font-size: 12px; }
   .terminal-market-columns { display: none; }
-  .terminal-market-row { grid-template-columns: minmax(0,1fr) auto; padding: 16px; gap: 12px; }
-  .terminal-market-row > :nth-child(3) { grid-column: 1; font-size: 12px; color: var(--terminal-muted); }
-  .terminal-market-row > :nth-child(4) { grid-column: 2; }
+  .terminal-market-row { padding: 16px; gap: 12px; }
+  .terminal-market-toolbar { padding: 12px; }
+  .terminal-market-toolbar > .terminal-status { margin-left: 0; }
   .terminal-token-names { font-size: 12px; }
   .terminal-market-pair > small { margin-left: 0; }
   .terminal-market-filters select { min-width: 0; }
