@@ -25,7 +25,7 @@ The confirmed toast closed automatically; Account → Latest transaction still
 exposed the confirmed update, offset, timestamp and receipt download.
 
 The **View receipt** action in a later confirmed reference-mark toast opened
-the native receipt dialog with a real correlated update at offset2377540.
+the native receipt dialog with a real correlated update at offset 2377540.
 The successful toast stayed present while that receipt dialog was open.
 
 Assets and prices are simulated. The grant uses the existing vetted PublicDesk

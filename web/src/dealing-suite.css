@@ -889,7 +889,7 @@
   .terminal-portfolio { height: auto; min-height: 360px; }
 }
 @media (max-width: 520px) {
-  .terminal-notices { right: 12px; bottom: max(12px,env(safe-area-inset-bottom)); width: calc(100vw - 24px); max-height: min(420px,calc(100dvh - 120px)); }
+  .terminal-notices { right: 12px; bottom: max(12px,env(safe-area-inset-bottom)); width: calc(100% - 24px); max-height: min(420px,calc(100dvh - 120px)); }
   .faucet-grant { padding: 20px; }
   .faucet-assets { grid-template-columns: minmax(0,1fr); gap: 16px; }
   .terminal-workspace { padding: 12px; }
