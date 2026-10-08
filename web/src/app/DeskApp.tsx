@@ -25,6 +25,7 @@ import { PublicDeskSetup } from "./PublicAccess";
 import { Faucet } from "./Faucet";
 import { NotificationRegion, TransactionToast, type Receipt } from "./TransactionToast";
 import { canPrepareReference, preparedReference } from "./market-preparation";
+import { holdingBalances, type HoldingBalance } from "./portfolio-state";
 
 function useDesk(session: Session) {
   const [state, setState] = useState<DeskState | null>(null);
@@ -62,8 +63,8 @@ type WorkspaceView = "markets" | "detail" | "portfolio" | "faucet";
 type Transaction = { busy: boolean; run(label: string, action: () => Promise<string>): Promise<boolean> };
 const Transactions = createContext<Transaction>({ busy: false, run: async () => false });
 
-function Panel({ title, children, description, id }: { title: string; children: ReactNode; description?: string; id?: string }) {
-  return <section className="panel" id={id}><h2>{title}</h2>{description && <p className="panel-lede">{description}</p>}{children}</section>;
+function Panel({ title, children, description, id }: { title?: string; children: ReactNode; description?: string; id?: string }) {
+  return <section className="panel" id={id}>{title && <h2>{title}</h2>}{description && <p className="panel-lede">{description}</p>}{children}</section>;
 }
 
 function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
@@ -192,21 +193,17 @@ function ConnectDialog({ connected, close }: { connected(s: Session): void; clos
 }
 
 function Balances({ st, party }: { st: DeskState; party: string }) {
-  const amounts = new Map<string, { instrument: string; issuer: string; available: number; locked: number }>();
-  for (const { payload: h } of st.holdings.filter((h) => h.payload.owner === party)) {
-    const key = `${h.issuer}/${h.instrument}`;
-    const row = amounts.get(key) ?? { instrument: h.instrument, issuer: h.issuer, available: 0, locked: 0 };
-    if (h.lockParties?.length === 0) row.available += num(h.amount);
-    else row.locked += num(h.amount);
-    amounts.set(key, row);
-  }
-  return <Panel title="Your holdings" description="Demo assets. Available amounts exclude reserved cash and locked collateral.">
-    {amounts.size === 0 && <p className="empty-state">No holdings for this party. An issuer must provision demo assets before this party can trade.</p>}
-    <div className="balance-list">{[...amounts].map(([key, row]) => <div className="balance-row" key={key}>
-      <div><strong>{row.instrument}</strong><small>Issuer <Party party={row.issuer} /></small></div>
-      <div><span className="bal-amt">{fmtAmount(row.available, 4)}</span><small>Available</small></div>
-      <div><span className="bal-amt">{fmtAmount(row.locked, 4)}</span><small>Locked</small></div>
-    </div>)}</div>
+  const amounts = holdingBalances(st,party);
+  const [detail,setDetail] = useState<HoldingBalance | null>(null);
+  const current = detail ? amounts.find(row=>row.key===detail.key) : undefined;
+  return <Panel title="Holdings" description="Available balances exclude locked collateral and reserved cash.">
+    {!amounts.length ? <div className="portfolio-empty"><h3>No assets yet</h3><p>Get test assets from Faucet to try your first deal.</p></div>
+      : <table className="portfolio-table holdings-table"><caption className="sr-only">Your holdings, separated by asset issuer</caption><thead><tr><th scope="col">Asset</th><th scope="col">Issuer</th><th scope="col" className="numeric">Available</th><th scope="col" className="numeric">Locked</th><th scope="col"><span className="sr-only">Actions</span></th></tr></thead>
+        <tbody>{amounts.map(row=><tr key={row.key}><th scope="row" data-label="Asset">{row.instrument}</th><td data-label="Issuer"><Party party={row.issuer}/></td><td data-label="Available" className="numeric">{fmtAmount(row.available,4)}</td><td data-label="Locked" className="numeric">{fmtAmount(row.locked,4)}</td><td className="table-action"><button className="ghost sm" onClick={()=>setDetail(row)} aria-label={`View ${row.instrument} from ${partyDisplayName(row.issuer)} details`}>Details</button></td></tr>)}</tbody>
+      </table>}
+    {detail && <Dialog title={`${detail.instrument} holding`} close={()=>setDetail(null)}>
+      {current ? <><Term label="Available">{fmtAmount(current.available,10)} {current.instrument}</Term><Term label="Locked">{fmtAmount(current.locked,10)} {current.instrument}</Term><p className="party-detail">Issuer<code>{current.issuer}</code></p><p className="decision-note">Balances belong to this issuer and asset. Matching symbols from other issuers stay separate.</p></> : <p>This holding is no longer in your current ledger view.</p>}
+    </Dialog>}
   </Panel>;
 }
 
@@ -560,13 +557,20 @@ function PositionCard({ position, s, st, onRepurchased }: { position: Contract<R
   </article>;
 }
 
-function Positions({ s, st, onRepurchased }: { s: Session; st: DeskState; onRepurchased?(): void }) {
+function Positions({ s, st, onRepurchased, onBrowse }: { s: Session; st: DeskState; onRepurchased?(): void; onBrowse?(): void }) {
   const { busy, run } = useContext(Transactions);
   const mine = st.positions.filter((p) => p.payload.borrower === s.party || p.payload.dealer === s.party);
   const proposals = st.proposals.filter((p) => p.payload.borrower === s.party || p.payload.dealer === s.party);
-  return <><Panel id="open-positions" title="Open repo positions" description="Title has transferred at settlement. Collateral stays locked while the repo is open.">
-    {!mine.length && <p className="empty-state">No open positions for this party. An accepted quote creates a position here.</p>}
-    {mine.map((p) => <PositionCard key={p.contractId} position={p} s={s} st={st} onRepurchased={onRepurchased} />)}
+  return <><Panel id="open-positions" title={mine.length ? "Open positions" : undefined}>
+    {!mine.length ? <div className="portfolio-empty"><h2>No open positions</h2><p>Accept a lender offer to open your first position.</p>{onBrowse && <button className="seal" onClick={onBrowse}>Browse markets</button>}</div>
+      : <div className="position-list"><div className="position-columns" aria-hidden="true"><span>Position</span><span>Fixed rate</span><span>Health</span><span>Repayment</span><span>Maturity</span><span></span></div>
+        {mine.map(position=>{const p=position.payload,h=health(p,st.feeds);const rowStatus=Date.now()>=Date.parse(p.maturity)?"Matured":cureElapsed(p)?"Cure deadline reached":isUnderCall(p)?`Margin call · ${cureLeft(cureDeadline(p)!)} to cure`:!h.priceKnown?"Price unavailable":!h.healthy?"Below margin":"Active";return <details className="position-item" key={position.contractId}><summary className="position-summary">
+          <span className="position-identity"><strong>{fmtAmount(p.cashAmount)} {p.cashInstrument}</strong><small>{p.borrower===s.party?"Borrowing":"Lending"} · {fmtAmount(p.collateralAmount,4)} {p.collateralInstrument}</small><span className={rowStatus==="Active"?"position-row-status":"position-row-status warn"}>{rowStatus}</span></span>
+          <span data-label="Fixed rate" className="figure"><span className="sr-only">Fixed rate </span>{fmtPct(num(p.rate))}</span><span data-label="Health" className={`figure ${h.priceKnown&&!h.healthy?"warn":""}`}><span className="sr-only">Health factor </span>{h.priceKnown?fmtAmount(h.factor):"Unavailable"}</span>
+          <span data-label="Repayment" className="figure"><span className="sr-only">Repayment </span>{fmtAmount(p.repurchasePrice,4)}<span className="sr-only"> {p.cashInstrument}</span></span><span data-label="Maturity" className="position-date"><span className="sr-only">Maturity </span>{fmtTime(p.maturity)}</span>
+          <span className="position-expand">Details <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span>
+        </summary><div className="position-detail"><PositionCard position={position} s={s} st={st} onRepurchased={onRepurchased}/></div></details>;})}
+      </div>}
   </Panel>{!!proposals.length && <Panel title="Pending substitutions">{proposals.map((proposal) => {
     const p = proposal.payload;
     const position = st.positions.find((x) => x.contractId === p.posCid);
@@ -584,12 +588,12 @@ function Positions({ s, st, onRepurchased }: { s: Session; st: DeskState; onRepu
 function Activity({ s, st }: { s: Session; st: DeskState }) {
   const closed = st.closed.filter((p) => p.payload.borrower === s.party || p.payload.dealer === s.party)
     .sort((a, b) => Date.parse(b.payload.closedAt) - Date.parse(a.payload.closedAt));
-  return <Panel id="closed-repos" title="Closed repos" description="Ledger closeouts visible to this account.">
-    {!closed.length && <p className="empty-state">No closed repos yet. Your latest transaction receipt is available in Account.</p>}
-    {closed.map(({ contractId, payload: p }) => <div className="row" key={contractId}>
-    <div><strong>{fmtAmount(p.collateralAmount, 4)} {p.collateralInstrument}</strong><p className="sm muted"><Party party={p.borrower} /> ↔ <Party party={p.dealer} /> · {fmtTime(p.closedAt)}{p.outcome === "Liquidated" && p.closeoutHealthFactor != null ? ` · HF ${fmtAmount(p.closeoutHealthFactor)}` : ""}</p></div>
-    <span className={p.outcome === "Repurchased" ? "ok" : "warn"}>{p.outcome}</span>
-  </div>)}</Panel>;
+  return <Panel id="closed-repos" title={closed.length ? "Closed positions" : undefined}>
+    {!closed.length ? <div className="portfolio-empty"><h2>No closed positions</h2><p>Your completed deals will appear here.</p></div>
+      : <table className="portfolio-table activity-table"><caption className="sr-only">Closed positions visible to your account</caption><thead><tr><th scope="col">Collateral</th><th scope="col">Counterparty</th><th scope="col">Closed</th><th scope="col">Outcome</th></tr></thead><tbody>{closed.map(({contractId,payload:p})=><tr key={contractId}>
+        <th scope="row" data-label="Collateral"><span className="figure">{fmtAmount(p.collateralAmount,4)}</span> {p.collateralInstrument}</th><td data-label="Counterparty"><Party party={p.borrower===s.party?p.dealer:p.borrower}/></td><td data-label="Closed" className="figure">{fmtTime(p.closedAt)}</td><td data-label="Outcome"><span className={`portfolio-outcome ${p.outcome==="Repurchased"?"":"warn"}`}>{p.outcome}</span>{p.outcome==="Liquidated"&&p.closeoutHealthFactor!=null&&<small>Health {fmtAmount(p.closeoutHealthFactor)}</small>}</td>
+      </tr>)}</tbody></table>}
+  </Panel>;
 }
 
 function OracleMark({ feed, s }: { feed: Contract<PriceFeed>; s: Session }) {
@@ -700,12 +704,12 @@ function Workspace({ session: s, connect, demoParties, switchParty, disconnect, 
       {view === "faucet" && <Faucet session={s} state={st} connected={connected} trading={trading} busy={transactions.busy} readError={error} onConnect={connectionAction} run={run}/>}
       {view === "markets" && <MarketOverview state={st} party={s.party} connected={connected} tradingEnabled={trading && !error}
         pauseReason={error ? "Trading paused until the ledger connection recovers." : undefined} mode={side} onConnect={connectionAction} onRequestPair={openPair} selectedPairId={selectedId} onSelectPair={openPair}/>}
-      {view === "portfolio" && <section className="terminal-portfolio"><div className="terminal-market-header"><div><h1>Portfolio</h1><p>Your private positions and issuer-separated holdings.</p></div></div>
+      {view === "portfolio" && <section className="terminal-portfolio"><div className="portfolio-heading"><div><h1>Portfolio</h1><p>Your positions, balances and completed deals.</p></div></div>
         {!connected ? <div className="terminal-empty"><h2>Connect to view your portfolio</h2><p>Your holdings and repo positions stay scoped to your account.</p><button className="seal" onClick={connectionAction}>Connect</button></div>
           : !st ? <p className="empty-state" role="status">{error ? "The ledger view is unavailable." : "Loading your authorized ledger view…"}</p>
-          : <><TerminalTabs<"positions" | "holdings" | "activity"> id="portfolio" label="Portfolio content" value={portfolio} onChange={setPortfolio} options={[{value:"positions",label:"Positions"},{value:"holdings",label:"Holdings"},{value:"activity",label:"Activity"}]}/>
+          : <><TerminalTabs<"positions" | "holdings" | "activity"> id="portfolio" label="Portfolio content" value={portfolio} onChange={setPortfolio} options={[{value:"positions",label:"Positions",count:st.positions.filter(p=>p.payload.borrower===s.party||p.payload.dealer===s.party).length},{value:"holdings",label:"Holdings",count:holdingBalances(st,s.party).length},{value:"activity",label:"Activity",count:st.closed.filter(p=>p.payload.borrower===s.party||p.payload.dealer===s.party).length}]}/>
             <TerminalPanels id="portfolio" value={portfolio} values={["positions","holdings","activity"]}>
-              {portfolio === "positions" ? <Positions s={s} st={st} onRepurchased={() => setPortfolio("activity")}/> : portfolio === "holdings" ? <Balances st={st} party={s.party}/> : <Activity s={s} st={st}/>}</TerminalPanels></>}
+              {portfolio === "positions" ? <Positions s={s} st={st} onRepurchased={() => setPortfolio("activity")} onBrowse={()=>setView("markets")}/> : portfolio === "holdings" ? <Balances st={st} party={s.party}/> : <Activity s={s} st={st}/>}</TerminalPanels></>}
       </section>}
       {view === "detail" && <div className="terminal-layout"><section className="terminal-main" aria-label="Selected market">
         <div className="terminal-market-header"><div><button type="button" className="terminal-pair-back" onClick={() => setView("markets")}>All markets</button>
