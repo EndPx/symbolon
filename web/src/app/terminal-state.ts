@@ -1,7 +1,16 @@
-import type { DeskState, PriceFeed, QuoteRequest } from "../ledger/symbolon";
+import type { DeskState, PriceFeed, QuoteRequest, RepoQuote } from "../ledger/symbolon";
+import type { Contract } from "../ledger/api";
 
 export type TradeSide = "borrow" | "lend";
 export type ContentTab = "overview" | "offers" | "positions" | "activity";
+
+export function partyQuotes(quotes:Contract<RepoQuote>[],party:string,side:TradeSide) {
+  return quotes.filter(({payload})=>side==="lend"?payload.dealer===party:payload.borrower===party);
+}
+
+export function partyRequests(requests:Contract<QuoteRequest>[],party:string,side:TradeSide) {
+  return requests.filter(({payload})=>side==="lend"?payload.dealer===party:payload.borrower===party);
+}
 
 export function tabForKey<T extends string>(key: string, current: T, values: readonly T[]): T | null {
   const index = values.indexOf(current);

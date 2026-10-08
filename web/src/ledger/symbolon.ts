@@ -251,7 +251,7 @@ export const cureElapsed = (p: RepoPosition, now = Date.now()) =>
 export const deadlineElapsed = (p: RepoPosition, now = Date.now()) =>
   now >= Date.parse(p.maturity) || (isUnderCall(p) && now >= Date.parse(p.status.value as string));
 
-export const repurchaseAmount = (q: RepoQuote) =>
+export const repurchaseAmount = (q: Pick<RepoQuote,"cashAmount"|"rate"|"termDays">) =>
   num(q.cashAmount) * (1 + num(q.rate) * num(q.termDays) / 360);
 
 export const fmtAmount = (s: string | number, dp = 2) =>
