@@ -716,7 +716,8 @@
 .field-with-help .desk-field > span { padding-right: 32px; }
 .field-help { position: absolute; right: -4px; top: -10px; display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 0; background: transparent; color: var(--terminal-muted); border-radius: var(--terminal-control-radius); }
 .field-help:hover { color: var(--terminal-text); background: var(--terminal-soft); }
-.financing-stage-note { color: var(--terminal-muted); font-size: 13px; margin-bottom: 12px !important; }
+.financing-stage-note { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--terminal-muted); font-size: 12px; margin-bottom: 8px !important; }
+.market-guide-button { flex: none; }
 .financing-estimate { padding: 12px; border-top: 1px solid var(--terminal-border); border-bottom: 1px solid var(--terminal-border); }
 .financing-estimate p { font-size: 12px; color: var(--terminal-muted); margin-top: 8px; }
 .lender-onboarding { display: grid; gap: 12px; font-size: 14px; }
@@ -911,7 +912,7 @@
 .position-detail .position-controls { max-width: 580px; }
 .terminal .position-summary:focus-visible { outline: 2px solid var(--terminal-text); outline-offset: -3px; }
 .terminal .desk-dialog { max-width: min(620px,calc(100vw - 32px)); max-height: calc(100dvh - 40px); overflow: auto; padding: 24px; border: 1px solid var(--terminal-border); border-radius: var(--terminal-radius); color: var(--terminal-text); background: var(--terminal-surface); }
-.terminal .desk-dialog::backdrop { background: rgba(11,18,32,.48); }
+.terminal .desk-dialog::backdrop { background: rgba(11,18,32,.48); backdrop-filter: blur(3px); }
 .terminal .dialog-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
 .terminal .dialog-heading h2 { font: 600 18px "Libre Franklin", sans-serif; }
 .terminal .review-terms { display: grid; gap: 0; padding: 12px 0; }
@@ -925,7 +926,8 @@
 .terminal .public-access { margin: 0; }
 .terminal .public-access-balances { gap: 24px; }
 .terminal-dialog { --ink-warm: #221c19; --ink-soft: #4a3a26; --terminal-canvas: #f4e9ce; --terminal-surface: #f9f2de; --terminal-soft: rgba(216,200,158,.18); --terminal-text: #221c19; --terminal-muted: #4a3a26; --terminal-border: rgba(34,28,25,.26); --terminal-radius: 16px; --terminal-control-radius: 8px; max-width: min(620px,calc(100vw - 32px)); max-height: calc(100dvh - 40px); overflow: auto; padding: 24px; border: 1px solid var(--terminal-border); border-radius: var(--terminal-radius); color: var(--terminal-text); background: var(--terminal-surface); font: 14px/1.5 "Libre Franklin", sans-serif; }
-.terminal-dialog::backdrop { background: rgba(11,18,32,.48); }
+.terminal-dialog::backdrop { background: rgba(11,18,32,.48); backdrop-filter: blur(3px); }
+.terminal .desk-dialog .review-terms .tr-val, .terminal-dialog .review-terms .tr-val { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
 .terminal-dialog .dialog-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
 .terminal-dialog .dialog-heading h2 { font: 600 18px "Libre Franklin", sans-serif; margin: 0; }
 .terminal-dialog { --terminal-control-border: rgba(34,28,25,.52); }

@@ -31,7 +31,7 @@ export function MarketEducation({side}:{side:TradeSide}) {
           <div><dt>Fees and test assets</dt><dd>This prototype has no Symbolon protocol fee. Network charges are separate. Demo assets and simulated prices do not represent real cBTC/USDCx funding.</dd></div>
         </dl></details>
       </section>
-      <section aria-labelledby={`${id}-privacy`}><h3 id={`${id}-privacy`}>Who can see your deal?</h3><p>Each lender receives its own request and quote. The accepted position and terms are shared with the borrower and winning lender, not unrelated counterparties.</p><p className="sm muted">Asset issuers can observe asset movements. Hosting operators remain a trust dependency.</p>
+      <section aria-labelledby={`${id}-privacy`}><h3 id={`${id}-privacy`}>Who can see your deal?</h3><p>Each lender sees its addressed request and own quote. The borrower sees offers addressed to them. The accepted position and terms are shared with the borrower and winning lender, not unrelated counterparties.</p><p className="sm muted">Asset issuers can observe asset movements. Hosting operators remain a trust dependency.</p>
         <details className="education-disclosure"><summary>Why Canton?</summary><p>Canton supports party-specific contract visibility and atomic cash/collateral settlement. That lets counterparties agree confidential terms and settle together. Privacy means controlled access, not anonymity.</p></details>
       </section>
     </div>
