@@ -931,7 +931,7 @@
 .terminal .desk-dialog .review-terms .tr-val, .terminal-dialog .review-terms .tr-val { min-width: 0; white-space: normal; overflow-wrap: anywhere; }
 .terminal-dialog .dialog-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
 .terminal-dialog .dialog-heading h2 { font: 600 18px "Libre Franklin", sans-serif; margin: 0; }
-.terminal .dialog-heading, .terminal-dialog .dialog-heading { position: sticky; top: 0; z-index: 3; background: var(--terminal-surface); }
+.terminal .dialog-heading, .terminal-dialog .dialog-heading { position: sticky; top: -24px; z-index: 3; margin: -24px -24px 20px; padding: 24px 24px 8px; border-bottom: 1px solid var(--terminal-border); background: var(--terminal-surface); }
 .terminal-dialog { --terminal-control-border: rgba(34,28,25,.52); }
 .terminal-dialog .ghost { min-height: 44px; padding: 10px 16px; border-radius: var(--terminal-control-radius); border: 1px solid var(--terminal-control-border); color: var(--terminal-text); font: 500 13px "Libre Franklin", sans-serif; background: var(--terminal-surface); }
 .terminal-dialog .wallet-row { min-height: 72px; border-color: var(--terminal-border); color: var(--terminal-text); }
