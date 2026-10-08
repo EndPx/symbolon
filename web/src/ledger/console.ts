@@ -1,9 +1,10 @@
-import { consoleWallet, type GetAccountResponse, type StatusEvent } from "@console-wallet/dapp-sdk";
+import { consoleWallet, type GetAccountResponse, type StatusEvent, type GetBalanceRequest } from "@console-wallet/dapp-sdk";
 import { parseResponse } from "./api";
 import { CantonV2Client } from "./canton-v2";
 import { deployment, normalizeNetwork, tradingBlocker } from "./deployment";
 import type { Session } from "./session";
 import { WalletSessionChanged } from "./grofty";
+import { consoleBalanceNetwork, readBoundWalletBalances } from "./wallet-balances";
 
 function checkAccount(account: GetAccountResponse, status: StatusEvent) {
   if (!status.connection?.isConnected || !account?.partyId?.includes("::") || account.status !== "allocated") {
@@ -34,6 +35,7 @@ export async function openConsoleSession(interactive: boolean): Promise<Session 
     if (disposed || invalid) throw new WalletSessionChanged(invalid ?? "This wallet session closed.");
     const nextStatus=await consoleWallet.status();
     const nextAccount=await consoleWallet.getPrimaryAccount();
+    if (disposed || invalid) throw new WalletSessionChanged(invalid ?? "This wallet session closed.");
     const next=checkAccount(nextAccount,nextStatus);
     if(next.party!==identity.party||next.network!==identity.network){invalidate("The Console Wallet account or network changed. Reconnect.");throw new WalletSessionChanged(invalid!);}
     return {status:nextStatus,account:nextAccount!};
@@ -50,6 +52,7 @@ export async function openConsoleSession(interactive: boolean): Promise<Session 
     }});
   await client.preflight();
   return {kind:"wallet",party:identity.party,label:"Console Wallet",wallet:"Console Wallet",networkId:identity.network,ledgerRead:true,
+    walletBalances:()=>readBoundWalletBalances(identity,bound,()=>consoleWallet.getBalance({party:identity.party,network:consoleBalanceNetwork(identity.network) as GetBalanceRequest["network"]})),
     read:()=>client.read(),
     async submit(commands,options){
       await bound();

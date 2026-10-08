@@ -30,6 +30,10 @@ import { holdingBalances, type HoldingBalance } from "./portfolio-state";
 import { MarketEducation } from "./MarketEducation";
 import { createBorrowDraftScope, readBorrowDraft, writeBorrowDraft, clearBorrowDraft, readTradeSide, writeTradeSide, readLastBorrowMarket, type BorrowDraftScope } from "./workspace-state";
 import { closedDealSnapshot, closedDealOutcome, matchingClosedDealReceipt } from "./closed-deal";
+import { displayDecimal, healthPresentation, marginCallPrice, offerAmounts } from "./financing-display";
+import { Disclosure } from "./Disclosure";
+import { WalletBalances } from "./WalletBalances";
+import { partyDisplayName, priceFeedLabel } from "./market-label";
 
 function useDesk(session: Session) {
   const [state, setState] = useState<DeskState | null>(null);
@@ -90,16 +94,6 @@ function Term({ label, children }: { label: string; children: ReactNode }) {
 function MarketGuide({side}:{side:TradeSide}) {
   const [open,setOpen]=useState(false);
   return <><button type="button" className="ghost sm market-guide-button" aria-haspopup="dialog" onClick={()=>setOpen(true)}>Guide</button>{open&&<Dialog title={side==="lend"?"Lending guide":"Borrowing guide"} close={()=>setOpen(false)}><MarketEducation side={side}/></Dialog>}</>;
-}
-
-function partyDisplayName(party: string, name?: string) {
-  const publicDesk = deployment().publicDesk;
-  const label = party === publicDesk?.operator ? publicDesk.label.replace(/\bdealer\b/gi, "lender")
-    : (name || partyLabel(party)).replace(/^dealer/i, "lender");
-  if (/^[a-f0-9]{8}-[a-f0-9]{4}-/i.test(label)) return `Account ${label.slice(0, 6)}…${label.slice(-4)}`;
-  const proofAlias = /^[a-f0-9]{8}-symbolon-proof-([a-f0-9]+)-(.+)$/i.exec(label);
-  if (proofAlias) return `${proofAlias[2].replace(/^dealer/i, "lender")} · ${proofAlias[1].slice(0, 4)}`;
-  return label.length > 24 ? `${label.slice(0, 12)}…${label.slice(-8)}` : label;
 }
 
 function Party({ party }: { party: string }) {
@@ -250,7 +244,8 @@ function QuoteReview({ quote, st, s, close, onSettled }: { quote: Contract<RepoQ
       <Term label="Cash issuer"><Party party={q.cashIssuer} /></Term>
       <Term label="Annualized rate">{fmtPct(num(q.rate))} · ACT/360</Term>
       <Term label="Duration">{q.termDays} days from settlement</Term>
-      <Term label="Amount to repay">{fmtAmount(repurchaseAmount(q), 10)} {q.cashInstrument}</Term>
+      <Term label="Fixed interest">{displayDecimal(offerAmounts(q).interest, 10)} {q.cashInstrument}</Term>
+      <Term label="Amount to repay">{displayDecimal(offerAmounts(q).repayment, 10)} {q.cashInstrument}</Term>
       <Term label="Symbolon protocol fee">0 {q.cashInstrument}</Term>
       <Term label="Network fee">Not quoted · separate from repayment</Term>
       <Term label="Margin threshold">{fmtPct(num(q.marginThresholdPct), 2)}</Term>
@@ -277,17 +272,21 @@ function ReceivedQuotes({ s, st, onSettled }: { s: Session; st: DeskState; onSet
   const [review, setReview] = useState<Contract<RepoQuote> | null>(null);
   const quotes = st.quotes.filter((q) => q.payload.borrower === s.party).sort((a, b) => num(a.payload.rate) - num(b.payload.rate));
   const requests = st.requests.filter((r) => r.payload.borrower === s.party);
-  return <Panel id="private-quotes" title="Received offers" description="Review the full terms before settlement.">
+  return <Panel id="private-quotes" title="Received offers" description="Compare fixed interest and total repayment. Review each offer's full terms before settlement.">
     {!quotes.length && <p className="empty-state">{requests.length ? "Waiting for a lender to quote your request." : "No offers yet. Request a private quote to begin."}</p>}
-    {quotes.map((q) => <article className="rfq" key={q.contractId}>
-      <div className="rfq-head"><strong><Party party={q.payload.dealer} /></strong><span className="rate">{fmtPct(num(q.payload.rate))}</span></div>
-      <p className="sm muted">Annualized ACT/360 · {q.payload.termDays} days</p>
-      <p>{fmtAmount(q.payload.cashAmount)} {q.payload.cashInstrument} against {fmtAmount(q.payload.collateralAmount, 4)} {q.payload.collateralInstrument}</p>
-      <p className="sm muted">Expires {fmtTime(q.payload.validUntil)} · {Intl.DateTimeFormat().resolvedOptions().timeZone}</p>
-      <div className="acts"><button className="seal sm" disabled={busy || Date.now() >= Date.parse(q.payload.validUntil)} onClick={() => setReview(q)}>
-        {Date.now() >= Date.parse(q.payload.validUntil) ? "Expired" : "Review quote"}</button>
-        <button className="ghost sm" disabled={busy} onClick={() => void run("Quote declined; lender cash released", () => act.rejectQuote(s, q.contractId))}>Decline</button></div>
-    </article>)}
+    {!!quotes.length && <div className="offer-list">{quotes.map((q) => {
+      const amounts = offerAmounts(q.payload), expired = Date.now() >= Date.parse(q.payload.validUntil);
+      return <article className={`offer-ticket${expired ? " expired" : ""}`} key={q.contractId}>
+        <header><div><h3><Party party={q.payload.dealer}/></h3><p>Collateral <strong>{fmtAmount(q.payload.collateralAmount, 4)} {q.payload.collateralInstrument}</strong></p></div><span className={`offer-status${expired ? " warn" : ""}`}>{expired ? "Expired" : "Funded offer"}</span></header>
+        <dl className="offer-metrics"><div><dt>Fixed APR</dt><dd>{fmtPct(num(q.payload.rate))}</dd><small>{q.payload.termDays} days · ACT/360</small></div>
+          <div><dt>Cash received</dt><dd>{displayDecimal(q.payload.cashAmount, 2)}</dd><small>{q.payload.cashInstrument}</small></div>
+          <div><dt>Fixed interest</dt><dd>{displayDecimal(amounts.interest, 4)}</dd><small>{q.payload.cashInstrument}</small></div>
+          <div className="offer-repayment"><dt>Total repayment</dt><dd>{displayDecimal(amounts.repayment, 4)}</dd><small>{q.payload.cashInstrument}</small></div></dl>
+        <footer><p>Expires {fmtTime(q.payload.validUntil)} · {Intl.DateTimeFormat().resolvedOptions().timeZone}</p><div className="acts"><button className="seal sm" disabled={busy || expired} onClick={() => setReview(q)}>{expired ? "Expired" : "Review offer"}</button>
+          <button className="ghost sm" disabled={busy} onClick={() => void run("Quote declined; lender cash released", () => act.rejectQuote(s, q.contractId))}>Decline</button></div></footer>
+      </article>;
+    })}</div>}
+    {!!quotes.length && <p className="sm muted offer-note">Amounts are rounded here; review shows 10 decimals. Network charges are separate. Each offer has its own funded contract.</p>}
     {!!requests.length && <div className="pending-requests"><h3>Awaiting a quote</h3>{requests.map((r) => <div className="row" key={r.contractId}>
       <span><Party party={r.payload.dealer} /> · {fmtAmount(r.payload.cashAmount)} {r.payload.cashInstrument}</span>
       <button className="ghost sm" disabled={busy} onClick={() => void run("Request withdrawn", () => act.withdrawRequest(s, r.contractId))}>Withdraw</button>
@@ -392,9 +391,9 @@ function BorrowRequest({ s, st, demoParties, initialPair, draftScope, onSubmitte
         <Term label="Available">{fmtAmount(available, 4)} {feed?.instrument ?? "—"}</Term>
         <Term label="Lender">{dealers.length === 1 ? partyDisplayName(dealers[0]) : `${dealers.length} selected`}</Term></div>
       <details className="terms-disclosure"><summary>Advanced terms</summary><div className="desk-form">
-        <Field label="Collateral and oracle"><select required value={chosen} onChange={(e) => onPairChange(e.target.value)}>
-          <option value="">Select an agreed price feed</option>{feeds.map(({ payload: f }) => <option key={feedIdentity(f)} value={feedIdentity(f)}>
-            {f.instrument} / {f.cashInstrument} · {partyDisplayName(f.instrumentIssuer)} · {partyDisplayName(f.oracle)}
+        <Field label="Price source" help="Markets are separated by collateral issuer, cash issuer and agreed oracle. The same asset symbols can have different price sources. Choose the source agreed with your lender; full identities are available in the market Overview."><select required value={chosen} onChange={(e) => onPairChange(e.target.value)}>
+          <option value="">Select the agreed price source</option>{feeds.map(({ payload: f }) => <option key={feedIdentity(f)} value={feedIdentity(f)}>
+            {priceFeedLabel(f, deployment())} · {fmtAmount(f.price)} {f.cashInstrument}
           </option>)}</select></Field>
         {feed && <p className="sm muted">Simulated mark {fmtAmount(feed.price)} {feed.cashInstrument} · {fmtTime(feed.asOf)}</p>}
         <Field label="Initial cover (%)" help="150% cover means collateral is initially worth 1.5 times the cash borrowed. It must be at least the agreed maintenance margin. A price decline can require more collateral even when repayment is fixed."><input type="number" min={threshold} step="0.01" required value={cushion} onChange={(e) => setCushion(e.target.value)} /></Field>
@@ -510,6 +509,8 @@ function PositionCard({ position, s, st, onRepurchased }: { position: Contract<R
   const p = position.payload;
   const borrower = p.borrower === s.party;
   const h = health(p, st.feeds);
+  const risk = healthPresentation(h);
+  const callPrice = marginCallPrice(p);
   const feed = feedFor(st.feeds, p);
   const now = Date.now();
   const elapsed = deadlineElapsed(p, now);
@@ -546,9 +547,11 @@ function PositionCard({ position, s, st, onRepurchased }: { position: Contract<R
   };
   return <article className="position"><header><div><strong>{fmtAmount(p.cashAmount)} {p.cashInstrument}</strong><span className="muted"> against </span><strong>{fmtAmount(p.collateralAmount, 4)} {p.collateralInstrument}</strong></div>
     <div className="pos-meta"><span className="rate">{fmtPct(num(p.rate))}</span><span className="sm muted">{borrower ? "Lender" : "Borrower"} <Party party={borrower ? p.dealer : p.borrower} /></span></div></header>
-    <div className="health" role="group" aria-label="Collateral health"><p className="health-row"><strong>Health factor {h.priceKnown ? fmtAmount(h.factor) : "unavailable"}</strong><span>Health-factor cutoff 1.00</span></p>
-      <div className="health-track" role={h.priceKnown ? "meter" : undefined} aria-label={h.priceKnown ? "Health factor" : undefined} aria-valuemin={h.priceKnown ? 0 : undefined} aria-valuemax={h.priceKnown ? Math.max(1.6, h.factor) : undefined} aria-valuenow={h.priceKnown ? h.factor : undefined} aria-valuetext={h.priceKnown ? `${fmtAmount(h.factor)}; ${h.healthy ? "margin covered" : "below required margin"}` : undefined}><div className={`health-fill ${h.priceKnown ? h.healthy ? "ok" : "bad" : "unknown"}`} style={{ transform: `scaleX(${Math.min(1.6, Math.max(0, h.factor)) / 1.6})` }} /><div className="health-mark" style={{ left: "62.5%" }} /></div>
+    <div className="health" role="group" aria-label="Collateral health"><p className="health-row"><strong>Health factor {h.priceKnown ? fmtAmount(h.factor) : "unavailable"} <span className={`health-badge ${risk.tone}`}>{risk.label}</span></strong><span>Health-factor cutoff 1.00</span></p>
+      <div className="health-track" role={h.priceKnown ? "meter" : undefined} aria-label={h.priceKnown ? "Health factor" : undefined} aria-valuemin={h.priceKnown ? 0 : undefined} aria-valuemax={h.priceKnown ? Math.max(1.6, h.factor) : undefined} aria-valuenow={h.priceKnown ? h.factor : undefined} aria-valuetext={h.priceKnown ? `${fmtAmount(h.factor)}; ${risk.label}` : undefined}><div className={`health-fill ${risk.tone}`} style={{ transform: `scaleX(${Math.min(1.6, Math.max(0, h.factor)) / 1.6})` }} /><div className="health-mark" style={{ left: "62.5%" }} /></div>
       <p className="health-row">{h.priceKnown ? `${fmtAmount(h.collateralValue)} / ${fmtAmount(h.requiredValue)} ${p.cashInstrument} required${h.shortfallValue > 0 ? ` · ${fmtAmount(h.shortfallValue)} shortfall` : ""}` : h.stale ? "Agreed oracle mark is stale or future-dated" : "No mark from the agreed oracle"}</p></div>
+    {callPrice && <div className="margin-price"><div><span>Margin call below</span><strong>{displayDecimal(callPrice, 2)} <small>{p.cashInstrument} / {p.collateralInstrument}</small></strong></div>
+      <p>A fresh price below this threshold lets the lender issue a margin call. Liquidation requires an expired cure window and a fresh post-cure price still below margin. Maturity default is separate.</p></div>}
     <dl className="terms"><div><dt>{borrower?"Amount to repay":"Amount due from borrower"}</dt><dd>{fmtAmount(p.repurchasePrice, 6)} {p.cashInstrument}</dd></div><div><dt>Maturity</dt><dd>{fmtTime(p.maturity)} · {Intl.DateTimeFormat().resolvedOptions().timeZone}</dd></div>
       <div><dt>Rate convention</dt><dd>Annualized ACT/360</dd></div><div><dt>Status</dt><dd className={elapsed || isUnderCall(p) || !h.healthy ? "warn" : ""}>{positionStatus}</dd></div></dl>
     <p className="sm muted">Oracle <Party party={p.oracle} /> · {feed ? `simulated mark ${fmtTime(feed.payload.asOf)} · ${Intl.DateTimeFormat().resolvedOptions().timeZone}` : "mark unavailable"} · maximum age {fmtDuration(num(p.maxPriceAgeSeconds))}</p>
@@ -597,12 +600,12 @@ function Positions({ s, st, onRepurchased, onBrowse }: { s: Session; st: DeskSta
   return <><Panel id="open-positions" title={mine.length ? "Open positions" : undefined} description={mine.length?`Maturity times shown in ${Intl.DateTimeFormat().resolvedOptions().timeZone}.`:undefined}>
     {!mine.length ? <div className="portfolio-empty"><h2>No open positions</h2><p>A position appears when an offer settles cash against collateral.</p><p className="sm">Its Details show health factor, repayment and maturity. Borrowers can top up, propose a replacement, or repay; lenders manage margin calls and closeout.</p>{onBrowse && <button className="seal" onClick={onBrowse}>Browse markets</button>}</div>
       : <div className="position-list"><div className="position-columns" aria-hidden="true"><span>Position</span><span>Fixed rate</span><span>Health</span><span>Repayment</span><span>Maturity</span><span></span></div>
-        {mine.map(position=>{const p=position.payload,h=health(p,st.feeds);const rowStatus=Date.now()>=Date.parse(p.maturity)?"Matured":cureElapsed(p)?"Cure deadline reached":isUnderCall(p)?`Margin call · ${cureLeft(cureDeadline(p)!)} to cure`:!h.priceKnown?"Price unavailable":!h.healthy?"Below margin":"Active";return <details className="position-item" key={position.contractId}><summary className="position-summary">
+        {mine.map(position=>{const p=position.payload,h=health(p,st.feeds),risk=healthPresentation(h);const rowStatus=Date.now()>=Date.parse(p.maturity)?"Matured":cureElapsed(p)?"Cure deadline reached":isUnderCall(p)?`Margin call · ${cureLeft(cureDeadline(p)!)} to cure`:!h.priceKnown?"Price unavailable":!h.healthy?"Below margin":"Active";return <Disclosure className="position-item" summaryClassName="position-summary" key={position.contractId} summary={<>
           <span className="position-identity"><strong>{fmtAmount(p.cashAmount)} {p.cashInstrument}</strong><small>{p.borrower===s.party?"Borrowing":"Lending"} · {fmtAmount(p.collateralAmount,4)} {p.collateralInstrument}</small><span className={rowStatus==="Active"?"position-row-status":"position-row-status warn"}>{rowStatus}</span></span>
-          <span data-label="Fixed rate" className="figure"><span className="sr-only">Fixed rate </span>{fmtPct(num(p.rate))}</span><span data-label="Health" className={`figure ${h.priceKnown&&!h.healthy?"warn":""}`}><span className="sr-only">Health factor </span>{h.priceKnown?fmtAmount(h.factor):"Unavailable"}</span>
+          <span data-label="Fixed rate" className="figure"><span className="sr-only">Fixed rate </span>{fmtPct(num(p.rate))}</span><span data-label="Health"><span className={`health-badge ${risk.tone}`} title={risk.label}><span className="sr-only">Health factor </span>{h.priceKnown?fmtAmount(h.factor):"Unavailable"}<span className="sr-only"> · {risk.label}</span></span></span>
           <span data-label="Repayment" className="figure"><span className="sr-only">Repayment </span>{fmtAmount(p.repurchasePrice,4)}<span className="sr-only"> {p.cashInstrument}</span></span><span data-label="Maturity" className="position-date"><span className="sr-only">Maturity </span>{fmtTime(p.maturity)}</span>
           <span className="position-expand">Details <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span>
-        </summary><div className="position-detail"><PositionCard position={position} s={s} st={st} onRepurchased={onRepurchased}/></div></details>;})}
+        </>}><div className="position-detail"><PositionCard position={position} s={s} st={st} onRepurchased={onRepurchased}/></div></Disclosure>;})}
       </div>}
   </Panel>{!!proposals.length && <Panel title="Pending substitutions">{proposals.map((proposal) => {
     const p = proposal.payload;
@@ -720,7 +723,7 @@ function Workspace({ session: s, connect, demoParties, switchParty, disconnect, 
       if(!panel)return;
       const offset=header&&getComputedStyle(header).position==="sticky"?header.getBoundingClientRect().height:0;
       panel.style.setProperty("--market-jump-offset",`${offset+12}px`);
-      panel.scrollIntoView({block:"start"});
+      panel.scrollIntoView({block:"start",behavior:window.matchMedia("(prefers-reduced-motion: reduce)").matches?"instant":"smooth"});
       panel.querySelector<HTMLButtonElement>(`#market-tab-${value}`)?.focus({preventScroll:true});
     });
   };
@@ -766,7 +769,7 @@ function Workspace({ session: s, connect, demoParties, switchParty, disconnect, 
           : !st ? <p className="empty-state" role="status">{error ? "The ledger view is unavailable." : "Loading your authorized ledger view…"}</p>
           : <><TerminalTabs<"positions" | "holdings" | "activity"> id="portfolio" label="Portfolio content" value={portfolio} onChange={setPortfolio} options={[{value:"positions",label:"Positions",count:st.positions.filter(p=>p.payload.borrower===s.party||p.payload.dealer===s.party).length},{value:"holdings",label:"Holdings",count:holdingBalances(st,s.party).length},{value:"activity",label:"Activity",count:st.closed.filter(p=>p.payload.borrower===s.party||p.payload.dealer===s.party).length}]}/>
             <TerminalPanels id="portfolio" value={portfolio} values={["positions","holdings","activity"]}>
-              {portfolio === "positions" ? <Positions s={s} st={st} onRepurchased={() => setPortfolio("activity")} onBrowse={()=>setView("markets")}/> : portfolio === "holdings" ? <Balances st={st} party={s.party}/> : <Activity s={s} st={st}/>}</TerminalPanels></>}
+              {portfolio === "positions" ? <Positions s={s} st={st} onRepurchased={() => setPortfolio("activity")} onBrowse={()=>setView("markets")}/> : portfolio === "holdings" ? <><WalletBalances session={s} connect={connect}/><Balances st={st} party={s.party}/></> : <Activity s={s} st={st}/>}</TerminalPanels></>}
       </section>}
       {view === "detail" && <div className="terminal-layout" role="region" aria-label="Selected market">
         <div className="terminal-market-header"><div><button type="button" className="terminal-pair-back" onClick={() => setView("markets")}>All markets</button>
@@ -813,13 +816,13 @@ function Workspace({ session: s, connect, demoParties, switchParty, disconnect, 
       <div className="ledger-status"><span className="sm muted">{readAt ? `Last ledger read ${readAt.toLocaleTimeString()} · ${Intl.DateTimeFormat().resolvedOptions().timeZone}` : s.kind === "browse" && !s.ledgerRead ? "Connect to read your private ledger view" : error ? "Ledger read failed" : "Reading ledger…"}</span><button className="ghost sm" disabled={busy || s.kind === "browse" && !s.ledgerRead} onClick={() => void refresh()}>Refresh</button></div>
       {receipt && <details className="terms-disclosure"><summary>Latest transaction</summary><ReceiptDetails receipt={receipt}/></details>}
       {!connected && deployment().network !== "localnet" && <button className="seal" onClick={() => { setAccountOpen(false); connect(); }}>Connect account</button>}
-      <details className="terms-disclosure"><summary>Advanced account controls</summary><div className="desk-form">
+      <Disclosure className="terms-disclosure" summary="Advanced account controls"><div className="desk-form">
         {s.kind === "account" && s.ownedParties && s.ownedParties.length > 1 && <Field label="Authorized account party" hint="Switching changes the signing identity. Borrow/Lend uses the current account."><select value={s.party} disabled={busy || !!s.pendingCommand?.()} onChange={event => switchParty(event.target.value)}>{s.ownedParties.map(party => <option key={party} value={party}>{partyDisplayName(party)}</option>)}</select></Field>}
         {sandboxModeEnabled() && !publicDesk && (s.kind === "browse" || s.kind === "sandbox") && <Field label="LocalNet test party" hint="Each party reads and signs its own ledger view."><select value={s.kind === "sandbox" ? s.party : ""} disabled={busy || !!s.pendingCommand?.()} onChange={event => { if (event.target.value) switchParty(event.target.value); }}><option value="">Choose a seeded party</option>{demoParties.map(party => <option key={party} value={party}>{partyDisplayName(party)}</option>)}</select>{!demoParties.length && <small>No seeded parties found. Start and seed LocalNet, then reload.</small>}</Field>}
         {connected && <p className="sm muted">The current account remains the signer when you change financing side.</p>}
         {trading && <PublicDeskSetup session={s} onRefresh={refresh}/>}
-        {!!ownFeeds.length && <details className="terms-disclosure"><summary>Oracle administration</summary><p className="sm muted">This party owns these feeds and may publish simulated marks.</p>{ownFeeds.map(item => <OracleMark key={feedIdentity(item.payload)} feed={item} s={s}/>)}</details>}
-      </div></details>
+        {!!ownFeeds.length && <Disclosure className="terms-disclosure" summary="Oracle administration"><p className="sm muted">This party owns these feeds and may publish simulated marks.</p>{ownFeeds.map(item => <OracleMark key={feedIdentity(item.payload)} feed={item} s={s}/>)}</Disclosure>}
+      </div></Disclosure>
       {deployment().network === "devnet" && publicDesk && <button className="ghost" onClick={() => { setAccountOpen(false); setView("faucet"); }}>Open faucet</button>}
       {connected && <button className="ghost sm" disabled={busy || !!s.pendingCommand?.()} onClick={disconnect}>Disconnect account</button>}
     </Dialog>}
@@ -838,6 +841,7 @@ export default function DeskApp() {
     try { sessionStorage.setItem("symbolon:workspace-view",viewChoice); } catch { /* Optional UI preference only. */ }
   }, [viewChoice]);
   const [session, setSession] = useState<Session>(() => browseSession());
+  const [restoring, setRestoring] = useState(true);
   const sessionRef = useRef(session);
   useLayoutEffect(() => { sessionRef.current = session; }, [session]);
   const [connecting, setConnecting] = useState(false);
@@ -859,6 +863,7 @@ export default function DeskApp() {
         if (active && restored) setSession((current) => current.kind !== "browse" ? current : restored);
         else { const party = await publicReadParty(); if (active && party) setSession((current) => current.kind !== "browse" ? current : browseSession(party)); }
       } catch (e) { if (active) setSessionError((e as Error).message); }
+      finally { if (active) setRestoring(false); }
     })();
     if (sandboxModeEnabled()) void listSandboxParties().then((p) => { if (active) setDemoParties(p); }).catch(() => {});
     return () => { active = false; };
@@ -874,6 +879,7 @@ export default function DeskApp() {
     if (!sandboxModeEnabled() || !demoParties.includes(party)) return;
     setSession(connectSandbox(party)); setSessionError(null);
   };
+  if (restoring) return <div className="terminal"><main className="terminal-empty" role="status" aria-busy="true"><h1>Restoring your connection…</h1></main></div>;
   return <>
     <Workspace key={`${session.kind}:${session.party}`} session={session} connect={() => setConnecting(true)} demoParties={demoParties} switchParty={switchParty} disconnect={() => void disconnect()}
       viewChoice={viewChoice} setView={setView} sessionError={sessionError} clearSessionError={() => setSessionError(null)} />

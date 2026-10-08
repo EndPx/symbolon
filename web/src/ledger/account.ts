@@ -1,11 +1,12 @@
 import { LedgerError, type Method } from "./api";
 import { LedgerHttpError, type LedgerRequest } from "./canton-v2";
+import { ACCOUNT_RESUME_KEY, parseAccountResume, resumedParty, type AccountResume } from "./account-resume";
 
 export const ACCOUNT_ISSUER = "https://keycloak.naas.noders.services/realms/noders-appsfactory";
 export const ACCOUNT_CLIENT = "web-app-ui-hackcanton-01-devnet";
 export const ACCOUNT_LEDGER = "https://ledger-api-json.participant.hackcanton-01.devnet.naas.noders.services";
 const pendingKey = "symbolon.account.pkce.v1";
-type AuthorizationAttempt = { state: string; verifier: string; redirectUri: string; startedAt: number; returnHash: string };
+type AuthorizationAttempt = { state: string; verifier: string; redirectUri: string; startedAt: number; returnHash: string; resume?: AccountResume };
 type Tokens = { access_token: string; refresh_token?: string };
 export type AccountContext = { subject: string; primaryParty?: string; parties: string[]; request: LedgerRequest };
 let capturedCallback: URLSearchParams | null = null;
@@ -32,7 +33,7 @@ export function checkedCallback(params: URLSearchParams, attempt: AuthorizationA
     || now - attempt.startedAt > 600000 || now < attempt.startedAt) {
     throw new LedgerError("This sign-in request expired or does not match this browser. Connect again.");
   }
-  if (params.get("error")) throw new LedgerError("Account connection was cancelled or declined. Connect again when ready.");
+  if (params.get("error")) throw new LedgerError(attempt.resume ? "Your sign-in session expired. Connect your account again." : "Account connection was cancelled or declined. Connect again when ready.");
   const code = params.get("code");
   if (!code) throw new LedgerError("No authorization code was returned.");
   return { code, verifier: attempt.verifier, redirectUri: attempt.redirectUri };
@@ -46,18 +47,30 @@ export function captureAccountCallback() {
   capturedCallback = params;
   window.history.replaceState(null, "", `/app${window.location.hash}`);
 }
-export async function startAccountConnection() {
+export function accountResumePreference() {
+  try { return parseAccountResume(sessionStorage.getItem(ACCOUNT_RESUME_KEY), window.location.origin); }
+  catch { return null; }
+}
+export function rememberAccountParty(account: AccountContext, party: string) {
+  if (!account.parties.includes(party)) throw new LedgerError("Select an authorized account party.");
+  try { sessionStorage.setItem(ACCOUNT_RESUME_KEY, JSON.stringify({ version: 1, origin: window.location.origin, network: "devnet", subject: account.subject, party, savedAt: Date.now() } satisfies AccountResume)); }
+  catch { /* A disabled storage area cannot grant or invalidate live authority. */ }
+}
+function clearAccountResume() { try { sessionStorage.removeItem(ACCOUNT_RESUME_KEY); } catch { /* Storage may be disabled. */ } }
+export async function startAccountConnection(resume?: AccountResume) {
   if (window.location.protocol !== "https:" && !["localhost", "127.0.0.1"].includes(window.location.hostname)) {
     throw new LedgerError("Connect from the HTTPS Symbolon app.");
   }
   const verifier = base64url(crypto.getRandomValues(new Uint8Array(32)));
   const state = base64url(crypto.getRandomValues(new Uint8Array(32)));
   const redirectUri = `${window.location.origin}/app`;
-  const attempt: AuthorizationAttempt = { state, verifier, redirectUri, startedAt: Date.now(), returnHash: window.location.hash };
+  const attempt: AuthorizationAttempt = { state, verifier, redirectUri, startedAt: Date.now(), returnHash: window.location.hash, ...(resume ? { resume } : {}) };
+  // Consume before navigating: a failed silent attempt must not loop on refresh.
+  clearAccountResume();
   sessionStorage.setItem(pendingKey, JSON.stringify(attempt));
   const url = new URL(`${ACCOUNT_ISSUER}/protocol/openid-connect/auth`);
   url.search = new URLSearchParams({ client_id: ACCOUNT_CLIENT, response_type: "code", scope: "openid daml_ledger_api",
-    redirect_uri: redirectUri, state, code_challenge: await pkceChallenge(verifier), code_challenge_method: "S256" }).toString();
+    redirect_uri: redirectUri, state, code_challenge: await pkceChallenge(verifier), code_challenge_method: "S256", ...(resume ? { prompt: "none" } : {}) }).toString();
   window.location.assign(url.toString());
 }
 function redactedError(value: string) {
@@ -86,6 +99,7 @@ async function validToken() {
     const refreshToken = tokens.refresh_token;
     const work = tokenRequest({ grant_type: "refresh_token", refresh_token: refreshToken }).then(next => {
       if (currentRevision !== revision) throw new LedgerError("The account session changed. Connect again.");
+      if (context && accessClaims(next.access_token).sub !== context.subject) throw new LedgerError("The account identity changed. Connect again.");
       tokens = next;
     });
     refreshing = work;
@@ -130,24 +144,35 @@ export async function uploadPublicAccessPackage(synchronizerId: string) {
 }
 export function disconnectAccount() {
   revision++; tokens = null; context = null; callbackWork = null; capturedCallback = null; refreshing = null;
+  clearAccountResume();
+  try { sessionStorage.removeItem(pendingKey); } catch { /* Storage may be disabled. */ }
 }
 export function finishAccountConnection(): Promise<AccountContext | null> {
   if (context) return Promise.resolve(context);
   if (callbackWork) return callbackWork;
-  if (!capturedCallback) return Promise.resolve(null);
+  if (!capturedCallback) {
+    const resume = accountResumePreference();
+    if (!resume) return Promise.resolve(null);
+    // Renew through the existing provider session; credentials stay in memory.
+    callbackWork = startAccountConnection(resume).then(() => null);
+    return callbackWork;
+  }
   const params = capturedCallback;
   capturedCallback = null;
+  let accountRevision: number | undefined;
   callbackWork = (async () => {
     let attempt: AuthorizationAttempt | null = null;
     try { attempt = JSON.parse(sessionStorage.getItem(pendingKey) ?? "null"); } catch { /* Reject below. */ }
     sessionStorage.removeItem(pendingKey);
     const verified = checkedCallback(params, attempt, window.location.origin);
     const currentRevision = ++revision;
+    accountRevision = currentRevision;
     const next = await tokenRequest({ grant_type: "authorization_code", code: verified.code,
       code_verifier: verified.verifier, redirect_uri: verified.redirectUri });
     if (currentRevision !== revision) throw new LedgerError("The account session changed. Connect again.");
-    tokens = next;
     const claims = accessClaims(next.access_token);
+    if (attempt?.resume && claims.sub !== attempt.resume.subject) throw new LedgerError("The signed-in account changed. Connect explicitly to load the new account.");
+    tokens = next;
     const userResponse = await ledgerRequest("GET", `/v2/users/${encodeURIComponent(claims.sub)}`) as { user?: { id?: string; primaryParty?: string; isDeactivated?: boolean } };
     if (currentRevision !== revision) throw new LedgerError("The account session changed. Connect again.");
     const user = userResponse.user;
@@ -161,9 +186,14 @@ export function finishAccountConnection(): Promise<AccountContext | null> {
       return typeof party === "string" && party.includes("::") ? [party] : [];
     }))].sort();
     if (!parties.length) throw new LedgerError("Allocate your party in the HackCanton wallet, then reconnect. This account has no act-as party yet.");
-    context = { subject: claims.sub, parties, ...(parties.includes(user.primaryParty ?? "") ? { primaryParty: user.primaryParty } : {}), request: ledgerRequest };
+    const preferred = resumedParty(attempt?.resume ?? null, claims.sub, parties);
+    context = { subject: claims.sub, parties, ...(preferred ? { primaryParty: preferred } : parties.includes(user.primaryParty ?? "") ? { primaryParty: user.primaryParty } : {}), request: ledgerRequest };
+    rememberAccountParty(context, context.primaryParty ?? parties[0]);
     if (attempt?.returnHash) window.history.replaceState(null, "", `/app${attempt.returnHash}`);
     return context;
-  })();
+  })().catch(error => {
+    if (accountRevision === undefined || accountRevision === revision) disconnectAccount();
+    throw error;
+  });
   return callbackWork;
 }

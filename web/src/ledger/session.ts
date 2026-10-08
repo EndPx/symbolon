@@ -4,8 +4,10 @@ import { connectGrofty, GROFTY_WALLET_ID, WalletSessionChanged } from "./grofty"
 import { partyLabel } from "./symbolon";
 import { requireTradingRelease } from "./release";
 import { deployment, deploymentSubmissionOptions, tradingBlocker } from "./deployment";
-import { activeAccountContext, disconnectAccount, finishAccountConnection, type AccountContext } from "./account";
+import { activeAccountContext, accountResumePreference, rememberAccountParty, disconnectAccount, finishAccountConnection, type AccountContext } from "./account";
+import { resumedParty } from "./account-resume";
 import { CantonV2Client, type CommittedReceipt, type PendingCommand } from "./canton-v2";
+import type { WalletBalanceSnapshot } from "./wallet-balances";
 
 export interface Session {
   readonly kind: "browse" | "sandbox" | "wallet" | "account";
@@ -19,6 +21,7 @@ export interface Session {
   pendingCommand?(): PendingCommand | null;
   reconcilePending?(): Promise<{status: "pending" | "committed" | "failed";updateId?:string}>;
   lastReceipt?(): CommittedReceipt | null;
+  walletBalances?(): Promise<WalletBalanceSnapshot>;
   read(): ReturnType<LedgerApi["activeContracts"]>;
   submit(commands: Command[], options?: SubmissionOptions): Promise<string>;
   onInvalidated?(listener: (reason: string) => void): () => void;
@@ -258,9 +261,10 @@ export async function connectAccount(party?: string): Promise<Session | null> {
   const account = activeAccountContext() ?? await finishAccountConnection();
   requireCurrentConnection(revision);
   if (!account) return null;
-  const selected = party ?? account.primaryParty ?? account.parties[0];
+  const selected = party ?? resumedParty(accountResumePreference(), account.subject, account.parties) ?? account.primaryParty ?? account.parties[0];
   if (!account.parties.includes(selected)) throw new Error("Select an authorized account party.");
   const session = accountSession(account, selected);
+  rememberAccountParty(account, selected);
   remember(null);
   return activate(session);
 }

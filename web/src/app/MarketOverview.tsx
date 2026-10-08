@@ -3,6 +3,7 @@ import type { Contract } from "../ledger/api";
 import { deployment, networkLabel } from "../ledger/deployment";
 import { DEFAULT_PRICE_AGE_SECONDS, fmtAmount, fmtPct, isFresh, type DeskState, type PriceFeed } from "../ledger/symbolon";
 import { marketSummary } from "./market-summary";
+import { priceFeedLabel } from "./market-label";
 
 export const marketIdentity = (f: PriceFeed) => [f.oracle, f.instrumentIssuer, f.instrument, f.cashIssuer, f.cashInstrument].join("|");
 export function latestPairs(feeds: Contract<PriceFeed>[]): Contract<PriceFeed>[] {
@@ -29,7 +30,6 @@ export default function MarketOverview({state,party,connected,tradingEnabled=con
   const filtered=rows.filter(p=>(!collateral||p.payload.instrument===collateral)&&(!cash||p.payload.cashInstrument===cash));
   const loading=connected&&!state&&!pauseReason;
   const open=(id:string)=>onSelectPair?onSelectPair(id):onRequestPair(id);
-  const venue=(f:PriceFeed)=>f.instrumentIssuer===d.publicDesk?.operator?"Symbolon":f.instrumentIssuer.startsWith("issuer-symbolon")?"LocalNet market":`Issuer · ${f.instrumentIssuer.slice(-6)}`;
   return <section className="terminal-market-browser" id="markets" aria-labelledby="market-list-title">
     <h1 id="market-list-title" className="sr-only">Markets</h1>
     <div className="terminal-market-toolbar">{!!rows.length&&<div className="terminal-market-filters" aria-label="Market filters"><label><span className="sr-only">Collateral</span><select value={collateral} onChange={e=>setCollateral(e.target.value)}><option value="">All collateral</option>{assets.map(a=><option key={a}>{a}</option>)}</select></label><label><span className="sr-only">Loan token</span><select value={cash} onChange={e=>setCash(e.target.value)}><option value="">All loan tokens</option>{currencies.map(a=><option key={a}>{a}</option>)}</select></label></div>}
@@ -41,7 +41,7 @@ export default function MarketOverview({state,party,connected,tradingEnabled=con
         const summary=marketSummary(f,connected?state:null,party,mode,d),fresh=isFresh(f,DEFAULT_PRICE_AGE_SECONDS),id=marketIdentity(f);
         const term=summary.terms.length?`${summary.terms[0]}${summary.terms.length>1?`–${summary.terms.at(-1)}`:""} days`:"Per request";
         return <button type="button" className={`terminal-market-row${selectedPairId===id?" selected":""}`} key={contractId} onClick={()=>open(id)}>
-          <span className="terminal-market-pair"><TokenPair collateral={f.instrument} cash={f.cashInstrument}/><small>{venue(f)}</small></span>
+          <span className="terminal-market-pair"><TokenPair collateral={f.instrument} cash={f.cashInstrument}/><small>{priceFeedLabel(f,d)}</small></span>
           <span data-label="Fixed APR" className="terminal-market-rate" title="Annualized ACT/360. Review the lender's actual offer before settlement."><span className="sr-only terminal-market-label">Fixed APR </span><strong>{summary.minRate===null?"On request":`${fmtPct(summary.minRate)}${summary.maxRate!==summary.minRate?` – ${fmtPct(summary.maxRate!)}`:""}`}</strong>{summary.source&&<small>{summary.source}</small>}</span>
           <span data-label="Term"><span className="sr-only terminal-market-label">Term </span>{term}</span>
           <span data-label="Your open financing" className="terminal-market-amount"><span className="sr-only terminal-market-label">Your open financing </span>{summary.openPrincipal===null?"—":fmtAmount(summary.openPrincipal)}<small>{f.cashInstrument}</small></span>

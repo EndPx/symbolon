@@ -1,6 +1,12 @@
 /* Symbolon's private dealing suite. The harbor artwork is the signature;
    everything below it reads like a precise, connected financial document. */
 :root {
+  --health-covered: #276344;
+  --health-covered-surface: #e4eddd;
+  --health-caution: #855b12;
+  --health-caution-surface: #f4e6c3;
+  --health-danger: #9a3529;
+  --health-danger-surface: #f3ddd1;
   --desk-ink-raised: #172334;
   --desk-ivory: #fbf6e8;
   --desk-muted-on-ink: #d8c89e;
@@ -1043,4 +1049,60 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .terminal *, .terminal *::before, .terminal *::after { transition-duration: 0s !important; animation-duration: 0s !important; scroll-behavior: auto !important; }
+}
+
+/* Private funded offers: amounts line up across independent contracts. */
+.offer-list { container-type: inline-size; display: grid; gap: 16px; margin-top: 16px; }
+.offer-ticket { min-width: 0; border: 1px solid var(--terminal-border); border-radius: 12px; overflow: hidden; background: var(--terminal-surface); }
+.offer-ticket > header, .offer-ticket > footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px; }
+.terminal .offer-ticket h3 { font-size: 16px; }
+.offer-ticket > header p { font-size: 13px; color: var(--terminal-muted); margin-top: 4px; }
+.offer-status { flex-shrink: 0; font-size: 12px; padding: 4px 8px; border-radius: 6px; background: var(--terminal-soft); }
+.offer-metrics { display: grid; grid-template-columns: .8fr repeat(3,minmax(0,1fr)); margin: 0; border-block: 1px solid var(--terminal-border); }
+.offer-metrics > div { min-width: 0; padding: 16px 20px; }
+.offer-metrics > div + div { border-left: 1px solid var(--terminal-border); }
+.offer-metrics dt { font-size: 13px; color: var(--terminal-muted); margin-bottom: 6px; }
+.offer-metrics dd { margin: 0; font: 700 18px/1.4 "Courier Prime",monospace; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.offer-metrics small { display: block; color: var(--terminal-muted); margin-top: 2px; }
+.offer-repayment { background: var(--terminal-soft); }
+.offer-ticket > footer p { color: var(--terminal-muted); font-size: 12px; }
+.offer-ticket > footer .acts { margin: 0; flex-shrink: 0; }
+.terminal .offer-note { margin-top: 12px; }
+@container (max-width: 700px) {
+  .offer-metrics { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .offer-metrics > div { padding: 12px 16px; }
+  .offer-metrics > div:nth-child(3) { border-left: 0; }
+  .offer-metrics > div:nth-child(n+3) { border-top: 1px solid var(--terminal-border); }
+  .offer-ticket > header, .offer-ticket > footer { padding: 16px; flex-wrap: wrap; }
+}
+.terminal .health-badge { display: inline-flex; align-items: center; padding: 4px 9px; border-radius: 6px; font: 600 13px/1.4 "Libre Franklin",sans-serif; font-variant-numeric: tabular-nums; }
+.health-badge.covered { color: var(--health-covered); background: var(--health-covered-surface); }
+.health-badge.caution { color: var(--health-caution); background: var(--health-caution-surface); }
+.health-badge.danger { color: var(--health-danger); background: var(--health-danger-surface); }
+.health-badge.unknown { color: var(--terminal-muted); background: var(--terminal-soft); }
+.health-fill.covered { background: var(--health-covered); }
+.health-fill.caution { background: var(--health-caution); }
+.health-fill.danger { background: var(--health-danger); }
+.health-track { border-radius: 4px; }
+.terminal .health-row > strong { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.margin-price { margin-top: 16px; padding: 14px 16px; border: 1px solid var(--terminal-border); border-radius: 8px; background: var(--terminal-soft); display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.35fr); gap: 16px; }
+.margin-price > div { display: grid; align-content: start; gap: 4px; }
+.margin-price > div > span { font-size: 13px; color: var(--terminal-muted); }
+.margin-price strong { font: 700 18px/1.4 "Courier Prime",monospace; }
+.margin-price strong small { display: block; font: 400 12px/1.5 "Libre Franklin",sans-serif; }
+.terminal .margin-price p { font-size: 12px; line-height: 1.6; color: var(--terminal-muted); }
+.disclosure-content { min-width: 0; }
+.animated-disclosure[data-closing] > summary .position-expand svg { transform: rotate(0); }
+.animated-disclosure .position-expand svg { transition: transform 180ms ease-out; }
+.wallet-balances { margin: 20px; border-bottom: 1px solid var(--terminal-border); padding-bottom: 20px; }
+.wallet-balances > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.terminal .wallet-balances header p { color: var(--terminal-muted); font-size: 13px; margin-top: 4px; }
+.wallet-balance-list { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(240px,100%),1fr)); gap: 12px; margin-bottom: 12px; }
+.wallet-balance-list article { display: flex; justify-content: space-between; align-items: center; min-width: 0; gap: 12px; border: 1px solid var(--terminal-border); border-radius: 8px; padding: 14px 16px; }
+.wallet-balance-list article small { display: block; color: var(--terminal-muted); }
+.wallet-balance-list .figure { overflow-wrap: anywhere; }
+.terminal-market-pair > small { overflow-wrap: anywhere; }
+@media (max-width: 760px) {
+  .margin-price { grid-template-columns: minmax(0,1fr); gap: 8px; }
+  .wallet-balances { margin: 16px; }
 }
