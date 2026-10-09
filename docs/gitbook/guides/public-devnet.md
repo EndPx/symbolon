@@ -36,7 +36,7 @@ The app can prepare an expired **public simulated reference** during request rev
 
 ## Optional: Rehearse a TestNet Wallet Connection
 
-Open the separate [Symbolon TestNet app](https://symbolon-testnet-snowy.vercel.app/app) to try connecting a compatible wallet and checking the data available to your own Canton party.
+Open the separate [Symbolon TestNet app](https://symbolon-testnet.vercel.app/app) to try connecting a compatible wallet and checking the data available to your own Canton party.
 
 {% hint style="info" %}
 **The current TestNet scope is connection and reads.** Request submission, funded quotes and settlement are disabled in this profile. The [DevNet app](https://symbolon.endpx.cloud/app) remains the place to try the simulated financing workflow.

@@ -6,7 +6,7 @@ Symbolon's financial contracts run on Canton. The repository demonstrates a loca
 | --- | --- | --- |
 | [LocalNet](localnet.md) | Reproduction and the separate BitSafe governed-price demonstration. | Simulated assets; one operator controls the test environment. |
 | [Shared DevNet](devnet.md) | The public app and retained shared-network financing runs. | Simulated cBTC-demo / USDCx-demo and a public test reference. |
-| [TestNet connection profile](https://symbolon-testnet-snowy.vercel.app/app) | Wallet connection and checking data available to the connected party. | Trading is disabled. No real-token RFQ, funded quote or settlement is claimed. |
+| [TestNet connection profile](https://symbolon-testnet.vercel.app/app) | Wallet connection and checking data available to the connected party. | Trading is disabled. No real-token RFQ, funded quote or settlement is claimed. |
 | [MainNet](mainnet.md) | Planned real-asset release work. | No enabled production financing or real-token settlement is claimed. |
 
 ## Example: choose the right environment
