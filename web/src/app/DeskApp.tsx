@@ -7,7 +7,7 @@ import {
 } from "../ledger/session";
 import {
   balanceOf, cureDeadline, cureElapsed, cureLeft, deadlineElapsed, deskState, feedFor,
-  fmtAmount, fmtDuration, fmtPct, fmtTime, health, isFresh, isUnderCall,
+  fmtAmount, fmtDuration, fmtPct, fmtTime, isFresh, isUnderCall,
   num, partyLabel, repurchaseAmount, DEFAULT_PRICE_AGE_SECONDS,
   type DeskState, type PriceFeed, type RepoPosition, type RepoQuote,
   type QuoteRequest,
@@ -25,12 +25,12 @@ import { completePublicRequests, refreshReferenceMark, requestPublicQuote } from
 import { PublicDeskSetup } from "./PublicAccess";
 import { Faucet } from "./Faucet";
 import { NotificationRegion, TransactionToast, type Receipt } from "./TransactionToast";
-import { canPrepareReference, preparedReference } from "./market-preparation";
+import { canPrepareReference, canRefreshTestPositionMark, preparedReference } from "./market-preparation";
 import { holdingBalances, type HoldingBalance } from "./portfolio-state";
 import { MarketEducation } from "./MarketEducation";
 import { createBorrowDraftScope, readBorrowDraft, writeBorrowDraft, clearBorrowDraft, readTradeSide, writeTradeSide, readLastBorrowMarket, type BorrowDraftScope } from "./workspace-state";
 import { closedDealSnapshot, closedDealOutcome, matchingClosedDealReceipt } from "./closed-deal";
-import { displayDecimal, healthPresentation, marginCallPrice, offerAmounts } from "./financing-display";
+import { displayDecimal, positionHealthDisplay, marginCallPrice, offerAmounts } from "./financing-display";
 import { Disclosure } from "./Disclosure";
 import { WalletBalances } from "./WalletBalances";
 import { partyDisplayName, priceFeedLabel } from "./market-label";
@@ -509,11 +509,12 @@ function PositionCard({ position, s, st, onRepurchased }: { position: Contract<R
   const [liquidationReview, setLiquidationReview] = useState(false);
   const p = position.payload;
   const borrower = p.borrower === s.party;
-  const h = health(p, st.feeds);
-  const risk = healthPresentation(h);
-  const callPrice = marginCallPrice(p);
-  const feed = feedFor(st.feeds, p);
   const now = Date.now();
+  const display = positionHealthDisplay(p, st.feeds, now);
+  const h = display.health, risk = display.risk;
+  const callPrice = marginCallPrice(p);
+  const feed = display.feed;
+  const refreshTestMark = canRefreshTestPositionMark(s, p, feed?.payload, deployment(), now);
   const elapsed = deadlineElapsed(p, now);
   const matured = now >= Date.parse(p.maturity);
   const cureExpired = cureElapsed(p, now);
@@ -548,9 +549,12 @@ function PositionCard({ position, s, st, onRepurchased }: { position: Contract<R
   };
   return <article className="position"><header><div><strong>{fmtAmount(p.cashAmount)} {p.cashInstrument}</strong><span className="muted"> against </span><strong>{fmtAmount(p.collateralAmount, 4)} {p.collateralInstrument}</strong></div>
     <div className="pos-meta"><span className="rate">{fmtPct(num(p.rate))}</span><span className="sm muted">{borrower ? "Lender" : "Borrower"} <Party party={borrower ? p.dealer : p.borrower} /></span></div></header>
-    <div className="health" role="group" aria-label="Collateral health"><p className="health-row"><strong>Health factor {h.priceKnown ? fmtAmount(h.factor) : "unavailable"} <span className={`health-badge ${risk.tone}`}>{risk.label}</span></strong><span>Health-factor cutoff 1.00</span></p>
-      <div className="health-track" role={h.priceKnown ? "meter" : undefined} aria-label={h.priceKnown ? "Health factor" : undefined} aria-valuemin={h.priceKnown ? 0 : undefined} aria-valuemax={h.priceKnown ? Math.max(1.6, h.factor) : undefined} aria-valuenow={h.priceKnown ? h.factor : undefined} aria-valuetext={h.priceKnown ? `${fmtAmount(h.factor)}; ${risk.label}` : undefined}><div className={`health-fill ${risk.tone}`} style={{ transform: `scaleX(${Math.min(1.6, Math.max(0, h.factor)) / 1.6})` }} /><div className="health-mark" style={{ left: "62.5%" }} /></div>
-      <p className="health-row">{h.priceKnown ? `${fmtAmount(h.collateralValue)} / ${fmtAmount(h.requiredValue)} ${p.cashInstrument} required${h.shortfallValue > 0 ? ` · ${fmtAmount(h.shortfallValue)} shortfall` : ""}` : h.stale ? "Agreed oracle mark is stale or future-dated" : "No mark from the agreed oracle"}</p></div>
+    <div className="health" role="group" aria-label="Collateral health"><p className="health-row"><strong>{display.lastMark ? "Last-mark health factor" : "Health factor"} {display.factor !== null ? fmtAmount(display.factor) : "unavailable"} <span className={`health-badge ${risk.tone}`}>{risk.label}</span></strong><span>Health-factor cutoff 1.00</span></p>
+      <div className="health-track" role={h.priceKnown ? "meter" : undefined} aria-label={h.priceKnown ? "Health factor" : undefined} aria-valuemin={h.priceKnown ? 0 : undefined} aria-valuemax={h.priceKnown ? Math.max(1.6, h.factor) : undefined} aria-valuenow={h.priceKnown ? h.factor : undefined} aria-valuetext={h.priceKnown ? `${fmtAmount(h.factor)}; ${risk.label}` : undefined}><div className={`health-fill ${risk.tone}`} style={{ transform: `scaleX(${Math.min(1.6, Math.max(0, display.factor ?? 0)) / 1.6})` }} /><div className="health-mark" style={{ left: "62.5%" }} /></div>
+      <p className="health-row">{h.priceKnown ? `${fmtAmount(h.collateralValue)} / ${fmtAmount(h.requiredValue)} ${p.cashInstrument} required${h.shortfallValue > 0 ? ` · ${fmtAmount(h.shortfallValue)} shortfall` : ""}` : display.lastMark && feed ? `Estimate from ${fmtAmount(feed.payload.price)} ${p.cashInstrument} at ${fmtTime(feed.payload.asOf)}. A fresh agreed mark is required for price-sensitive actions.` : display.state === "future" ? "The agreed mark is future-dated; ask the oracle to correct its timestamp." : display.state === "invalid" ? "The agreed price cannot be used; ask the oracle for a valid mark." : "No mark from the agreed oracle"}</p>
+      {refreshTestMark && feed && <div className="acts wrap"><button type="button" className="ghost sm" disabled={busy} onClick={() => void run("Test mark timestamp refreshed", () => act.setPrice(s, feed, num(feed.payload.price)))}>Refresh test timestamp</button><span className="sm muted">Keeps the test price at {fmtAmount(feed.payload.price)} {p.cashInstrument}; updates its ledger timestamp.</span></div>}
+      {display.lastMark && !refreshTestMark && <p className="sm muted">Ask the agreed oracle to publish a current mark. Refreshing the ledger view alone does not update the price timestamp.</p>}
+    </div>
     {callPrice && <div className="margin-price"><div><span>Margin call below</span><strong>{displayDecimal(callPrice, 2)} <small>{p.cashInstrument} / {p.collateralInstrument}</small></strong></div>
       <p>A fresh price below this threshold lets the lender issue a margin call. Liquidation requires an expired cure window and a fresh post-cure price still below margin. Maturity default is separate.</p></div>}
     <dl className="terms"><div><dt>{borrower?"Amount to repay":"Amount due from borrower"}</dt><dd>{fmtAmount(p.repurchasePrice, 6)} {p.cashInstrument}</dd></div><div><dt>Maturity</dt><dd>{fmtTime(p.maturity)} · {Intl.DateTimeFormat().resolvedOptions().timeZone}</dd></div>
@@ -601,9 +605,9 @@ function Positions({ s, st, onRepurchased, onBrowse }: { s: Session; st: DeskSta
   return <><Panel id="open-positions" title={mine.length ? "Open positions" : undefined} description={mine.length?`Maturity times shown in ${Intl.DateTimeFormat().resolvedOptions().timeZone}.`:undefined}>
     {!mine.length ? <div className="portfolio-empty"><h2>No open positions</h2><p>A position appears when an offer settles cash against collateral.</p><p className="sm">Its Details show health factor, repayment and maturity. Borrowers can top up, propose a replacement, or repay; lenders manage margin calls and closeout.</p>{onBrowse && <button className="seal" onClick={onBrowse}>Browse markets</button>}</div>
       : <div className="position-list"><div className="position-columns" aria-hidden="true"><span>Position</span><span>Fixed rate</span><span>Health</span><span>Repayment</span><span>Maturity</span><span></span></div>
-        {mine.map(position=>{const p=position.payload,h=health(p,st.feeds),risk=healthPresentation(h);const rowStatus=Date.now()>=Date.parse(p.maturity)?"Matured":cureElapsed(p)?"Cure deadline reached":isUnderCall(p)?`Margin call · ${cureLeft(cureDeadline(p)!)} to cure`:!h.priceKnown?"Price unavailable":!h.healthy?"Below margin":"Active";return <Disclosure className="position-item" summaryClassName="position-summary" key={position.contractId} summary={<>
+        {mine.map(position=>{const p=position.payload,display=positionHealthDisplay(p,st.feeds),h=display.health,risk=display.risk;const rowStatus=Date.now()>=Date.parse(p.maturity)?"Matured":cureElapsed(p)?"Cure deadline reached":isUnderCall(p)?`Margin call · ${cureLeft(cureDeadline(p)!)} to cure`:!h.priceKnown?risk.label:!h.healthy?"Below margin":"Active";return <Disclosure className="position-item" summaryClassName="position-summary" key={position.contractId} summary={<>
           <span className="position-identity"><strong>{fmtAmount(p.cashAmount)} {p.cashInstrument}</strong><small>{p.borrower===s.party?"Borrowing":"Lending"} · {fmtAmount(p.collateralAmount,4)} {p.collateralInstrument}</small><span className={rowStatus==="Active"?"position-row-status":"position-row-status warn"}>{rowStatus}</span></span>
-          <span data-label="Fixed rate" className="figure"><span className="sr-only">Fixed rate </span>{fmtPct(num(p.rate))}</span><span data-label="Health"><span className={`health-badge ${risk.tone}`} title={risk.label}><span className="sr-only">Health factor </span>{h.priceKnown?fmtAmount(h.factor):"Unavailable"}<span className="sr-only"> · {risk.label}</span></span></span>
+          <span data-label="Fixed rate" className="figure"><span className="sr-only">Fixed rate </span>{fmtPct(num(p.rate))}</span><span data-label="Health"><span className={`health-badge ${risk.tone}`} title={risk.label}><span className="sr-only">Health factor </span>{display.factor !== null ? fmtAmount(display.factor) : "Unavailable"}<span className="sr-only"> · {risk.label}</span></span>{display.lastMark && <small className="sm muted"> Last mark</small>}</span>
           <span data-label="Repayment" className="figure"><span className="sr-only">Repayment </span>{fmtAmount(p.repurchasePrice,4)}<span className="sr-only"> {p.cashInstrument}</span></span><span data-label="Maturity" className="position-date"><span className="sr-only">Maturity </span>{fmtTime(p.maturity)}</span>
           <span className="position-expand">Details <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span>
         </>}><div className="position-detail"><PositionCard position={position} s={s} st={st} onRepurchased={onRepurchased}/></div></Disclosure>;})}

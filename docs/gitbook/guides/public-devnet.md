@@ -83,6 +83,22 @@ repurchase amount, settle, then repay. Peer dealers can use their actual issued
 cash to quote requests addressed to them; the public standing dealer is a test
 counterparty and does not represent external liquidity or market demand.
 
+## Position health and expired marks
+
+Borrower and lender positions use the same agreed oracle/issuer identity and
+maximum mark age. When that exact feed expires, Positions retains the health
+estimate from its last published price with neutral **Last mark / Price expired**
+labels. It is not current collateral health. Future-dated, invalid and missing
+prices produce no estimate. Price-sensitive actions remain blocked until a fresh
+valid mark is available; refreshing a ledger read does not update the mark itself.
+
+For the published public test market only, the party acting as its configured
+oracle may use **Details → Refresh test timestamp**. This reuses the oracle's
+existing `SetPrice` authority and preserves the exact current price; a price the
+numeric builder cannot preserve is refused. The control does not publish in the
+background and is unavailable to borrowers, other networks and committee oracles.
+The lender's call, cure and fresh post-cure requirements remain in force.
+
 ## Receipts and uncertain results
 
 The v3.5 client uses `eventFormat` with an own-party filter and validates command ID,

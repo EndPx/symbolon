@@ -62,7 +62,7 @@ All targets below are proposed goals, not achieved results or promises.
 | MainNet transactions | Verified real-network receipts | 0 | No MainNet target for current submission scope |
 | Actor parties in the DevNet run | Named roles in retained mapping | 7 synthetic roles / 1 account | Clearly labeled as roles, not users |
 | BitSafe LocalNet topology | Participant IDs and all-node audits | 3 participants / 3 DecMan services / 1 host | Reproducible pinned setup |
-| Automated checks | Dated test/CI results | 106 frontend tests and production build passed locally on 9 October 2026; 11 core Daml Script entries, 2 BitSafe scripts and 7 runner/helper tests passed in their retained runs | Preserve tested revision and scope; SDK construction tests do not prove live wallet compatibility or a security audit |
+| Automated checks | Dated test/CI results | 111 frontend tests and production build passed locally on 9 October 2026; 11 core Daml Script entries, 2 BitSafe scripts and 7 runner/helper tests passed in their retained runs | Preserve tested revision and scope; SDK construction tests do not prove live wallet compatibility or a security audit |
 
 ## 6. Success criteria after the hackathon
 

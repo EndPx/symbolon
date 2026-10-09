@@ -1,4 +1,5 @@
-import { decimalUnits, type Health, type RepoQuote, type RepoPosition } from "../ledger/symbolon";
+import { decimalUnits, feedFor, health, num, type Health, type PriceFeed, type RepoQuote, type RepoPosition } from "../ledger/symbolon";
+import type { Contract } from "../ledger/api";
 
 const SCALE = 10_000_000_000n;
 const LIMIT = 10n ** 38n;
@@ -52,4 +53,17 @@ export function healthPresentation(h: Pick<Health, "priceKnown" | "factor">) {
   if (h.factor < 1) return { tone: "danger", label: "Below margin" } as const;
   if (h.factor < 1.2) return { tone: "caution", label: "Near margin" } as const;
   return { tone: "covered", label: "Margin covered" } as const;
+}
+
+/** Historical display only; expired figures never change the authoritative action guards. */
+export function positionHealthDisplay(position: RepoPosition, feeds: Contract<PriceFeed>[], now = Date.now()) {
+  const h = health(position, feeds, now), feed = feedFor(feeds, position);
+  const at = feed ? Date.parse(feed.payload.asOf) : NaN;
+  const price = feed ? num(feed.payload.price) : NaN;
+  const lastFactor = price * num(position.collateralAmount) / h.requiredValue;
+  const state = !feed ? "missing" : !Number.isFinite(at) || !Number.isFinite(price) || price <= 0 || !Number.isFinite(lastFactor) || lastFactor <= 0 ? "invalid"
+    : at > now ? "future" : h.priceKnown ? "current" : "expired";
+  const label = state === "expired" ? "Price expired" : state === "future" ? "Future-dated price" : state === "invalid" ? "Invalid price" : "Price unavailable";
+  return { health: h, feed, state, factor: state === "current" ? h.factor : state === "expired" ? lastFactor : null,
+    lastMark: state === "expired", risk: state === "current" ? healthPresentation(h) : { tone: "unknown" as const, label } };
 }
