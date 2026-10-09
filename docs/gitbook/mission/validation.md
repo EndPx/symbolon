@@ -1,6 +1,8 @@
 # User validation and pilot plan
 
-The initial customer profile is a treasury operator at a small or mid-sized digital-asset fund or tokenized-asset business, together with a dealer willing to finance an agreed collateral type. This is a targeting hypothesis. No interviews, design partners, signed pilots, user counts or willingness-to-pay findings are claimed.
+The initial customer profile is a treasury operator at a small or mid-sized digital-asset fund with Canton asset exposure or a concrete adoption plan, together with a lender willing to finance an agreed collateral type. This is a targeting hypothesis. One informal borrower discussion and a follow-up about a real Aave borrowing episode have started discovery. Institutional ICP interviews, external app use, design partners, signed pilots and willingness to pay remain unvalidated.
+
+The borrower reported borrowing USDC against ETH at approximately 60% LTV and closing after roughly two months. They were concerned that floating rates could increase accrued debt and weaken health factor, and valued fixed financing terms and confidential bilateral terms after hearing the concept. No actual rate spike or budget disruption was quantified. The follow-up is the same participant, not a second interview; no app trial or switching commitment was reported.
 
 ## Questions to test
 

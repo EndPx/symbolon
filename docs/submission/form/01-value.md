@@ -6,7 +6,7 @@ Symbolon helps borrowers know their contractual principal-plus-interest repaymen
 
 **Treasury managers at digital-asset funds using floating-rate collateralized borrowing** struggle to **budget their repayment** because **borrowing rates change while their positions remain open**, exposing them to **unexpected interest increases and an uncertain financing cost**.
 
-This is our initial customer hypothesis. Floating-rate borrowing exists; demand for Symbolon from this specific segment has not yet been validated through interviews.
+This is our initial customer hypothesis, focused on small or mid-sized digital-asset funds with Canton exposure or a concrete adoption plan. One informal borrower conversation has started human discovery; institutional ICP fit and demand from this specific segment remain unvalidated.
 
 ## 2. The value we create
 
@@ -35,6 +35,7 @@ For the executed example, ACT/360 means actual term days divided by 360: `1,000 
 - **How many people or companies have it:** No verified count for our target segment. We are not presenting total DeFi or repo volume as Symbolon's customer market.
 - **Public evidence:** [Aave V3 documentation](https://www.aave.com/docs/aave-v3/overview) describes rates that change with utilization and rise faster above the optimal point. This supports the mechanism behind rate uncertainty, not proof that every borrower wants fixed terms.
 - **Product evidence:** [Our shared DevNet record](https://github.com/EndPx/symbolon/blob/main/docs/submission/evidence/shared-devnet.md) retains 20 committed transactions and the unchanged repayment amount through a collateral-price drop, margin call, top-up and `Repurchased`. Assets and marks were simulated. This proves software behavior, not customer demand.
+- **Human discovery:** One borrower reported borrowing USDC on Aave against ETH at approximately 60% LTV and closing after roughly two months. They were concerned that floating rates could increase accrued debt and weaken health factor, and gave positive concept feedback on fixed financing terms and confidential bilateral terms. They have not tried Symbolon. No actual rate spike or budget impact was quantified; institutional fit, switching intent, willingness to pay and acceptance of the full repayment structure remain unvalidated. The initial discussion and follow-up count as one participant. [Discovery record](../borrower-discovery.md)
 
 ## 4. Why now
 

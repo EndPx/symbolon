@@ -14,4 +14,4 @@ Our next step is an operator pilot and official cBTC/USDCx asset adapters. We wa
 
 ## Presenter boundaries
 
-The asset and price examples are simulations. Do not imply they settle real cBTC or USDCx. The [shared DevNet flow](evidence/shared-devnet.md) uses ordinary hosted parties and Ledger API submission, without wallet signing or a DevNet decentralized party. The three-participant DecMan evidence remains LocalNet. The recorded browser quote comparison is local. No discovery interviews or usage metrics have been completed.
+The asset and price examples are simulations. Do not imply they settle real cBTC or USDCx. The [shared DevNet flow](evidence/shared-devnet.md) uses ordinary hosted parties and Ledger API submission, without wallet signing or a DevNet decentralized party. The three-participant DecMan evidence remains LocalNet. The recorded browser quote comparison is local. One informal borrower discussion and follow-up have started [human discovery](borrower-discovery.md); institutional ICP fit, willingness to switch/pay, external app use and pilot participation remain unvalidated.
