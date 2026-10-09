@@ -2,7 +2,7 @@
 
 Prepared 9 October 2026. This is a connection/read rehearsal, not a completed TestNet financing deployment. The default public app remains shared HackCanton DevNet.
 
-Public connection app: https://symbolon-testnet-snowy.vercel.app/app . Its production alias was verified without Vercel authentication. Build/deployment evidence does not demonstrate a wallet signature or financing transaction.
+Public connection app: https://symbolon-testnet.vercel.app/app . Its production alias was verified without Vercel authentication. Build/deployment evidence does not demonstrate a wallet signature or financing transaction.
 
 ## Public build
 
