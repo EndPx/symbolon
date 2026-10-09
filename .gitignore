@@ -20,3 +20,16 @@ dist/
 .vercel/
 /docs/submission/symbolon-pitch.pptx
 /docs/submission/symbolon-pitch-v2.pptx
+
+# Private submission preparation; keep the curated final deliverables public.
+/docs/submission/form/
+/docs/submission/*-narration.md
+/docs/submission/mentor-update-oct10.md
+/docs/submission/borrower-discovery.md
+/docs/submission/demo-video.md
+/docs/submission/pitch.md
+/docs/submission/value-draft.md
+/docs/submission/symbolon-pitch-final.pptx
+/docs/submission/symbolon-pitch-final-v5*
+/docs/submission/symbolon-app-demo-devnet.mp4
+/docs/gitbook/assets/symbolon-overview-illustration.png

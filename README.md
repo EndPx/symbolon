@@ -220,7 +220,7 @@ The intended business model charges **0.1% of term interest to the borrower and 
 
 One informal borrower discussion includes a real Aave borrowing episode. The founder also reports approximately **3–5 informal app explorers** from Web3 communities and their personal network. Their exact count, roles, dates and completed steps have not yet been documented; this is early product feedback. Planning personas are excluded from user counts.
 
-Institutional ICP fit, quantified financing-budget pain, switching intent, willingness to pay and an externally operated borrower/lender rehearsal remain open. [Discovery record](https://github.com/EndPx/symbolon/blob/main/docs/submission/borrower-discovery.md) · [Metrics and evidence](https://github.com/EndPx/symbolon/blob/main/docs/submission/form/03-metrics.md)
+Institutional ICP fit, quantified financing-budget pain, switching intent, willingness to pay and an externally operated borrower/lender rehearsal remain open. Internal discovery notes and submission drafts are kept outside the public repository.
 
 Next milestones are qualified treasury/lender interviews, an external simulated financing rehearsal, and operator-authorized asset integration. Real-asset deployment also needs reviewed token adapters, reliable price sourcing, permissions, closeout accounting and operating arrangements. [Roadmap](https://github.com/EndPx/symbolon/blob/main/docs/gitbook/mission/roadmap.md)
 
@@ -229,10 +229,10 @@ Next milestones are qualified treasury/lender interviews, an external simulated 
 | Resource | Purpose |
 | --- | --- |
 | [Published documentation](https://symbolon.gitbook.io/symbolon-docs/) | Product overview, role guides, diagrams, privacy and deployment scope. |
-| [Submission text pack](https://github.com/EndPx/symbolon/blob/main/docs/submission/form/README.md) | Value, ICP, metrics, GTM and project-page material. |
+| [Final pitch deck](https://github.com/EndPx/symbolon/blob/main/docs/submission/symbolon-pitch-final-v6.pdf) | Product, evidence, intended fee model and next milestones. |
 | [BitSafe Contribution Pool entry](https://github.com/EndPx/symbolon/blob/main/docs/submission/bitsafe-contribution.md) | Challenge scope, tested source, reproduction and evidence links. |
 | [Recorded local core workflow](https://github.com/EndPx/symbolon/blob/main/docs/submission/symbolon-local-demo.mp4) | Earlier simulated core repo demonstration; it does not show the installed DecMan integration. |
-| [60-second pitch](https://github.com/EndPx/symbolon/blob/main/docs/submission/pitch.md) | Product narrative and evidence boundaries. |
+| [Public application demo](https://symbolon.endpx.cloud/demo/symbolon-app-demo-devnet.mp4) | Direct request-to-repurchase execution with short Albary narration and captions. |
 | [PR #5](https://github.com/EndPx/symbolon/pull/5) | Merged delivery integration and review history. |
 
 The submission and development branch is **`main`**. [PR #5](https://github.com/EndPx/symbolon/pull/5) preserves the delivery review history. The repository includes an August 28, 2026 scaffold baseline. HackCanton delivery began September 18, and [the submission scope](https://github.com/EndPx/symbolon/blob/main/docs/gitbook/mission/submission.md) distinguishes that baseline from later implementation and evidence.
