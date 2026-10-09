@@ -268,7 +268,7 @@ function ReceivedQuotes({ s, st, onSettled }: { s: Session; st: DeskState; onSet
   const quotes = st.quotes.filter((q) => q.payload.borrower === s.party).sort((a, b) => num(a.payload.rate) - num(b.payload.rate));
   const requests = st.requests.filter((r) => r.payload.borrower === s.party);
   return <Panel id="private-quotes" title="Received offers" description="Compare fixed interest and total repayment. Review each offer's full terms before settlement.">
-    {!quotes.length && !requests.length && <p className="empty-state">No offers yet. Request a private quote to begin.</p>}
+    {!quotes.length && !requests.length && <p className="empty-state">{deployment().publicDesk ? "No funded offers yet. Publish an opportunity, then approve a lender's access to receive a quote." : "No offers yet. Request a private quote to begin."}</p>}
     {!!quotes.length && <div className="offer-list">{quotes.map((q) => {
       const amounts = offerAmounts(q.payload), expired = Date.now() >= Date.parse(q.payload.validUntil);
       return <article className={`offer-ticket${expired ? " expired" : ""}`} key={q.contractId}>

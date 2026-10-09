@@ -649,7 +649,8 @@
 .terminal *, .terminal *::before, .terminal *::after { box-sizing: border-box; }
 .terminal h1, .terminal h2, .terminal h3, .terminal p { margin: 0; }
 .terminal h1 { font: 400 24px/1.25 "Marcellus", serif; }
-.terminal h2 { font: 600 16px/1.4 "Libre Franklin", sans-serif; }
+.terminal h2 { font: 600 16px/1.4 "Libre Franklin", sans-serif; padding: 0; border: 0; }
+.terminal-dialog h2 { padding: 0; border: 0; }
 .terminal h3 { font: 600 14px/1.5 "Libre Franklin", sans-serif; }
 .terminal small, .terminal .sm { font-size: 12px; line-height: 1.5; }
 .terminal .muted, .terminal-muted { color: var(--terminal-muted); }
