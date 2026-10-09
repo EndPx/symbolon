@@ -33,9 +33,7 @@
 * [Getting Started](guides/public-devnet.md)
 * [Lenders](guides/dealer-oracle.md)
 * [Borrowers](guides/borrower.md)
-* [Frequently Asked Questions](guides/faq.md)
 * [Troubleshooting](guides/troubleshooting.md)
-* [Glossary](reference/glossary.md)
 
 ## Technical Details
 
@@ -53,5 +51,7 @@
 
 ## Other
 
+* [Glossary](reference/glossary.md)
+* [FAQ](guides/faq.md)
 * [Challenge Plans](mission/challenges.md)
 * [Links](other/links.md)

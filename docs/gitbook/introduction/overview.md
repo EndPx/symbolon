@@ -5,6 +5,10 @@ description: Private fixed-rate financing on Canton, with repayment agreed befor
 
 Symbolon connects borrowers who need cash with lenders who can finance their collateral. The borrower compares fixed-rate offers, chooses a lender, and knows the contractual repayment amount before the trade settles on Canton.
 
+![Product overview: User A requests cash, Users B and C quote, and A selects B before settlement and repayment](../assets/product-overview.png)
+
+**Read the overview:** User A brings collateral and needs cash. Users B and C each set an APR. A selects B's suitable offer, receives cash and later repays the agreed amount to recover the collateral. B receives principal plus interest if A repays.
+
 The current app uses simulated **cBTC-demo** collateral and **USDCx-demo** cash on HackCanton DevNet. These are test assets. Production cBTC and USDCx adapters remain planned work.
 
 ## The financing journey
@@ -16,14 +20,14 @@ The current app uses simulated **cBTC-demo** collateral and **USDCx-demo** cash 
 
 ![From request to repayment](../assets/repo-journey.png)
 
-## Example: comparing two lenders
+## Example: User A, User B and User C
 
-Alex requests **1,000 USDCx-demo for 30 days**, pledging **0.0250 cBTC-demo** at a simulated price of **60,000 USDCx-demo per cBTC-demo**. Blair offers **7% APR**; Casey offers **7.5% APR**.
+**User A (Alex)** requests **1,000 USDCx-demo for 30 days**, pledging **0.0250 cBTC-demo** at a simulated price of **60,000 USDCx-demo per cBTC-demo**. **User B (Blair)** offers **7% APR**; **User C (Casey)** offers **7.5% APR**.
 
 | Offer | Fixed term interest, approximately | Total repayment, approximately |
 | --- | --- | --- |
-| Blair: 7% APR | 5.83 USDCx-demo | 1,005.83 USDCx-demo |
-| Casey: 7.5% APR | 6.25 USDCx-demo | 1,006.25 USDCx-demo |
+| User B: 7% APR | 5.83 USDCx-demo | 1,005.83 USDCx-demo |
+| User C: 7.5% APR | 6.25 USDCx-demo | 1,006.25 USDCx-demo |
 
 The examples use simple ACT/360 interest. The review dialog shows the ledger's exact amount before acceptance. Alex can choose Blair's cheaper offer if its other terms are suitable. Casey cannot automatically inspect Blair's quote.
 

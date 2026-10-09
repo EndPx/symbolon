@@ -7,9 +7,9 @@ These guides explain how to use the public Symbolon app. Begin with your HackCan
 | [Getting Started](public-devnet.md) | Connect an account, choose a party and obtain test assets. |
 | [Borrowers](borrower.md) | Request financing, compare offers and recover collateral through repayment. |
 | [Lenders](dealer-oracle.md) | Register for a market, price requests and fund an offer. |
-| [Frequently Asked Questions](faq.md) | Understand repayment, risk and account behavior. |
 | [Troubleshooting](troubleshooting.md) | Resolve an empty directory, expired price or incompatible balance. |
-| [Glossary](../reference/glossary.md) | Look up a term using a plain definition and example. |
+
+For quick answers and definitions, open [FAQ](faq.md) or [Glossary](../reference/glossary.md) under **Other**.
 
 ## Example: which guide should I choose?
 
