@@ -14,7 +14,7 @@ export function PublicAccess({session,state,busy,run}: {
   const cash=balanceOf(state?.holdings??[],session.party,"USDCx-demo",d.publicDesk.operator);
   return <section className="panel public-access" aria-labelledby="public-access-title">
     <h2 id="public-access-title">Your DevNet balance</h2>
-    <p className="panel-lede">Get ledger-issued test assets, then request offers from registered lenders or register your party from Lend. These assets have no monetary value.</p>
+    <p className="panel-lede">Get Symbolon demo assets to publish a borrowing request or fund a lender quote. Lenders can quote open requests directly. These assets have no monetary value.</p>
     <div className="public-access-balances"><div><span>Available collateral</span><strong>{fmtAmount(collateral,4)} cBTC-demo</strong></div>
       <div><span>Available cash</span><strong>{fmtAmount(cash)} USDCx-demo</strong></div></div>
     <div className="acts wrap"><button className="seal sm" disabled={busy} onClick={()=>void run("DevNet assets issued",()=>claimDevnetAssets(session))}>Get DevNet assets</button>

@@ -16,8 +16,8 @@ export function Faucet({ session, state, connected, trading, busy, readError, on
   const d = deployment();
   const configured = d.network === "devnet" && !!d.publicDesk;
   return <section className="terminal-faucet" aria-labelledby="faucet-title">
-    <div className="terminal-page-heading"><div><h1 id="faucet-title">Faucet</h1><p>Get test assets to try Symbolon on Canton DevNet.</p></div><span className="terminal-status">{networkLabel()}</span></div>
-    <div className="faucet-sheet"><div className="faucet-grant"><h2>Test assets per claim</h2>
+    <div className="terminal-page-heading"><div><h1 id="faucet-title">Faucet</h1><p>Get Symbolon demo assets to try fixed-rate financing on Canton DevNet.</p></div><span className="terminal-status">{networkLabel()}</span></div>
+    <div className="faucet-sheet"><div className="faucet-grant"><h2>Symbolon demo assets per claim</h2>
       <div className="faucet-assets"><div><span>Collateral</span><strong>0.1 <small>cBTC-demo</small></strong></div><div><span>Cash</span><strong>5,000 <small>USDCx-demo</small></strong></div></div>
       <p className="muted">These simulated assets have no monetary value.</p>
     </div>
