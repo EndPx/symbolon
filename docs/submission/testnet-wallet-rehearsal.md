@@ -1,12 +1,12 @@
 # Canton TestNet wallet connection rehearsal
 
-Prepared 9 October 2026. This is a connection/read rehearsal, not a completed TestNet financing deployment. The default public app remains shared HackCanton DevNet.
+Prepared 9 October 2026. **TestNet work is deferred at the user's request; the active demo is [shared HackCanton DevNet](https://symbolon.endpx.cloud/app).** Participant access, package vetting and wallet transaction compatibility remain unresolved. This document preserves preparation and read evidence, not a completed TestNet financing deployment.
 
-Public connection app: https://symbolon-testnet.vercel.app/app . Its production alias was verified without Vercel authentication. A later real Send connection and own-party read succeeded; see [direct-check evidence](evidence/testnet-wallet-read.md). This does not demonstrate a financing signature or transaction.
+Earlier public connection app: https://symbolon-testnet.vercel.app/app . Its entry routes now redirect temporarily to the DevNet demo. The disabled TestNet profile remains in source for later operator-authorized work. A historical Send connection and own-party read succeeded before the user selected Grofty-only onboarding; see [direct-check evidence](evidence/testnet-wallet-read.md). This does not demonstrate a financing signature or transaction.
 
 ## Public build
 
-Use `npm.cmd run build:testnet` for the separately published TestNet connection app. It selects the disabled manifest into `dist/deployment.json` without changing the source/default DevNet manifest. Publish the built static assets to the separate `symbolon-testnet` Vercel project, with `/app` rewritten to `/index.html`. Its canonical production domain is publicly accessible. The original project's additional alias remained behind Vercel authentication, so it is not used as the judging URL. The existing shared DevNet app keeps its URL.
+Use `npm.cmd run build:testnet` to build the retained connection profile. It selects the disabled manifest into `dist/deployment.json` without changing the source/default DevNet manifest. The separate `symbolon-testnet` Vercel project now uses the temporary entry redirects in `web/vercel.testnet.json`; a static deployment copies the `redirects` field and does not run that file's build command. Do not remove the redirects or promote financing until the participant and execution requirements below are verified. The existing shared DevNet app keeps its URL.
 
 ## Start the connection profile
 

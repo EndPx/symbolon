@@ -14,4 +14,6 @@ Symbolon's selected technical challenge path is BitSafe Contribution Pool. The i
 
 The reproducible [integration runbook](https://github.com/EndPx/symbolon/tree/codex/public-devnet-app/infra/decman) and [retained evidence](https://github.com/EndPx/symbolon/tree/codex/public-devnet-app/docs/submission/evidence) include threshold rejection, execution and matching participant audits. The managers and participants share one operator host. This is not an independent-operator outage demonstration or a live DevNet decentralized-party deployment.
 
+The selected entry is **BitSafe Challenge — Contribution Pool: Decentralizing Apps on Canton**. The current [challenge sheet](https://bitsafe.notion.site/BitSafe-Challenge-Decentralizing-Apps-on-Canton-3db636dd0ba5804ba3e0ec08aec56638) excludes Gold applicants from the Contribution Pool. The public shared-DevNet app is additional Symbolon execution evidence; it is not a Gold Decentralized Party deployment.
+
 Gold own-node work and Grofty MainNet wallet execution are outside the current submission scope. Sponsor judging, eligibility and awards remain sponsor decisions rather than product capabilities.

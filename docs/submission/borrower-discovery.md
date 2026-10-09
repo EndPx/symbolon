@@ -1,6 +1,6 @@
 # Borrower discovery record and next interviews
 
-Updated 9 October 2026. This date records the document update, not the conversation date. The source is the founder's report of one informal discussion and a follow-up with the same borrower. No verbatim transcript, loan receipt or consent for identifiable attribution has been supplied.
+Updated 10 October 2026 WIB. This date records the document update, not the conversation or testing dates. The sources are the founder's report of one informal borrower discussion and follow-up, plus approximately 3–5 informal app explorers from Web3 communities and their personal network. No verbatim transcript, individual session record or consent for identifiable attribution has been supplied.
 
 ## What was reported
 
@@ -17,16 +17,25 @@ Updated 9 October 2026. This date records the document update, not the conversat
 
 These are paraphrased, self-reported findings. The follow-up improves the evidence from the same person; it does not add a second participant.
 
+## Informal hands-on feedback
+
+The founder reports that approximately 3–5 people explored the application themselves and provided informal feedback. Reported themes were interest in fixed financing as an additional Canton option, appreciation of confidentiality and potential usefulness for borrowing against assets. These are paraphrases, not retained direct quotes.
+
+The exact participant count, roles, dates, network, feedback format and completed steps have not been documented. It is unknown whether this group overlaps with the borrower above; do not add the two into a verified total. Login, quote review, settlement, repayment and an independently operated borrower/lender cycle have not been confirmed for this group.
+
+Four planning personas are fictional scenarios for follow-up test design. They are excluded from human participant counts. This feedback does not establish that Symbolon is the first fixed-rate or private financing app on Canton.
+
 ## Interpretation and limits
 
 This is an early problem signal and a positive reaction to the concept. It does not establish that rates actually spiked, that the repayment budget changed materially, or that this borrower would adopt Symbolon.
 
 | Measure | Current evidence |
 | --- | --- |
-| Unique informal discovery participants | 1 |
+| Documented borrower episodes | 1 person; follow-up is the same participant |
+| Informal app explorers | Approximately 3–5, founder-reported; exact count and completed steps unrecorded |
 | Structured institutional ICP interviews | 0 |
-| External human Symbolon walkthroughs | 0 |
-| External borrower/lender pairs completing a rehearsal | 0 |
+| Structured externally operated walkthroughs | Not documented |
+| External borrower/lender pairs completing a rehearsal | None confirmed |
 | Willingness to switch, pay or participate in a pilot | Not established |
 
 The borrower has not accepted Symbolon's fixed maturity, full agreed repayment on early closure, bilateral counterparty workflow or Canton operating requirements. Their Aave episode is research evidence, not a Symbolon financing cycle.

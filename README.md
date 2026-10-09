@@ -1,49 +1,134 @@
+<div align="center">
+
+<img src="brand/logo-mark.png" alt="Symbolon mark" width="80" />
+
 # Symbolon
 
-**A confidential, fixed-rate bilateral repo desk on Canton.**
+### Know your repayment before settlement.
 
-Floating-rate borrowing leaves future interest expense uncertain. Symbolon lets a borrower agree a dealer's fixed annualized rate and exact principal-plus-interest repurchase amount before accepting financing on Canton. Cash and pledged collateral settle atomically. The benefit is a known contractual repayment amount; network fees, collateral maintenance, margin calls and counterparty risk remain.
+**Private fixed-rate financing on Canton.**
 
-The name comes from the Greek *symbolon*: two matching halves of a token used to recognize an agreement. Symbolon applies that idea to bilateral trade terms with explicit, limited ledger visibility.
+[Live DevNet App](https://symbolon.endpx.cloud/app) · [Documentation](https://symbolon.gitbook.io/symbolon-docs/) · [Demo Guide](docs/submission/hosted-devnet-demo.md) · [BitSafe Proof](docs/submission/bitsafe-contribution.md)
 
-Open the [Symbolon desk](https://symbolon.endpx.cloud/app) for the application, and the [documentation](https://symbolon.gitbook.io/symbolon-docs/) for the product and technical guides. The [recorded local Canton workflow](docs/submission/symbolon-local-demo.mp4) shows the ledger-backed repo lifecycle. The target real-asset pair is **cBTC / USDCx**, with DevNet verification before MainNet promotion. [One release, runtime network profiles](docs/gitbook/guides/network-promotion.md) explains the configuration and remaining adapter work.
+[![Frontend verification](https://github.com/EndPx/symbolon/actions/workflows/web.yml/badge.svg?branch=codex%2Fpublic-devnet-app)](https://github.com/EndPx/symbolon/actions/workflows/web.yml)
+[![BitSafe LocalNet proof](https://github.com/EndPx/symbolon/actions/workflows/bitsafe-localnet.yml/badge.svg)](https://github.com/EndPx/symbolon/actions/runs/37341484064)
 
-[Submission text pack](docs/submission/form/README.md) contains separate Value, ICP, Metrics, GTM and project-page Markdown. It distinguishes implemented behavior from customer hypotheses and labels synthetic test actors separately from users.
+</div>
 
-The current core is **`symbolon-v2` v0.2.0**; old `symbolon-0.1.0` DevNet contracts are a separate baseline. On **5 October 2026**, the revised release passed **11 core Daml scripts, 2 BitSafe scripts and 27 frontend tests**. Native local Canton completed both lifecycle scripts at offsets **55 → 202** and the BitSafe threshold-to-margin scenario at **202 → 261**.
+Symbolon helps treasury borrowers agree a financing obligation before committing to it. Borrowers request offers, lenders set their own rates, and the borrower chooses a funded quote with a fixed annualized rate, maturity and contractual repayment amount. Canton settles cash against pledged collateral atomically and records the agreement's lifecycle.
 
-On **7 October 2026**, the revised release completed a repo on **shared HackCanton DevNet**: two governance confirmations published a lower simulated mark, followed by a margin call, top-up and `ClosedRepo: Repurchased`. The [judge evidence](docs/submission/evidence/shared-devnet.md) retains **20 committed receipts, one expected threshold rejection and five timestamped snapshots** at offsets **2293352 → 2293507**. This used the frontend action builders through authenticated Ledger API submission on one participant, with simulated cBTC-demo / USDCx-demo. It does not establish wallet signing, DevNet decentralized-party hosting or real-token settlement.
+The name comes from the Greek *symbolon*: two matching halves used to recognize an agreement. Here, the two sides share agreed terms while competing lenders retain separate quotes.
 
-The public `/app` now supports HackCanton account sign-in and a verified DevNet borrower path through a disclosed, dedicated standing dealer. Browser-driven grant, funded quote, settlement, margin/top-up and repurchase runs were completed, including a trade directly at [symbolon.endpx.cloud/app](https://symbolon.endpx.cloud/app). [Public frontend receipts](docs/submission/evidence/public-devnet.md) and [E2E coverage](docs/submission/evidence/frontend-e2e.md) record the executed paths and their limits. These are hosted-account transactions with simulated assets; MainNet and wallet-signed execution remain separate work.
+> **Current demo:** shared HackCanton DevNet, authorized HackCanton accounts, simulated assets and prices. **BitSafe entry:** Contribution Pool, supported by a reproducible LocalNet integration. TestNet work is deferred; MainNet financing is not enabled.
 
-## What works
+## Why Symbolon
 
-- Separate private RFQs and funded quotes for each counterparty.
-- Exact-sized quote cash reservations and locked collateral; an owner cannot spend either unilaterally while committed.
-- Atomic cash/collateral settlement, ACT/360 fixed repurchase price, full-price early repurchase.
-- Agreed oracle, issuer and cash denomination checks; freshness and initial margin validation.
-- Health factor, margin call, sufficient top-up, recovered-mark call resolution, negotiated collateral substitution, dealer liquidation after an uncured call, separate maturity default and closing receipts.
-- One market workspace with Borrow/Lend actions, Overview/Offers/Positions/Activity tabs, issuer-separated holdings and committed transaction receipts. Account details contain authorized party switching and oracle administration.
+A floating borrowing rate can change while a position stays open. A treasury team then has to budget for interest it cannot lock at entry. Financing requests and lender pricing also reveal commercial information that counterparties may prefer to share selectively.
 
-This is a **working prototype using simulated assets and marks**. `Symbolon.DemoAsset.Holding` is not a CIP-56 token. Its trusted issuer can mint/archive holdings and sees asset movements. Per-party visibility tests on one local participant do not prove separation from that participant's administrator or independent hosting. [Read the privacy boundaries](docs/gitbook/architecture/privacy-and-trust.md).
+| Capability | What it gives the user |
+| --- | --- |
+| **Fixed contractual repayment** | Review principal, annualized APR, term interest and the amount due before accepting. Later rate changes do not reprice that agreement. |
+| **Independent lender offers** | Request financing from eligible registered lenders. Each lender sets its own APR and reserves cash to back its quote. |
+| **Controlled visibility and atomic settlement** | Compare bilateral offers while Canton enforces authorization and the simultaneous cash/collateral exchange. |
 
-## BitSafe Contribution Pool work
+The value is repayment predictability. Fixed financing does not guarantee cheaper borrowing or remove collateral and counterparty risk. Network charges remain separate. The initial customer hypothesis is a treasury operator at a small or mid-sized digital-asset fund with Canton exposure or a concrete adoption plan.
 
-`daml-bitsafe` contains a `GovernableAction` proposal that lets a 2-of-3 governance group publish a Symbolon oracle mark. Its separate Daml Script proves that one confirmation cannot execute, while two confirmations update the feed and let the dealer call an undercollateralized repo. Build and run it with `./scripts/build-bitsafe.ps1` and `./scripts/verify-bitsafe-live.ps1`; see the [BitSafe LocalNet guide](docs/gitbook/guides/bitsafe-localnet.md). The official three-participant DecMan LocalNet also passed on 5 October 2026: [workflow and artifacts](https://github.com/EndPx/symbolon/actions/runs/37341484064). It completed threshold-governed mark publication, repo margin top-up and repurchase, with matching execution update IDs on all participants. [Evidence record](docs/submission/evidence/bitsafe-localnet.json).
+## The borrower and lender journey
 
-On **8 October 2026 WIB**, the three-participant/three-manager stack was installed on an existing VPS with private loopback ports and persistent storage. A browser repo on this installed LocalNet used a DecMan-approved mark for its margin call, topped up, and repurchased for the unchanged `1004.3333333333`. [Installed-run evidence](docs/submission/evidence/bitsafe-vps-localnet.md) contains matching all-node audits and five final browser receipts. All roles remain controlled by one operator; this is Contribution Pool evidence, without independent-operator or live DevNet decentralized-party claims.
+![An illustrative borrower comparing two private lender offers, settling one agreement and recovering collateral on repayment](docs/gitbook/assets/product-overview.png)
 
-Follow the [LocalNet installation runbook](infra/decman/README.md) for Docker setup, SSH access and the separate frontend at `http://127.0.0.1:15173/app`. Its dedicated Vite config uses the installed LocalNet 0.6.12 / Canton API 3.5.8 / DecMan v1.8.0 and keeps sandbox authorization on the local server. The public app continues to use shared DevNet. **45 frontend tests and the production build pass** for this release; MainNet remains blocked.
+1. **Register to lend.** A lender joins the exact market and obtains compatible cash holdings. Registration does not reserve funds.
+2. **Request financing.** The borrower specifies principal, term and collateral conditions, reviews **All registered lenders**, and approves sharing. One addressed request is created per eligible recipient.
+3. **Price and fund a quote.** Each lender chooses its APR. Sending a funded quote reserves the exact cash amount; it does not settle financing.
+4. **Compare and settle.** The borrower reviews the full terms and accepts one funded quote. Cash reaches the borrower while collateral transfers to the lender under the position's restrictions.
+5. **Manage collateral.** Monitor the agreed price mark and coverage. Address a margin call with a sufficient top-up or an agreed substitution.
+6. **Repurchase.** Pay the contractual amount before the applicable deadline to recover collateral. Early closure still requires the full agreed repayment.
 
-The **8 October market-terminal revision** replaces scrolling section navigation with actual tabs and displays the dealer role as **Lender**. Borrow/Lend changes the action form while preserving the connected signing party. Raw identities, party switching and oracle controls are under **Account → Advanced account controls**. The revised UI passes **49 frontend tests** and a browser LocalNet cycle covering request, lender offer, settlement, governed margin call, top-up and repurchase. The contractual repayment stayed `1004.3333333333` while health factor moved `1.43 → 0.86 → 1.03`. A further public-URL DevNet cycle confirmed automatic Positions/Activity navigation, an exact `105.25%` maintenance threshold and repurchase at `100.1011111111`; see the [terminal verification record](docs/submission/evidence/terminal-ux.md).
+Borrow/Lend changes the workspace, not the signing identity. A same-account test can switch only between authorized parties; a two-person rehearsal uses each person's own account. Sending a request never automatically creates a lender offer.
 
-## Run the complete demo
+### A worked agreement
 
-The application keeps Symbolon's parchment/ink/gold identity: paper information surfaces, a navy Borrow/Lend ticket, warm ink text, Courier Prime figures and the gold seal action. Morpho informs the compact workspace and tab behavior; Symbolon's own palette and flat print-financial rules govern the visual design.
+The following is an illustrative **30-day simulated-asset agreement** using simple ACT/360 interest:
 
-**Faucet** in the main navigation issues 0.1 cBTC-demo and 5,000 USDCx-demo per claim on the configured public DevNet. These assets have no monetary value. Notifications appear at the bottom right without moving the workspace; confirmed toasts close automatically while Account retains the latest receipt. Pending and uncertain submissions retain their original-status check. This revision passes **51 frontend tests** and the production build.
+| Term | Value |
+| --- | ---: |
+| Principal | 1,000 USDCx-demo |
+| Lender's annualized APR | 5.20% |
+| Term interest | 4.3333333333 USDCx-demo |
+| Contractual repayment | **1,004.3333333333 USDCx-demo** |
+| Collateral at a simulated 60,000 mark and 150% initial cover | 0.0250 cBTC-demo |
 
-Prerequisites: PowerShell 7, `dpm` with Daml SDK **3.5.2**, Java compatible with the bundled Canton runtime, Node.js/npm. The verified local Canton runtime is **3.5.6**. Run from the repository root:
+At 105% maintenance cover, that collateral has a health factor of approximately 1.43. A simulated mark of 36,000 reduces it to approximately 0.86; adding 0.0050 collateral restores it to approximately 1.03. **The agreed repayment stays unchanged.** Exact quote terms and ledger values govern each actual test.
+
+## Execution evidence
+
+| Evidence | What was demonstrated | Inspect it |
+| --- | --- | --- |
+| **Shared HackCanton DevNet** | A retained reference repo with 20 committed transactions, governed mark publication, margin handling, top-up and `ClosedRepo: Repurchased`. | [Reference run and receipts](docs/submission/evidence/shared-devnet.md) |
+| **Public application on DevNet** | Browser-operated funded quote, settlement, collateral actions and repurchase, including execution from the public URL. | [Frontend evidence](docs/submission/evidence/public-devnet.md) · [Workflow coverage](docs/submission/evidence/frontend-e2e.md) |
+| **BitSafe three-participant LocalNet** | Below-threshold rejection, successful 2-of-3 execution and the resulting Symbolon collateral workflow. | [Reproducible CI run](https://github.com/EndPx/symbolon/actions/runs/37341484064) · [Retained evidence](docs/submission/evidence/bitsafe-localnet.json) |
+| **Installed LocalNet and actual browser UI** | Three DecMan services, matching participant audits and browser margin/top-up/repurchase receipts against the governed feed. | [Installed-run report](docs/submission/evidence/bitsafe-vps-localnet.md) · [Raw evidence](docs/submission/evidence/bitsafe-vps-localnet.json) |
+
+Internal test roles and transactions are engineering evidence. They are not customer counts, independent operators or native wallet signatures. Core lifecycle checks also cover substitution, uncured-margin liquidation and maturity default; the linked shared-DevNet reference is a repurchase path.
+
+## BitSafe Contribution Pool
+
+**Application integration / custom Daml module · LocalNet · shared control**
+
+Symbolon integrates Decentralization Manager into collateral-price publication. The risk being addressed is unilateral control over a mark that can change collateral coverage and enable a margin call. Custom `GovernableAction` templates connect the governance workflow to Symbolon's `PriceFeed`.
+
+```mermaid
+flowchart LR
+    P[Propose collateral mark] --> C[Collect member confirmations]
+    C -->|One confirmation| R[Execution rejected]
+    C -->|Two of three| E[Governed action executes]
+    E --> F[Symbolon PriceFeed replaced]
+    F --> H[Repo coverage changes]
+    H --> M[Margin call, top-up and repurchase]
+```
+
+The demonstrated oracle party is hosted across three LocalNet participants with three configured governance members. One confirmation fails; two succeed. The resulting mark changes an actual simulated repo's coverage, and the browser completes the margin and repayment workflow.
+
+All participants and managers share one operator host. The demonstration establishes threshold behavior and application integration; independent-operator control and node-outage tolerance have not been demonstrated. Routine financing steps do not require a governance vote.
+
+The selected challenge is **Contribution Pool**, not Gold. The public DevNet app is separate product execution evidence. The current [BitSafe challenge sheet](https://bitsafe.notion.site/BitSafe-Challenge-Decentralizing-Apps-on-Canton-3db636dd0ba5804ba3e0ec08aec56638) excludes Gold applicants from Contribution Pool.
+
+**Reproduce:** [installation and run instructions](infra/decman/README.md). **Review:** [challenge submission and evidence map](docs/submission/bitsafe-contribution.md).
+
+## Privacy and remaining risk
+
+| Record or capability | Visibility / authority |
+| --- | --- |
+| Lender registration | Party ID and market preference are listed with consent for discovery. |
+| Financing request | The borrower approves the audience; eligible registered lenders receive separate addressed requests. |
+| Funded quote | The borrower and that quoting lender can read their bilateral terms. Competing quotes remain separate. |
+| Accepted position and closing record | Shared with the borrower and winning lender under the contract's visibility rules. |
+| Demo holdings | The trusted issuer sees asset movements and retains mint/archive powers. |
+| Hosted participant | Participant operators and administrators remain trust dependencies. |
+
+Privacy means controlled disclosure, not anonymity or secrecy from the hosting operator. The prototype uses `Symbolon.DemoAsset.Holding`, not production cBTC, USDCx or a completed CIP-56 adapter. Stale or unavailable marks cannot be treated as fresh health measurements. Closeout releases demo collateral; it does not establish a collateral sale, realized recovery or surplus/deficiency accounting.
+
+[Privacy and trust boundaries](docs/gitbook/architecture/privacy-and-trust.md) · [Contracts and permissions](docs/gitbook/architecture/daml.md)
+
+## Try the current demo
+
+Open **[symbolon.endpx.cloud/app](https://symbolon.endpx.cloud/app)** with a provider-authorized HackCanton/NODERS account.
+
+1. Confirm your account party and **DevNet** network.
+2. Use **Faucet** for matching cBTC-demo collateral and USDCx-demo cash.
+3. Have the lender register in the selected market before the borrower sends a new request.
+4. Send the request as borrower; use the distinct lender party to enter an APR and submit a funded offer.
+5. Return to the borrower to review, settle, manage and repay the agreement.
+
+The [demo guide](docs/submission/hosted-devnet-demo.md) gives the two-sided sequence and a comprehension check. [Borrowers](docs/gitbook/guides/borrower.md), [Lenders](docs/gitbook/guides/dealer-oracle.md) and [FAQ](docs/gitbook/guides/faq.md) explain each role.
+
+TestNet preparation remains in source with financing disabled. Its earlier public entry URLs redirect temporarily to DevNet. Grofty TestNet parties, balances and wallet permissions do not migrate when opening the DevNet app.
+
+## Run locally
+
+### Native Canton sandbox
+
+Requirements: **PowerShell 7**, **Daml SDK 3.5.2 through `dpm`**, compatible Java, and **Node.js 24 / npm**. From the repository root:
 
 ```powershell
 ./scripts/demo.ps1 build
@@ -52,54 +137,72 @@ Prerequisites: PowerShell 7, `dpm` with Daml SDK **3.5.2**, Java compatible with
 ./scripts/demo.ps1 verify
 Set-Location web
 npm.cmd ci
-npm.cmd test
-node node_modules/tsx/dist/cli.mjs ../scripts/demo-http.mjs
-npm.cmd run dev -- --host 127.0.0.1
+npm.cmd run dev:sandbox
 ```
 
-Open **http://127.0.0.1:5173/app**. Select the seeded borrower/dealers using the local demo selector. Party identities are recorded in `.omc/demo/parties.json`. Follow the [complete demonstration](docs/gitbook/guides/demo.md) for quote comparison, settlement, margin, substitution, repayment, liquidation and maturity default.
+Open `http://127.0.0.1:5173/app` and use the seeded local test parties. This native sandbox uses CETH/CUSD demo assets. Its JSON API is bound to `127.0.0.1:6864`, with gRPC on `127.0.0.1:6865`. Run `./scripts/demo.ps1 stop` from the repository root to stop it.
 
-`build` stages source in a fresh space-free directory because Daml's Windows dependency resolution mishandles paths with spaces. The default cache is `<project-drive>:\symbolon-build`; override it with a writable, space-free `SYMBOLON_BUILD_HOME`. DARs are copied back to each package's ignored `.daml/dist` directory. The helper never removes source or previous build directories.
+The build helper stages source in a space-free directory to avoid Windows Daml path-resolution issues. A writable `SYMBOLON_BUILD_HOME` overrides its default staging location. Runtime state and build artifacts stay outside tracked source.
 
-Canton JSON API: `127.0.0.1:6864`; gRPC: `127.0.0.1:6865`. The unauthenticated local runtime is bound to loopback. To stop it, return to the repository root and run `./scripts/demo.ps1 stop`. Runtime state is ephemeral.
+### BitSafe LocalNet reproduction
 
-## Verification
+Use the [separate Linux/Docker runbook](infra/decman/README.md) for Contribution Pool. It pins the upstream source, installs three participants and three DecMan services, distributes/vets the application DARs, and runs the threshold-to-repurchase proof. Requirements include Docker Compose 2.24.4+, 12 GB RAM, 4 CPUs and 20 GB free disk.
 
-The September 23, 2026 local verification built all three DARs and passed **10 Daml Script entries** (nine behavioral scenarios plus setup). The live happy path and full lifecycle passed on Canton at ledger offsets **94 → 238**. On September 28, the new health-factor liquidation path rebuilt all three DARs, passed **11 Daml Script entries**, and completed both wall-clock Canton flows at offsets **55 → 202**. A separate one-dealer browser run then reached `ClosedRepo: Liquidated` at local ledger offset **229**. Reproduce rather than relying on historical offsets:
+Local ledgers and admin interfaces stay on loopback. Shared DevNet credentials are not used by this sandbox.
+
+### Verification commands
 
 ```powershell
-./scripts/demo.ps1 build
-./scripts/demo.ps1 verify
+# From the repository root: check retained execution evidence offline.
+node scripts/verify-shared-devnet-evidence.mjs
+node scripts/verify-public-devnet-evidence.mjs
+
+# From web: frontend/adapter checks and a production build.
 Set-Location web
 npm.cmd test
 npm.cmd run build
-npm.cmd run doctor
 ```
 
-The contract suite isolates invalid terms, issuer mismatches, stale/future/wrong-denomination feeds, insufficient collateral, reserved-asset spending, replay, early liquidation, a pre-cure mark, recovered collateral value, maturity, cure deadlines and stale substitution refunds. Twenty-seven frontend and wallet tests cover party-scoped reads, committed receipts, price identity/freshness, health-factor arithmetic, exact balances, maturity, and Grofty behavior against a fake CIP-0103 provider. They are not a MainNet wallet test. The earlier `demo-http.mjs` run drove the actual frontend actions through the live JSON API: 19 successful submissions verified the pre-liquidation workflow (offsets 208 → 283), including an unauthorized reserved-fund spend rejection. Run it after installing the web dependencies and seeding the ledger. React Doctor is an additional static diagnostic, not a contract/security proof.
+Offline evidence checks validate retained records; they do not submit a new transaction. Core Daml and BitSafe checks are reproduced through their build/run instructions and the linked LocalNet CI workflow.
 
-The browser completed an end-to-end local Canton flow: RFQs to two dealers, funded quotes at 5.2% and 5.8%, acceptance of the 5.2% quote, a simulated oracle mark move from 100 to 60 CUSD, margin call, 3 CETH top-up, and repayment. The 1,000 CUSD / 30-day repo closed for the agreed 1,004.3333333333 CUSD and returned 18 CETH of collateral. Landing and desk responsive checks and a production preview are recorded in the [verification status](docs/gitbook/reference/status.md), together with remaining limitations.
+## Repository map
 
-The newer liquidation browser run used a separate one-dealer 1,000 CUSD / 15 CETH repo. Health factor fell from **1.43** to **0.86** after a simulated mark changed from 100 to 60; the dealer issued a call, the oracle published another mark after the one-minute cure deadline, and the dealer confirmed liquidation. The desk displayed a committed receipt and `Liquidated` with HF **0.86**. Both browser runs use simulated assets and local Canton.
+```text
+daml/                  Core financing, holdings and price-feed contracts
+daml-test/             Core Daml Script scenarios
+daml-live/             Live-ledger setup and lifecycle scripts
+daml-bitsafe/          DecMan GovernableAction integration
+daml-bitsafe-test/     Governance and application-effect checks
+daml-public/           Public DevNet access contracts
+web/                   React/Vite desk, ledger adapters and server modules
+api/                   Deployed API entrypoints, including lender discovery
+infra/decman/          Pinned LocalNet installation and private port configuration
+scripts/               Build, reproduction and evidence verification helpers
+docs/gitbook/          Documentation source, guides and editable diagrams
+docs/submission/       Submission materials and curated execution evidence
+docs/research/         Public-source claim substantiation
+brand/                 Symbolon visual assets
+```
 
-## Documentation
+Daml owns authoritative financing state. The web application builds commands and presents party-scoped ledger reads. The server authenticates lender-directory registrations and stores discovery records in Neon; registration is not proof of cash availability. Public deployment profiles describe the runtime network. Credentials, private profiles, `.omc/` operations, dependencies and build output remain ignored. Server secrets never belong in `VITE_` variables.
 
-[Start the GitBook](docs/gitbook/README.md) · [Contents](docs/gitbook/SUMMARY.md) · [Architecture](docs/gitbook/architecture/overview.md) · [Why privacy](docs/gitbook/introduction/privacy.md) · [Contract/API reference](docs/gitbook/reference/api.md)
+## Discovery and roadmap
 
-`.gitbook.yaml` points to `docs/gitbook`. [Symbolon Docs is published](https://symbolon.gitbook.io/symbolon-docs/) with original diagrams, guides, economics, security boundaries, deployment details and pilot plans. Reference research stays local and excluded from Git; it is not part of the publication.
+One informal borrower discussion includes a real Aave borrowing episode. The founder also reports approximately **3–5 informal app explorers** from Web3 communities and their personal network. Their exact count, roles, dates and completed steps have not yet been documented; this is early product feedback. Planning personas are excluded from user counts.
 
-## Wallets and deployment
+Institutional ICP fit, quantified financing-budget pain, switching intent, willingness to pay and an externally operated borrower/lender rehearsal remain open. [Discovery record](docs/submission/borrower-discovery.md) · [Metrics and evidence](docs/submission/form/03-metrics.md)
 
-The current **symbolon-v2 v0.2.0** and **symbolon-bitsafe v0.2.0** packages are uploaded and **Vetted** on shared DevNet participant `hackcanton-devnet-3`. The older `symbolon-0.1.0` installation remains a separate baseline. [Deployment evidence and package IDs](docs/gitbook/deployments/devnet.md) record the completed current-release repo and its remaining wallet/real-asset boundaries.
+Next milestones are qualified treasury/lender interviews, an external simulated financing rehearsal, and operator-authorized asset integration. Real-asset deployment also needs reviewed token adapters, reliable price sourcing, permissions, closeout accounting and operating arrangements. [Roadmap](docs/gitbook/mission/roadmap.md)
 
-[Shared DevNet provisioning and reproduction](docs/submission/shared-devnet-proof.md) explains wallet onboarding, Console party setup and the local credential helper. To check retained evidence without connecting to a network, run `node scripts/verify-shared-devnet-evidence.mjs`.
+## Review the submission
 
-The desk supports PartyLayer wallets for its configured network. The [public TestNet app](https://symbolon-testnet.vercel.app/app) now exposes only **Grofty Wallet TestNet**, using the official `@groftylabs/dapp-sdk@0.2.0` with own-party reads and identity checks. Send was removed from the TestNet picker and restoration path at the user's request; earlier Send read evidence remains a separate historical check. [Direct-check evidence](docs/submission/evidence/testnet-wallet-read.md) records actual results and limits. Financing is disabled: package vetting, token adapters and wallet-authorized lender registration are incomplete. No TestNet financing signature, transfer or repo execution is claimed. The [TestNet rehearsal guide](docs/submission/testnet-wallet-rehearsal.md) records the two-Grofty-account direction and faucets. The standard public app remains shared DevNet. Never place tokens or passwords in `VITE_` variables. The [wallet/DevNet guide](docs/gitbook/guides/wallet-devnet.md) distinguishes provisioning from transaction proof.
+| Resource | Purpose |
+| --- | --- |
+| [Published documentation](https://symbolon.gitbook.io/symbolon-docs/) | Product overview, role guides, diagrams, privacy and deployment scope. |
+| [Submission text pack](docs/submission/form/README.md) | Value, ICP, metrics, GTM and project-page material. |
+| [BitSafe Contribution Pool entry](docs/submission/bitsafe-contribution.md) | Challenge scope, tested source, reproduction and evidence links. |
+| [Recorded local core workflow](docs/submission/symbolon-local-demo.mp4) | Earlier simulated core repo demonstration; it does not show the installed DecMan integration. |
+| [60-second pitch](docs/submission/pitch.md) | Product narrative and evidence boundaries. |
+| [PR #5](https://github.com/EndPx/symbolon/pull/5) | Current delivery branch and reviewable changes. |
 
-There is no MainNet Symbolon package/asset deployment or Grofty-signed product transaction in the evidence. Grofty access, real fee funding, authorized issuer/oracle/dealer parties and a supported real-asset model would be prerequisites if the bounty is resumed.
-
-## HackCanton scope
-
-The repository includes a pre-existing scaffold committed on **August 28, 2026**. HackCanton delivery began September 18; disclose the baseline and describe the delivery-phase changes separately. [Submission evidence](docs/gitbook/mission/submission.md) records the required distinctions.
-
-The active challenge direction is the [BitSafe Contribution Pool LocalNet path](docs/gitbook/mission/challenges.md). The Grofty adapter remains in source but is deferred. The verified DecMan integration is confined to the official LocalNet; the shared DevNet record adds ordinary hosted-party governance and repo execution. Real cBTC/USDCx, independent hosting and a completed shared DevNet or MainNet wallet flow remain unverified. User validation and GTM remain [explicit hypotheses and a pilot plan](docs/gitbook/mission/validation.md), not invented traction.
+The delivery branch is **`codex/public-devnet-app`**; PR #5 is not merged. The repository includes an August 28, 2026 scaffold baseline. HackCanton delivery began September 18, and [the submission scope](docs/gitbook/mission/submission.md) distinguishes that baseline from later implementation and evidence.

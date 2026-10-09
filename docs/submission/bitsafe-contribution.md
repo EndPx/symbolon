@@ -1,6 +1,6 @@
 # Symbolon — BitSafe Contribution Pool submission
 
-**Challenge:** BitSafe Contribution Pool
+**Challenge:** BitSafe Contribution Pool — not Gold
 
 **Entry type:** Application integration / custom Daml module
 
@@ -76,11 +76,16 @@ Use the public project/repository/video links in the dashboard. Localhost
 links. Judges can reproduce the LocalNet from the runbook; no VPS credentials
 or public exposure of the unauthenticated sandbox are needed.
 
-Select the Contribution Pool route in the available BitSafe challenge entry.
-The precise current option label and account eligibility were not verified:
-the dashboard session inspected on 8 October showed Sign In. Confirm the
-saved challenge selection and ordinary HackCanton profile/activity/Mana
-requirements in the authenticated dashboard before the final submission.
+The authenticated dashboard was inspected on 10 October 2026 WIB. Its saved
+project selection is **BitSafe Challenge — Contribution Pool: Decentralizing
+Apps on Canton**. The current challenge sheet excludes Gold applicants from
+the Contribution Pool. The Symbolon shared-DevNet demo is separate application
+evidence; it is not a Gold Decentralized Party deployment.
+
+The dashboard still showed 4/6 materials, an instruction to add a demo link,
+and a disabled Publish for Judging button. Demo, Pitch and the stated ordinary
+HackCanton requirements must be completed before final publication. No final
+entry was submitted during this read-only check.
 
 This is an application integration submission. An upstream framework PR is
 not claimed; the integration source, custom templates and reproducible app

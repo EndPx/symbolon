@@ -8,6 +8,12 @@ One borrower liked the fixed-rate concept and confidentiality of bilateral terms
 
 No actual rate spike, quantified budget disruption, app trial or switching commitment was established. This is one informal participant, not two customer interviews.
 
+## Informal app feedback
+
+The founder also reports that approximately 3–5 people from Web3 communities and their personal Web3 network explored the app themselves and provided informal feedback. Reported themes were interest in fixed financing as an additional Canton option, appreciation of confidentiality and the potential usefulness of accessing liquidity against assets.
+
+Exact participant count, roles, dates, testing network and completed steps have not been documented. These are paraphrased early product-interest signals; they do not establish an externally completed financing cycle, institutional fit, switching intent, willingness to pay or pilot participation. Overlap with the borrower above is unknown, so the groups are not combined into a verified total. Four fictional planning personas are excluded from tester counts.
+
 ## Example: turn a concern into evidence
 
 Instead of asking whether fixed rate sounds attractive, ask about the respondent's last borrowing episode:

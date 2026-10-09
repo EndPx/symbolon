@@ -1,6 +1,6 @@
 # Metrics
 
-We have engineering evidence and one informal borrower discovery conversation with a follow-up about a real borrowing episode. We have no verified institutional customer interviews, external Symbolon users, measured customer savings or revenue. Internal test parties and transactions are not counted as users.
+We have engineering evidence, one informal borrower discovery conversation and same-person episode follow-up, and approximately 3–5 founder-reported informal app explorers. Exact explorer count, roles, dates and completed steps are unrecorded. We have no verified institutional customer interviews, externally completed financing cycles, measured customer savings or revenue. Internal test parties, transactions and planning personas are not counted as users.
 
 ## 1. North Star metric
 
@@ -22,6 +22,8 @@ We have engineering evidence and one informal borrower discovery conversation wi
 ## 3. Conversations
 
 **Unique informal discovery participants: 1.** The follow-up concerns the same borrower and is not counted as a second interview. **Structured institutional ICP interviews: 0.** Dates were not recorded; this update does not retroactively assign an interview date.
+
+**Additional hands-on feedback:** approximately 3–5 people from Web3 communities and the founder's personal network reportedly explored the app themselves. They expressed interest in fixed financing, confidentiality and additional borrowing options within Canton. These are informal paraphrased findings. Exact count, roles, dates, network and steps are not documented, and overlap with the borrower above is unknown. Do not sum these groups into an exact total or infer E2E completion, switching, payment or pilot commitments.
 
 | # | Respondent / status | Date | Key takeaway |
 | --- | --- | --- | --- |
@@ -53,7 +55,7 @@ All targets below are proposed goals, not achieved results or promises.
 
 | Metric | How measured | Now | Target by submission |
 | --- | --- | --- | --- |
-| External people who tried the demo | Consented unique operators, excluding the builder and AI reviewers | 0 | 3 |
+| Informal app explorers | Founder-reported people; confirmed unique identities and observed steps still need recording | Approximately 3–5; roles, dates and completed steps unknown | Record exact count and step-level feedback before claiming structured walkthroughs |
 | External borrower/dealer pairs completing the core rehearsal | Observed quote-to-repurchase cycle operated by both sides | 0 pairs | 1 simulated pair |
 | Informal discovery participants | Unique people and consent-aware notes; follow-ups do not add participants | 1 borrower; conversation date not recorded | 3 unique relevant participants; remain marked incomplete if not achieved |
 | Structured institutional ICP interviews | Dated notes confirming role, borrowing episode and Canton exposure/adoption plan | 0 | Seek institutional fit during the next two interviews; do not assume it |
@@ -62,7 +64,7 @@ All targets below are proposed goals, not achieved results or promises.
 | MainNet transactions | Verified real-network receipts | 0 | No MainNet target for current submission scope |
 | Actor parties in the DevNet run | Named roles in retained mapping | 7 synthetic roles / 1 account | Clearly labeled as roles, not users |
 | BitSafe LocalNet topology | Participant IDs and all-node audits | 3 participants / 3 DecMan services / 1 host | Reproducible pinned setup |
-| Automated checks | Dated test/CI results | 111 frontend tests and production build passed locally on 9 October 2026; 11 core Daml Script entries, 2 BitSafe scripts and 7 runner/helper tests passed in their retained runs | Preserve tested revision and scope; SDK construction tests do not prove live wallet compatibility or a security audit |
+| Automated checks | Dated test/CI results | 131 frontend tests passed locally on 10 October 2026 WIB; 11 core Daml Script entries, 2 BitSafe scripts and 7 runner/helper tests passed in their retained runs | Preserve tested revision and scope; SDK construction tests do not prove live wallet compatibility or a security audit |
 
 ## 6. Success criteria after the hackathon
 
