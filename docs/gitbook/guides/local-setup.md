@@ -44,16 +44,16 @@ Set-Location web
 npm.cmd ci
 npm.cmd test
 npm.cmd run doctor
-npm.cmd run dev -- --host 127.0.0.1
+npm.cmd run dev:sandbox
 ```
 
-Open the loopback URL Vite prints and visit `/app`. The local party picker is restricted to a loopback host in development mode. The dev-only `/demo-parties` endpoint reads `.omc/demo/parties.json`, keeping the seeded role picker separate from parties allocated by verification runs. Select a party from that seeded environment. An unauthenticated remote visitor does not automatically receive a borrower's view.
+Open **http://127.0.0.1:5173/app**. The sandbox profile serves a LocalNet deployment instead of the public DevNet desk. The local party picker is restricted to a loopback host in development mode. The dev-only `/demo-parties` endpoint reads `.omc/demo/parties.json`, keeping the seeded role picker separate from parties allocated by verification runs. Select a party from that seeded environment. An unauthenticated remote visitor does not automatically receive a borrower's view.
 
 The development proxy maps `/ledger` to `http://127.0.0.1:6864` by default. If the local runtime is reachable at a different address, configure `LEDGER_ORIGIN` in the frontend terminal before launching Vite:
 
 ```powershell
 $env:LEDGER_ORIGIN = 'http://127.0.0.1:6864'
-npm.cmd run dev -- --host 127.0.0.1
+npm.cmd run dev:sandbox
 ```
 
 `VITE_LEDGER_URL` can override the direct client base, normally `/ledger`. Do not put credentials in a `VITE_` variable. For a local production preview, `VITE_ENABLE_LOCAL_DEMO=true` can enable the demo path on loopback; it does not enable a remote public party picker.

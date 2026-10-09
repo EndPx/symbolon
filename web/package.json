@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:sandbox": "vite --config vite.sandbox.config.ts",
     "build": "tsc --noEmit && tsc --noEmit -p tsconfig.server.json && vite build",
     "preview": "vite preview",
     "test": "tsx --test test/*.test.ts",
