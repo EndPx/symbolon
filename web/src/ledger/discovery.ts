@@ -1,6 +1,6 @@
 import { accountDiscoveryRequest } from "./account";
 import { checkedLenderMarket, lenderMarketKey, type LenderMarket } from "./lender-directory-model";
-import { checkedDiscoveryId, checkedDiscoveryParty, checkedDiscoveryTerms, checkedInterestName, checkedOwnDiscovery, checkedPublicOpportunities,
+import { checkedDiscoveryId, checkedDiscoveryParty, checkedDiscoveryTerms, checkedOwnDiscovery, checkedPublicOpportunities,
   type DiscoveryTerms, type OwnDiscovery, type PublicOpportunity } from "./discovery-model";
 export type { DiscoveryTerms, DiscoveryInterest, OwnDiscovery, OwnOpportunity, OutgoingInterest, PublicOpportunity } from "./discovery-model";
 
@@ -21,8 +21,8 @@ export async function publishOpportunity(market: LenderMarket, party: string, te
   if (lenderMarketKey(checked.market) !== lenderMarketKey(market)) throw new Error("Publication returned another market.");
   return checked;
 }
-export async function requestOpportunityAccess(market: LenderMarket, party: string, opportunityId: string, name: string): Promise<{id: string; status: "pending" | "approved"}> {
-  const value = await accountDiscoveryRequest("POST", {op: "request-access", market, party: checkedDiscoveryParty(party), opportunityId: checkedDiscoveryId(opportunityId), name: checkedInterestName(name)}) as {interest?: {id: unknown; status: unknown}};
+export async function requestOpportunityAccess(market: LenderMarket, party: string, opportunityId: string): Promise<{id: string; status: "pending" | "approved"}> {
+  const value = await accountDiscoveryRequest("POST", {op: "request-access", market, party: checkedDiscoveryParty(party), opportunityId: checkedDiscoveryId(opportunityId)}) as {interest?: {id: unknown; status: unknown}};
   if (value?.interest?.status !== "pending" && value?.interest?.status !== "approved") throw new Error("Access was not confirmed. Refresh before requesting again.");
   return {id: checkedDiscoveryId(value.interest.id), status: value.interest.status};
 }

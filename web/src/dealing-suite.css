@@ -1137,6 +1137,9 @@
 .wallet-balances { margin: 16px 20px; border-bottom: 1px solid var(--terminal-border); padding-bottom: 16px; }
 .wallet-balances > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
 .discovery-sheet { min-width: 0; border: 1px solid var(--terminal-border); border-radius: var(--terminal-radius); background: var(--terminal-surface); padding: 16px 20px; }
+.discovery-sheet.discovery-embedded { border: 0; border-top: 1px solid var(--terminal-border); border-radius: 0; background: transparent; }
+.discovery-archive { margin: 12px 0 0; }
+.discovery-archive > summary { min-height: 44px; display: list-item; align-content: center; cursor: pointer; font-size: 13px; }
 .discovery-heading, .discovery-record-heading { display: flex; align-items: center; flex-wrap: wrap; justify-content: space-between; gap: 12px; }
 .discovery-heading h2 { font: 600 16px/1.4 "Libre Franklin",sans-serif; margin: 0; }
 .discovery-heading p { margin: 4px 0 0; color: var(--terminal-muted); }
@@ -1154,6 +1157,7 @@
 .discovery-public-record { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
 .discovery-public-record p { margin: 4px 0; }
 .discovery-helper { max-width: 68ch; margin-top: 12px; color: var(--terminal-muted); }
+.discovery-connected-party { display: grid; gap: 4px; margin: 12px 0; }
 .discovery-notice { padding: 10px 12px; border-left: 2px solid var(--antique-gold,#c9a227); background: var(--terminal-inset); }
 .discovery-sheet .terms-disclosure { margin-top: 12px; }
 @media(max-width:580px) {

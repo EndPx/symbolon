@@ -57,9 +57,15 @@ export function checkedDiscoveryParty(value: unknown): string {
   if (typeof value !== "string" || value.length > 512 || !/^[^\s\x00-\x1f]+::[^\s\x00-\x1f]+$/.test(value)) throw new Error("Supply your full authorized party ID.");
   return value;
 }
-export function checkedInterestName(value: unknown): string {
-  if (typeof value !== "string" || !value.trim() || value.length > 80 || /[\x00-\x1f]/.test(value)) throw new Error("Use a name of 1–80 characters.");
-  return value.trim();
+/** Identity hint only; this does not attest a human name or organization. */
+export function discoveryPartyLabel(party: string, publicOperator?: string): string {
+  checkedDiscoveryParty(party);
+  if (party === publicOperator) return "Symbolon DevNet lender";
+  const [rawHint, namespace] = party.split("::");
+  const hint = rawHint.replace(/\p{C}/gu, "").replace(/-[0-9a-f]{8}$/i, "").replace(/^dealer/i, "lender");
+  const short = hint.length > 24 ? `${hint.slice(0, 12)}…${hint.slice(-8)}` : hint;
+  const suffix = namespace.replace(/\p{C}/gu, "").slice(-6);
+  return `${/^[a-f0-9]{8}-[a-f0-9]{4}-/i.test(hint) ? "Account" : "Party"} ${short} · ${suffix}`.slice(0, 80);
 }
 export function publicOpportunity(value: { id: string; market: LenderMarket; status: string; createdAt: string }): PublicOpportunity {
   if (value.status !== "open" || !Number.isFinite(Date.parse(value.createdAt))) throw new Error("Invalid public opportunity.");
@@ -108,7 +114,8 @@ export function checkedOwnDiscovery(value: unknown, market: LenderMarket): OwnDi
     const row = record(value);
     if (!Array.isArray(row.incoming)) throw new Error("Incoming access requests were not returned.");
     return {id: checkedDiscoveryId(row.id), market: checkedMarket(row.market), status: state(row.status), createdAt: date(row.createdAt), terms: checkedDiscoveryTerms(row.terms, market),
-      incoming: row.incoming.map(value => {const interest = record(value); return {id: checkedDiscoveryId(interest.id), party: checkedDiscoveryParty(interest.party), name: checkedInterestName(interest.name), createdAt: date(interest.createdAt), ...approval(interest)};})};
+      incoming: row.incoming.map(value => {const interest = record(value), party = checkedDiscoveryParty(interest.party); return {id: checkedDiscoveryId(interest.id), party,
+        name: discoveryPartyLabel(party, market.oracle), createdAt: date(interest.createdAt), ...approval(interest)};})};
   });
   const outgoing = body.outgoing.map(value => {
     const row = record(value), approved = approval(row);

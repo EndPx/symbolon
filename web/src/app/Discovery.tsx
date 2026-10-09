@@ -3,6 +3,7 @@ import type { Session } from "../ledger/session";
 import { lenderMarket, lenderMarketKey } from "../ledger/lender-directory";
 import { approveOpportunityAccess, closeOpportunity, readOpportunities, readOwnDiscovery, requestOpportunityAccess,
   type DiscoveryInterest, type OwnDiscovery, type OwnOpportunity, type PublicOpportunity } from "../ledger/discovery";
+import { discoveryPartyLabel } from "../ledger/discovery-model";
 import { fmtAmount, fmtPct, fmtTime, type DeskState, type PriceFeed } from "../ledger/symbolon";
 import { partyDisplayName } from "./market-label";
 import { Dialog } from "./DeskDialog";
@@ -44,14 +45,14 @@ function savedProof(key: string): RequestProof | null {
   } catch { return null; }
 }
 
-export function Discovery({session, state, discovery, side, busy, run, connect}: {
+export function Discovery({session, state, discovery, side, busy, run, connect, embedded = false}: {
   session: Session; state: DeskState | null; discovery: DiscoveryState; side: "borrow" | "lend"; busy: boolean;
   run(label: string, action: () => Promise<string>): Promise<boolean>; connect(): void;
+  embedded?: boolean;
 }) {
   const [requesting, setRequesting] = useState<PublicOpportunity | null>(null);
   const [approval, setApproval] = useState<{opportunity: OwnOpportunity; interest: DiscoveryInterest} | null>(null);
   const [closing, setClosing] = useState<OwnOpportunity | null>(null);
-  const [name, setName] = useState(partyDisplayName(session.party).slice(0, 80));
   const [consent, setConsent] = useState(false), [working, setWorking] = useState(false);
   const [error, setError] = useState<string | null>(null), [notice, setNotice] = useState<string | null>(null);
   const proofs = useRef(new Map<string, RequestProof>());
@@ -98,22 +99,26 @@ export function Discovery({session, state, discovery, side, busy, run, connect}:
   };
   const owners = new Set(discovery.own.opportunities.map(opportunity => opportunity.id));
   const available = discovery.opportunities.filter(opportunity => !owners.has(opportunity.id));
-  return <section className="discovery-sheet" aria-label={side === "borrow" ? "Your opportunities" : "Open opportunities"}>
+  const open = discovery.own.opportunities.filter(opportunity => opportunity.status === "open");
+  const archived = discovery.own.opportunities.filter(opportunity => opportunity.status === "closed");
+  const opportunityCard = (opportunity: OwnOpportunity) => <article className="discovery-record" key={opportunity.id}>
+    <div className="discovery-record-heading"><strong>Opportunity {opportunity.id.slice(0, 8)}</strong><span className="terminal-status">{opportunity.status === "open" ? "Open" : "Closed"}</span>
+      {opportunity.status === "open" && <button type="button" className="ghost sm" disabled={busy || working} onClick={() => {setClosing(opportunity); setError(null);}}>Close listing</button>}</div>
+    <dl className="discovery-metrics"><div><dt>Your requested cash</dt><dd>{fmtAmount(opportunity.terms.cashAmount)} {opportunity.terms.cashInstrument}</dd></div><div><dt>Duration</dt><dd>{opportunity.terms.termDays} days</dd></div><div><dt>Visibility</dt><dd>Details private</dd></div></dl>
+    {!opportunity.incoming.length ? <p className="sm muted">{opportunity.status === "open" ? "Waiting for lenders to request access." : "No access requests received."}</p> : <ul className="discovery-interests">{opportunity.incoming.map(interest => <li key={interest.id}><div><strong>{interest.name}</strong><small>{partyDisplayName(interest.party)}</small></div>
+      {interest.status === "approved" ? <span className="terminal-status">Access approved</span> : <button type="button" className="ghost sm" disabled={busy || working} onClick={() => {setApproval({opportunity, interest});setConsent(false);setError(null);}}>{opportunity.status === "closed" ? "Recover access status" : "Review access"}</button>}</li>)}</ul>}
+  </article>;
+  return <section className={`discovery-sheet${embedded ? " discovery-embedded" : ""}`} aria-label={side === "borrow" ? "Your opportunities" : "Open opportunities"}>
     <header className="discovery-heading"><div><h2>{side === "borrow" ? "Your opportunities" : "Open opportunities"}</h2><p className="sm">Open discovery. Financing details are shared after borrower approval.</p></div>
       <button type="button" className="ghost sm" onClick={discovery.refresh} disabled={working}>Refresh</button></header>
     {discovery.loading ? <p className="empty-state" role="status">Loading opportunities…</p> : discovery.error ? <p className="err" role="alert">{discovery.error}</p> : null}
     {discovery.ownError && <p className="err" role="alert">Your access records could not be loaded. {discovery.ownError}</p>}
     {notice && <p className="discovery-notice sm" role="status">{notice}</p>}
-    {error && !approval && !requesting && !closing && <p className="err" role="alert">{error}</p>}
+    {error && !approval && !requesting && !closing && (side === "lend" || open.length > 0) && <p className="err" role="alert">{error}</p>}
     {side === "borrow" ? <>
-      {!discovery.loading && !discovery.ownError && !discovery.own.opportunities.length && <p className="empty-state">Publish an opportunity from Borrow. Lenders ask for access here before receiving your terms.</p>}
-      {discovery.own.opportunities.map(opportunity => <article className="discovery-record" key={opportunity.id}>
-        <div className="discovery-record-heading"><strong>Opportunity {opportunity.id.slice(0, 8)}</strong><span className="terminal-status">{opportunity.status === "open" ? "Open" : "Closed"}</span>
-          {opportunity.status === "open" && <button type="button" className="ghost sm" disabled={busy || working} onClick={() => {setClosing(opportunity); setError(null);}}>Close listing</button>}</div>
-        <dl className="discovery-metrics"><div><dt>Your requested cash</dt><dd>{fmtAmount(opportunity.terms.cashAmount)} {opportunity.terms.cashInstrument}</dd></div><div><dt>Duration</dt><dd>{opportunity.terms.termDays} days</dd></div><div><dt>Visibility</dt><dd>Details private</dd></div></dl>
-        {!opportunity.incoming.length ? <p className="sm muted">{opportunity.status === "open" ? "Waiting for lenders to request access." : "No access requests received."}</p> : <ul className="discovery-interests">{opportunity.incoming.map(interest => <li key={interest.id}><div><strong>{interest.name}</strong><small>{partyDisplayName(interest.party)}</small></div>
-          {interest.status === "approved" ? <span className="terminal-status">Access approved</span> : <button type="button" className="ghost sm" disabled={busy || working} onClick={() => {setApproval({opportunity, interest});setConsent(false);setError(null);}}>{opportunity.status === "closed" ? "Recover access status" : "Review access"}</button>}</li>)}</ul>}
-      </article>)}
+      {!discovery.loading && !discovery.ownError && !open.length && <p className="empty-state">No open listings. Publish an opportunity from Borrow.</p>}
+      {open.map(opportunityCard)}
+      {archived.length > 0 && <details className="discovery-archive"><summary>Archive · {archived.length} closed listing{archived.length === 1 ? "" : "s"}</summary>{archived.map(opportunityCard)}</details>}
     </> : <>
       {!discovery.loading && !discovery.error && !available.length && <p className="empty-state">No open opportunities from other borrowers yet. A borrower can publish one from Borrow.</p>}
       {available.map(opportunity => {
@@ -126,11 +131,11 @@ export function Discovery({session, state, discovery, side, busy, run, connect}:
     </>}
     <details className="terms-disclosure"><summary>What is visible?</summary><p className="sm">The board shows the market, an opportunity ID and listing time. Borrower identity, amount, collateral quantity and duration are withheld. The borrower sees each requesting lender's name and party ID. Approval shares full terms with that lender; their quote and position remain bilateral. The app's database operator can access stored discovery details.</p></details>
     {requesting && <Dialog title="Request private details" busy={working} close={() => setRequesting(null)}><p>The borrower reviews your request before sharing their identity, amount, collateral and duration.</p>
-      <label className="desk-field"><span>Your lender name</span><input value={name} maxLength={80} onChange={event => setName(event.target.value)}/></label>
+      <div className="discovery-connected-party"><span className="sm muted">Connected lender</span><strong>{discoveryPartyLabel(session.party, market.oracle)}</strong></div>
       <details className="party-detail"><summary>Your party shared with this borrower</summary><code>{session.party}</code></details>
-      <label className="directory-consent"><input type="checkbox" checked={consent} onChange={event => setConsent(event.target.checked)}/><span>Share my lender name and party ID privately with this borrower.</span></label>
+      <label className="directory-consent"><input type="checkbox" checked={consent} onChange={event => setConsent(event.target.checked)}/><span>Share my connected party identity privately with this borrower.</span></label>
       {error && <p className="err" role="alert">{error}</p>}
-      <button className="seal" disabled={working || !consent || !name.trim()} onClick={() => void mutation(async () => {await requestOpportunityAccess(market, session.party, requesting.id, name);}, "Access requested. Waiting for borrower approval.")}>{working ? "Requesting…" : "Request detail access"}</button>
+      <button className="seal" disabled={working || !consent} onClick={() => void mutation(async () => {await requestOpportunityAccess(market, session.party, requesting.id);}, "Access requested. Waiting for borrower approval.")}>{working ? "Requesting…" : "Request detail access"}</button>
       <p className="sm muted">This does not reserve cash or create a quote.</p>
     </Dialog>}
     {approval && <ApprovalDialog key={approval.interest.id} value={approval} consent={consent} setConsent={setConsent} busy={busy || working} error={error} close={() => setApproval(null)} approve={() => void approve()} recover={proof => {const key=proofKey(session.party,approval.opportunity.id,approval.interest.id);proofs.current.set(key,proof);try{sessionStorage.setItem(key,JSON.stringify(proof));}catch{/* Memory fallback. */}setError(null);setNotice("Original receipt retained. Approve access to verify it without creating another request.");}}/>}

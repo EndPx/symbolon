@@ -692,7 +692,7 @@ function Workspace({ session: s, connect, connectBalanceWallet, demoParties, swi
     cashIssuer: publicDesk.operator, cashInstrument: "USDCx-demo", price: "", asOf: "", readers: [],
   } : undefined;
   const [side, setSide] = useState<TradeSide>(()=>readTradeSide()??"borrow");
-  const chooseSide=(next:TradeSide)=>{writeTradeSide(next);setSide(next);};
+  const chooseSide=(next:TradeSide)=>{writeTradeSide(next);setSide(next);setContent("offers");};
   const [content, setContent] = useState<ContentTab>("overview");
   const [portfolio, setPortfolio] = useState<"positions" | "holdings" | "activity">("positions");
   const [chosenPair, setSelectedId] = useState(() => publicPair ? marketIdentity(publicPair) : "");
@@ -828,11 +828,11 @@ function Workspace({ session: s, connect, connectBalanceWallet, demoParties, swi
           </Panel>{connected && ownRequests.length > 0 && <p className="terminal-trade-note">{ownRequests.length} private request{ownRequests.length === 1 ? "" : "s"} awaiting a quote. {side==="lend"?"Review and price incoming requests in the Lend panel.":"Track or withdraw your requests in Offers."}</p>}</div>
             : !connected ? <div className="terminal-empty"><h2>Your private {content}</h2><p>Connect to see the ledger records authorized for your account.</p><button className="seal" onClick={connectionAction}>Connect</button></div>
             : !scoped ? <p className="empty-state" role="status">{st && !feed ? "Selected market no longer available. Open All markets to choose a visible pair." : error ? "The ledger view is unavailable." : "Loading your authorized ledger view…"}</p>
-            : content === "offers" ? side==="lend"?<SentOffers s={s} st={scoped}/>:<ReceivedQuotes s={s} st={scoped} onSettled={() => setContent("positions")}/>
+            : content === "offers" ? <div className="offers-workspace">{side==="lend"?<SentOffers s={s} st={scoped}/>:<ReceivedQuotes s={s} st={scoped} onSettled={() => setContent("positions")}/>}
+              {feed && publicMarket(feed, deployment()) && <Discovery key={`${s.kind}:${s.party}:${selectedId}`} embedded session={s} state={scoped} discovery={discovery} side={side} busy={transactions.busy} run={run} connect={connectionAction}/>}</div>
             : content === "positions" ? <Positions s={s} st={scoped} onRepurchased={() => setContent("activity")}/> : <Activity s={s} st={scoped}/>}
         </TerminalPanels>
       </section>
-        {feed && publicMarket(feed, deployment()) && <Discovery key={`${s.kind}:${s.party}:${selectedId}`} session={s} state={scoped} discovery={discovery} side={side} busy={transactions.busy} run={run} connect={connectionAction}/>}
         </div>
       <aside className="terminal-trade" aria-label="Financing action">
         <TerminalTabs<TradeSide> id="trade" label="Financing side" value={side} onChange={chooseSide} className="terminal-trade-tabs" options={[{value:"borrow",label:"Borrow"},{value:"lend",label:"Lend"}]}/>
