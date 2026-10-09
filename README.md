@@ -8,7 +8,7 @@
 
 **Private fixed-rate financing on Canton.**
 
-[Live DevNet App](https://symbolon.endpx.cloud/app) · [App Demo Video](https://symbolon.endpx.cloud/demo/symbolon-app-demo-devnet.mp4) · [Pitch PDF](https://github.com/EndPx/symbolon/blob/main/docs/submission/symbolon-pitch-final-v6.pdf) · [Documentation](https://symbolon.gitbook.io/symbolon-docs/) · [Demo Guide](https://github.com/EndPx/symbolon/blob/main/docs/submission/hosted-devnet-demo.md) · [BitSafe Proof](https://github.com/EndPx/symbolon/blob/main/docs/submission/bitsafe-contribution.md)
+[Live DevNet App](https://symbolon.endpx.cloud/app) · [App Demo Video](https://symbolon.endpx.cloud/demo/symbolon-app-demo-devnet.mp4) · [Documentation](https://symbolon.gitbook.io/symbolon-docs/) · [Demo Guide](https://github.com/EndPx/symbolon/blob/main/docs/submission/hosted-devnet-demo.md) · [BitSafe Proof](https://github.com/EndPx/symbolon/blob/main/docs/submission/bitsafe-contribution.md)
 
 [![Frontend verification](https://github.com/EndPx/symbolon/actions/workflows/web.yml/badge.svg?branch=main)](https://github.com/EndPx/symbolon/actions/workflows/web.yml)
 [![BitSafe LocalNet proof](https://github.com/EndPx/symbolon/actions/workflows/bitsafe-localnet.yml/badge.svg)](https://github.com/EndPx/symbolon/actions/runs/37341484064)
@@ -229,7 +229,6 @@ Next milestones are qualified treasury/lender interviews, an external simulated 
 | Resource | Purpose |
 | --- | --- |
 | [Published documentation](https://symbolon.gitbook.io/symbolon-docs/) | Product overview, role guides, diagrams, privacy and deployment scope. |
-| [Final pitch deck](https://github.com/EndPx/symbolon/blob/main/docs/submission/symbolon-pitch-final-v6.pdf) | Product, evidence, intended fee model and next milestones. |
 | [BitSafe Contribution Pool entry](https://github.com/EndPx/symbolon/blob/main/docs/submission/bitsafe-contribution.md) | Challenge scope, tested source, reproduction and evidence links. |
 | [Recorded local core workflow](https://github.com/EndPx/symbolon/blob/main/docs/submission/symbolon-local-demo.mp4) | Earlier simulated core repo demonstration; it does not show the installed DecMan integration. |
 | [Public application demo](https://symbolon.endpx.cloud/demo/symbolon-app-demo-devnet.mp4) | Direct request-to-repurchase execution with short Albary narration and captions. |

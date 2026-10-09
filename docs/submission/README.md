@@ -8,8 +8,6 @@ Symbolon implements fixed-rate collateralized financing on Canton. Borrowers pub
 | --- | --- |
 | [Live application](https://symbolon.endpx.cloud/app) | Shared DevNet demo with authorized account parties. |
 | [Application video](https://symbolon.endpx.cloud/demo/symbolon-app-demo-devnet.mp4) | 2:20 direct quote-to-repurchase screencast with Albary voice and captions. |
-| [Final pitch PDF](symbolon-pitch-final-v6.pdf) | 12 slides covering the product, evidence, fee proposal and roadmap. |
-| [Editable pitch deck](symbolon-pitch-final-v6.pptx) | Native editable slides, speaker notes, sources and three closing QR links. |
 | [Hosted DevNet runbook](hosted-devnet-demo.md) | Account requirements, exact example arithmetic and reproducible click sequence. |
 | [Published documentation](https://symbolon.gitbook.io/symbolon-docs/) | Product guides, contract visibility and deployment scope. |
 
@@ -29,4 +27,4 @@ The [earlier LocalNet recording](symbolon-local-demo.mp4) uses simulated CETH/CU
 
 These records demonstrate engineering behavior at their stated scope. They do not establish external customer adoption, independent operators, native wallet signatures, production-token settlement or a security audit. BitSafe's selected entry is Contribution Pool; no Gold deployment claim is made.
 
-Narration scripts, interview notes, mentor journals, form drafts and production working files are retained locally. Public source includes the product, technical documentation, final presentation and reproducible evidence.
+Final pitch files for platform submission, narration scripts, interview notes, mentor journals, form drafts and production working files are retained locally. Public source includes the product, technical documentation, the application demo and reproducible evidence.
