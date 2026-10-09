@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "network": "testnet",
+  "walletNetwork": "testnet",
+  "participant": null,
+  "synchronizerId": null,
+  "corePackageId": null,
+  "tradingEnabled": false,
+  "releaseEvidence": null,
+  "assets": {
+    "collateral": { "symbol": "cBTC", "admin": null, "adapter": "cip56", "packageIds": [] },
+    "cash": { "symbol": "USDCx", "admin": null, "adapter": "cip56", "packageIds": [] }
+  }
+}

@@ -2,6 +2,14 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { defaultDeployment, networkLabel, parseDeployment, tradingBlocker } from "../src/ledger/deployment.ts";
 const hash = "a".repeat(64);
+test("TestNet connection profile never enables financing by copying DevNet settings", () => {
+  const profile = parseDeployment({ ...structuredClone(defaultDeployment), network: "testnet", walletNetwork: "canton:testnet" });
+  assert.equal(networkLabel(profile.network), "TestNet");
+  assert.match(tradingBlocker("canton:testnet", profile)!, /TestNet financing is not enabled/);
+  assert.match(tradingBlocker("testnet", { ...profile, ...complete(), network: "testnet", walletNetwork: "testnet" })!, /TestNet financing is not enabled/);
+  assert.match(tradingBlocker("devnet", profile)!, /uses testnet/);
+  assert.throws(() => parseDeployment({ ...profile, walletNetwork: "devnet" }));
+});
 const complete = () => ({ ...structuredClone(defaultDeployment), tradingEnabled: true,
   participant: "https://participant.example.org", synchronizerId: "sync::123", corePackageId: hash,
   releaseEvidence: "https://example.org/devnet-proof",

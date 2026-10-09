@@ -1,0 +1,7 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm run build:testnet",
+  "outputDirectory": "dist",
+  "redirects": [{ "source": "/demo", "destination": "/app", "permanent": true }],
+  "rewrites": [{ "source": "/app", "destination": "/index.html" }]
+}

@@ -9,7 +9,7 @@ export interface AssetDeployment {
 }
 export interface Deployment {
   schemaVersion: 1;
-  network: "localnet" | "devnet" | "mainnet";
+  network: "localnet" | "devnet" | "testnet" | "mainnet";
   walletNetwork: string;
   participant: string | null;
   synchronizerId: string | null;
@@ -46,7 +46,7 @@ export function parseDeployment(value: unknown): Deployment {
   const d = value as Deployment;
   const allowed = ["schemaVersion", "network", "walletNetwork", "participant", "synchronizerId", "corePackageId", "tradingEnabled", "releaseEvidence", "assets", "publicPackageId", "publicDesk"];
   if (Object.keys(d).some(key => !allowed.includes(key))) throw new Error("Unexpected deployment field. Credentials must stay outside public configuration.");
-  if (d.schemaVersion !== 1 || !["localnet", "devnet", "mainnet"].includes(d.network)
+  if (d.schemaVersion !== 1 || !["localnet", "devnet", "testnet", "mainnet"].includes(d.network)
     || normalizeNetwork(d.walletNetwork) !== d.network || typeof d.tradingEnabled !== "boolean") {
     throw new Error("Invalid deployment network or schema.");
   }
@@ -58,6 +58,7 @@ export function parseDeployment(value: unknown): Deployment {
   if (d.network === "localnet" && (d.participant !== null || d.tradingEnabled || d.publicDesk != null || d.publicPackageId != null)) {
     throw new Error("LocalNet must use the development proxy with remote signing disabled.");
   }
+  if (d.network === "testnet" && d.publicDesk != null) throw new Error("TestNet cannot reuse the public DevNet demo desk.");
   if (Object.keys(d.assets ?? {}).some(key => !["collateral", "cash"].includes(key))) throw new Error("Unexpected deployment asset field.");
   if (d.publicDesk != null) {
     const p = d.publicDesk;
@@ -115,6 +116,7 @@ export async function loadDeployment() {
 export function tradingBlocker(network?: string, d = active): string | null {
   if (d.network === "localnet") return "LocalNet uses the development party picker. Remote wallet and hosted-account signing are disabled.";
   if (normalizeNetwork(network) !== d.network) return `This deployment uses ${d.network}. Connect a wallet on that network.`;
+  if (d.network === "testnet") return "TestNet financing is not enabled yet. Verify the Symbolon packages, token adapters and settlement on the wallet participants first.";
   if (!d.tradingEnabled) return `${networkLabel(d.network)} trading is disabled in this deployment configuration.`;
   if (!d.corePackageId || !d.participant || !d.synchronizerId || !d.releaseEvidence) return "The deployment needs a pinned package, participant, synchronizer and release evidence.";
   // This release has only the trusted-issuer demo adapter. Configuration cannot

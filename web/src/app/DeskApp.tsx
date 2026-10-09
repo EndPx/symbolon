@@ -186,7 +186,7 @@ function ConnectDialog({ connected, close, walletOnly = false }: { connected(s: 
     <p className="connection-network">LocalNet · Demo assets and simulated oracle marks · No real funds</p>
   </Dialog>;
   return <Dialog title={walletOnly ? "Connect Console Wallet" : "Connect to Symbolon"} close={dismiss} busy={busy === "account"}>
-    <p className="panel-lede">{walletOnly ? `Connect Console Wallet on Canton ${networkLabel()} to read its token balances. The wallet party becomes your Symbolon account.` : <>Connect on Canton {networkLabel()} to access your private quotes and positions.</>}</p>
+    <p className="panel-lede">{deployment().network === "testnet" ? <>Connect to verify your Canton TestNet party and ledger access. Financing is not enabled for this rehearsal.</> : walletOnly ? `Connect Console Wallet on Canton ${networkLabel()} to read its token balances. The wallet party becomes your Symbolon account.` : <>Connect on Canton {networkLabel()} to access your private quotes and positions.</>}</p>
     {!walletOnly && deployment().network === "devnet" && <button className="wallet-row account-connect" disabled={busy !== null} onClick={()=>{
       setBusy("account");void startAccountConnection().catch(e=>{setError(e.message);setBusy(null);});
     }}><ConnectionMark account/><span className="wallet-name">HackCanton account<small>Sign in to your hosted DevNet party</small></span><span className="wallet-note">{busy==="account"?"Redirecting…":"Sign in"}</span></button>}
@@ -195,7 +195,7 @@ function ConnectDialog({ connected, close, walletOnly = false }: { connected(s: 
     <ul className="wallet-list">{availableWallets?.map((w) => <li key={w.id}>
       <button className="wallet-row" disabled={busy !== null || !w.installed || !!w.unavailableReason} onClick={() => void connect(w.id)}>
         <ConnectionMark icon={w.icon}/>
-        <span className="wallet-name">{w.name}<small>{w.unavailableReason ?? (w.id === "grofty" ? `Canton MainNet · v${w.minimumVersion}+ required` : w.installed ? "Open your wallet to approve the connection" : "Wallet extension not detected")}</small></span>
+        <span className="wallet-name">{w.name}<small>{w.unavailableReason ?? (w.id === "grofty" ? `Canton ${networkLabel()} · v${w.minimumVersion}+ required` : w.installed ? "Open your wallet to approve the connection" : "Wallet extension not detected")}</small></span>
         <span className="wallet-note">{busy === w.id ? "Connecting…" : w.unavailableReason ? "Unavailable" : w.installed ? "Connect" : "Not detected"}</span>
       </button></li>)}</ul>
     {availableWallets?.length === 0 && <p className="empty-state">No supported wallet was discovered. Open your Canton wallet on the configured network, then retry.</p>}
@@ -748,6 +748,11 @@ function Workspace({ session: s, connect, connectBalanceWallet, demoParties, swi
       </div>
     </header>
     <main className="terminal-workspace" id="desk-content">
+      {deployment().network === "testnet" && <section className="terminal-overview" aria-label="TestNet connection rehearsal"><Panel title="Connect your TestNet wallet">
+        <p>Use Send Connect or Grofty Wallet on Canton TestNet to check your party and its ledger access. Symbolon financing is not deployed on this network yet; requests, quotes and settlement remain disabled.</p>
+        {!connected && <button className="seal" onClick={connectionAction}>Connect TestNet wallet</button>}
+        <p className="sm">Test cBTC and USDCx belong to their token issuers. They are separate from the simulated holdings used in the current shared DevNet demo.</p>
+      </Panel></section>}
       <div className="terminal-notices" role="region" aria-label="Notifications">
         {sessionError && <div className="session-error" role="alert"><div className="toast-heading"><strong>Session</strong><button className="toast-close" onClick={clearSessionError} aria-label="Dismiss session notification">×</button></div><p>{sessionError}</p></div>}
         {deploymentFailure() && <p className="session-error" role="alert">Deployment configuration unavailable. Remote signing is paused. {deploymentFailure()}</p>}
@@ -765,7 +770,13 @@ function Workspace({ session: s, connect, connectBalanceWallet, demoParties, swi
           }).catch(e => setReceipt({phase:"unconfirmed",label:"Original transaction status",detail:e.message}));
         }}>Check ledger status</button></div>}
       </div>
-      {view === "faucet" && <Faucet session={s} state={st} connected={connected} trading={trading} busy={transactions.busy} readError={error} onConnect={connectionAction} run={run}/>}
+      {view === "faucet" && (deployment().network === "testnet" ? <Panel title="Get TestNet assets" description="Request tokens from their issuers, then verify the received balance in your TestNet wallet.">
+        <div className="terminal-overview-summary">
+          <div><h3>CC</h3><p>Request test CC using your active Canton TestNet party ID. The Foundation processes requests once daily, Monday–Friday.</p><a className="ghost" href="https://testnet-faucet.canton.foundation/" target="_blank" rel="noopener noreferrer">Open CC faucet</a></div>
+          <div><h3>USDCx</h3><p>Get USDC on Ethereum Sepolia, then deposit through xReserve with Canton TestNet as the destination. You also need Sepolia ETH for deposit gas.</p><p><a href="https://faucet.circle.com/" target="_blank" rel="noopener noreferrer">Sepolia USDC faucet</a> · <a href="https://digital-asset.github.io/xreserve-deposits/" target="_blank" rel="noopener noreferrer">Open xReserve</a></p></div>
+          <div><h3>cBTC</h3><p>Request CBTC from BitSafe. Accept the resulting transfer in your wallet; its participant needs DA Utility Registry support.</p><a className="ghost" href="https://cbtc-faucet.bitsafe.finance/?network=testnet&token=cbtc" target="_blank" rel="noopener noreferrer">Open cBTC faucet</a></div>
+        </div><p className="sm">A received token balance does not enable Symbolon financing by itself. This TestNet app currently verifies wallet connections and ledger reads.</p>
+      </Panel> : <Faucet session={s} state={st} connected={connected} trading={trading} busy={transactions.busy} readError={error} onConnect={connectionAction} run={run}/>)}
       {view === "markets" && <MarketOverview state={st} party={s.party} connected={connected} tradingEnabled={trading && !error}
         pauseReason={error ? "Trading paused until the ledger connection recovers." : undefined} mode={side} onConnect={connectionAction} onRequestPair={openPair} selectedPairId={selectedId} onSelectPair={openPair}/>}
       {view === "portfolio" && <section className="terminal-portfolio" aria-labelledby="portfolio-title"><h1 id="portfolio-title" className="sr-only">Portfolio</h1>

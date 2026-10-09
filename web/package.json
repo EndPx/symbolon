@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "dev:sandbox": "vite --config vite.sandbox.config.ts",
+    "dev:testnet": "vite --config vite.testnet.config.ts",
     "build": "tsc --noEmit && tsc --noEmit -p tsconfig.server.json && vite build",
+    "build:testnet": "npm run build && node scripts/testnet-build-profile.mjs",
     "preview": "vite preview",
     "test": "tsx --test test/*.test.ts",
     "doctor": "react-doctor . --yes"

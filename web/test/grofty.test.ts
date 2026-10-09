@@ -48,6 +48,22 @@ class FakeProvider implements Cip0103Provider {
   listenerCount() { return [...this.listeners.values()].reduce((count, listeners) => count + listeners.size, 0); }
 }
 const commands = [create("#symbolon:Symbolon.Repo:QuoteRequest", { borrower: "alice::namespace" })];
+test("Grofty TestNet binds the live party and rejects a switch to MainNet before reading", async () => {
+  const provider = new FakeProvider();
+  provider.network = "canton:testnet";
+  provider.status.network = { networkId: "canton:da-testnet" };
+  provider.account.networkId = "canton:testnet";
+  const session = await openGroftySession(new GroftyClient(provider), true, () => {}, "testnet");
+  assert.ok(session);
+  assert.equal(session.networkId, "canton:testnet");
+  assert.equal((await session.read()).length, 1);
+  await assert.rejects(session.submit(commands), /read-only/);
+  assert.equal(provider.calls.some(call => call.method === "prepareExecuteAndWait"), false);
+  const readsBefore = provider.calls.filter(call => call.method === "ledgerApi").length;
+  provider.network = GROFTY_NETWORK_ID;
+  await assert.rejects(session.read(), WalletSessionChanged);
+  assert.equal(provider.calls.filter(call => call.method === "ledgerApi").length, readsBefore);
+});
 async function ready(provider = new FakeProvider(), forget = () => {}) {
   const session = await openGroftySession(new GroftyClient(provider), true, forget);
   assert.ok(session);
@@ -245,7 +261,7 @@ test("matching deployment restores silently and a delayed restore cannot replace
     removeItem: (key: string) => storage.delete(key),
   } });
   try {
-    await assert.rejects(connectWallet("grofty", "devnet"), /MainNet only/);
+    await assert.rejects(connectWallet("grofty", "devnet"), /matching MainNet or TestNet/);
     assert.equal(provider.calls.length, 0);
     const connected = await connectWallet("grofty", "mainnet");
     const beforeSigning = provider.calls.length;

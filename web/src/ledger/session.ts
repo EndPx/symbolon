@@ -1,14 +1,14 @@
 import type { PartyLayerClient, Session as WalletSession, WalletId } from "@partylayer/sdk";
 import { LedgerApi, sandboxTransport, walletTransport, type Command, type SubmissionOptions } from "./api";
-import { connectGrofty, GROFTY_WALLET_ID, WalletSessionChanged } from "./grofty";
+import { connectGrofty, discoverGrofty, GROFTY_WALLET_ID, GROFTY_MIN_VERSION, WalletSessionChanged } from "./grofty";
 import { partyLabel } from "./symbolon";
 import { requireTradingRelease } from "./release";
-import { deployment, deploymentSubmissionOptions, tradingBlocker } from "./deployment";
+import { deployment, deploymentSubmissionOptions, tradingBlocker, normalizeNetwork } from "./deployment";
 import { activeAccountContext, accountResumePreference, rememberAccountParty, disconnectAccount, finishAccountConnection, type AccountContext } from "./account";
 import { resumedParty } from "./account-resume";
 import { CantonV2Client, type CommittedReceipt, type PendingCommand } from "./canton-v2";
 import type { WalletBalanceSnapshot } from "./wallet-balances";
-import { attachSendLedger } from "./send-ledger";
+import { attachSendLedger, attachSendReadOnly } from "./send-ledger";
 
 export interface Session {
   readonly kind: "browse" | "sandbox" | "wallet" | "account";
@@ -65,7 +65,7 @@ export const canTrade = (s: Session | null): boolean => s !== null &&
 // A deployed app must obtain authority through a wallet or authenticated hosted account.
 export function sandboxModeEnabled(): boolean {
   return typeof window !== "undefined" && ["localhost", "127.0.0.1", "[::1]"].includes(window.location.hostname)
-    && !!import.meta.env?.DEV && deployment().network !== "mainnet";
+    && !!import.meta.env?.DEV && !["mainnet", "testnet"].includes(deployment().network);
 }
 function requireSandbox() {
   if (!sandboxModeEnabled()) throw new Error("The demo party picker is only available on a local demo server.");
@@ -145,6 +145,13 @@ const walletMarks: Record<string, string> = {
 };
 export async function listWalletOptions(network = walletNetwork()): Promise<WalletOption[]> {
   if (deployment().network === "localnet") return [];
+  if (deployment().network === "testnet") {
+    const [wallets, grofty] = await Promise.all([listSecondaryWallets(network), discoverGrofty(network)]);
+    return [...wallets.filter(wallet => wallet.id === "send"), {
+      id: GROFTY_WALLET_ID, name: "Grofty Wallet TestNet", network,
+      minimumVersion: GROFTY_MIN_VERSION, ...grofty,
+    }];
+  }
   // Grofty bounty work is deferred. Keep the prototype adapter in source while
   // the submitted product exposes its configured development wallet path.
   return listSecondaryWallets(network);
@@ -212,7 +219,10 @@ function walletSession(c: PartyLayerClient, s: WalletSession, network: string): 
     async disconnect() { session.dispose?.(); if (currentSession === session) remember(null); await c.disconnect(); },
   };
   remember({ kind: "wallet", walletId: s.walletId, network });
-  if (s.walletId === "send") attachSendLedger(session, verifyBound, invalidate);
+  if (s.walletId === "send") {
+    if (deployment().network === "testnet") attachSendReadOnly(session, verifyBound, invalidate);
+    else attachSendLedger(session, verifyBound, invalidate);
+  }
   return activate(session);
 }
 /** Ignore a late connection response without revoking the user's wallet permission. */
@@ -229,8 +239,8 @@ export async function connectWallet(walletId?: string, network = walletNetwork()
     return activate(session);
   }
   if (walletId === GROFTY_WALLET_ID) {
-    if (network !== "mainnet" && network !== "canton:da-mainnet") {
-      throw new Error("Grofty Wallet supports MainNet only. Select the Grofty MainNet connection explicitly.");
+    if (!["mainnet", "testnet"].includes(normalizeNetwork(network) ?? "") || normalizeNetwork(network) !== deployment().network) {
+      throw new Error("Grofty needs the matching MainNet or TestNet deployment. Select the configured wallet network.");
     }
     return (await groftySession(true, revision))!;
   }
@@ -241,12 +251,12 @@ export async function connectWallet(walletId?: string, network = walletNetwork()
   return walletSession(c, connected, network);
 }
 async function groftySession(interactive: boolean, revision: number): Promise<Session | null> {
-  const session = await connectGrofty(interactive, () => { if (currentSession === session) remember(null); });
+  const session = await connectGrofty(interactive, () => { if (currentSession === session) remember(null); }, walletNetwork());
   if (!session) return null;
   const submit = session.submit;
   session.submit = async (commands, options) => { requireTradingRelease(session.networkId); return submit(commands, options); };
   requireCurrentConnection(revision, session);
-  remember({ kind: "wallet", walletId: GROFTY_WALLET_ID, network: "mainnet" });
+  remember({ kind: "wallet", walletId: GROFTY_WALLET_ID, network: walletNetwork() });
   return activate(session);
 }
 export function walletNetwork(): string { return deployment().walletNetwork; }
@@ -259,7 +269,7 @@ function bootstrapCommand(commands: Command[], party: string) {
     && create.createArguments.operator === party;
 }
 export async function connectAccount(party?: string): Promise<Session | null> {
-  if (deployment().network === "localnet") return null;
+  if (deployment().network !== "devnet") return null;
   const revision = ++connectionRevision;
   const account = activeAccountContext() ?? await finishAccountConnection();
   requireCurrentConnection(revision);
@@ -310,7 +320,7 @@ export function rememberedSession(): Remembered | null {
     const value = JSON.parse(localStorage.getItem(storeKey) ?? "null");
     if (value?.kind === "sandbox" && typeof value.party === "string" && sandboxModeEnabled()) return value;
     if (value?.kind === "wallet" && typeof value.walletId === "string" && typeof value.network === "string") {
-      if (value.walletId === GROFTY_WALLET_ID && value.network !== "mainnet") return null;
+      if (value.walletId === GROFTY_WALLET_ID && !["mainnet", "testnet"].includes(value.network)) return null;
       return { kind: "wallet", walletId: value.walletId, network: value.network };
     }
   } catch { /* Invalid or unavailable browser storage. */ }
