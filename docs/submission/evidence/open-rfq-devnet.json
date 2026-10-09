@@ -1,0 +1,58 @@
+{
+  "evidenceKind": "visible_confirmed_receipts_and_verified_api_index",
+  "rawTransactionExport": false,
+  "network": "shared HackCanton DevNet",
+  "participant": "hackcanton-devnet-3",
+  "application": "https://symbolon.endpx.cloud/app",
+  "testedRevision": "3e7bdef35494454c26136a5902d3ed5a6f1c3cda",
+  "operationScope": "founder-operated synthetic borrower and lender parties on one authorized account",
+  "nativeAssets": false,
+  "externalCustomerCycle": false,
+  "requestId": "b510ba2f-6663-43ae-9ddb-fb848bd5f586",
+  "principal": "1000.0000000000",
+  "cashInstrument": "USDCx-demo",
+  "collateralAmount": "0.0250000000",
+  "collateralInstrument": "cBTC-demo",
+  "annualizedRate": "0.0700000000",
+  "termDays": 30,
+  "interestConvention": "simple ACT/360",
+  "repurchasePrice": "1005.8333333333",
+  "protocolFeeCollected": "0",
+  "openRfqPackageId": "53e322d473cb992c4d38889869bc7b4e0a814cc6e10af3492aa126a24735c882",
+  "corePackageId": "1d40e972b56e42c279140639d33dc362b432f2c0f608c77ec36410f0395f3e19",
+  "synchronizerId": "global-domain::1220be58c29e65de40bf273be1dc2b266d43a9a002ea5b18955aeef7aac881bb471a",
+  "publication": {
+    "updateId": "1220062f73d040f86b531ed9f6444aa14d36b9c363027506f41dc00773ba5f504540",
+    "commandId": "symbolon-public-c4d73b0c-f4ff-436c-8393-d0382d3ecae2",
+    "ledgerOffset": "2788301",
+    "recordedAt": "2026-10-09T20:53:17.732302Z",
+    "contractId": "007d1f2b2885a54bb6a47a88d14e13dbd206326092614e5f0d1ff3a7479c8e8d7eca12122094b98e720a367307d51136fc7d438d7d6371bcc784db857f3f89b2e9b61e1983"
+  },
+  "fundedQuote": {
+    "updateId": "1220e7f09a68f09abbced38ec394f02039342fa2a2e49b3c67206060fd34981d939d",
+    "contractId": "0089162cea6e0d62829d41b0e52b33ae56f94e057b3eccc62751616c09d6e2f952ca1212208cf2462ec3e5920b0c0153a3cdb8bf4bd195ed663e60eb6fb8b01f29248fd99b",
+    "cashReserved": "1000.0000000000",
+    "reconciledUsingOriginalReceipt": true,
+    "duplicateCashReservation": false
+  },
+  "settlement": {
+    "updateId": "1220f0c00dd9c3d5b1d3ff3e56f5aa6de4cc4d730df7c74a086841133cf9f9b9baf2",
+    "commandId": "symbolon-public-b24d31a3-632d-46a7-9282-3529bf5b3bea",
+    "ledgerOffset": "2790006",
+    "recordedAt": "2026-10-09T21:10:59.314348Z",
+    "requestClosedInSameUpdate": true,
+    "otherRecordedActiveQuotes": 0
+  },
+  "repurchase": {
+    "updateId": "12208ccfa9cfa152945176bb8c08de89aa05c503a244398a38c65921cfb895b7f2d8",
+    "commandId": "symbolon-public-278ab815-7db8-432d-82ae-c3932ef60b8f",
+    "ledgerOffset": "2790169",
+    "recordedAt": "2026-10-09T21:12:14.186876Z",
+    "closedContractId": "00337490941de83455d8125ee17bd9f56520e851bf375b5e6364d573f93d418c49ca121220690ed3e479c50e298e3d5b141deed216665645511424d06964a563d4648cbb1c",
+    "outcome": "Repurchased",
+    "collateralResult": "Returned to borrower",
+    "availableCollateralBeforeSettlement": "0.3000",
+    "availableCollateralWhileOpen": "0.2750",
+    "availableCollateralAfterRepurchase": "0.3000"
+  }
+}

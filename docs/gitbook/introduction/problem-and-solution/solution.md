@@ -4,7 +4,7 @@ Symbolon turns a financing request into a choice between funded, fixed-rate offe
 
 ## Example: choose the repayment budget upfront
 
-For 1,000 USDCx-demo over 30 days, a 7% APR offer produces approximately 5.83 interest and 1,005.83 total repayment. Alex reviews that obligation before settlement and can reserve the cash needed to repay. Later changes in available lender rates do not reprice this agreement.
+For 1,000 USDCx over 30 days, a 7% APR offer produces approximately 5.83 interest and 1,005.83 total repayment. Alex reviews that obligation before settlement and can reserve the cash needed to repay. Later changes in available lender rates do not reprice this agreement.
 
 | Borrower question | Symbolon response |
 | --- | --- |
@@ -16,7 +16,7 @@ For 1,000 USDCx-demo over 30 days, a 7% APR offer produces approximately 5.83 in
 
 ## Shared request, bilateral offers
 
-The borrower approves sharing its request with all registered lenders in the selected market. Each receives a separate request and sets its own APR. The accepted position is shared with the borrower and winning lender rather than becoming a global public position list.
+The borrower consents once to publish full request terms to authenticated connected parties. Lenders directly set their own APRs and fund separate private offers. The accepted position is shared with the borrower and winning lender rather than becoming a global public position list.
 
 ## Keep the remaining risk visible
 

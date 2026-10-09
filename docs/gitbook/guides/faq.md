@@ -1,6 +1,8 @@
 ---
 description: Answers about requests, fixed repayment, collateral, privacy and accounts.
 ---
+
+
 # FAQ
 
 Find a quick answer, then open the relevant guide when you are ready to act.
@@ -10,9 +12,9 @@ Find a quick answer, then open the relevant guide when you are ready to act.
 <details>
 <summary>What is Symbolon?</summary>
 
-Symbolon is a private fixed-rate repo app on Canton. A borrower requests cash against collateral, lenders return independently priced offers, and the borrower chooses one agreement.
+Symbolon is a fixed-rate repo app on Canton with open requests and private quotes. A borrower publishes consented financing terms, lenders independently price and fund bilateral offers, and the borrower chooses an agreement before settlement.
 
-**Example:** User A requests 1,000 USDCx-demo for 30 days. User B offers 7% APR and User C offers 7.5%. A compares the full terms before accepting B's offer.
+**Example:** User A requests 1,000 USDCx for 30 days. User B offers 7% APR and User C offers 7.5%. A compares the full terms before accepting B's offer.
 
 </details>
 
@@ -28,7 +30,7 @@ See [Why Fixed Rate?](../introduction/fixed-interest.md) for a worked comparison
 <details>
 <summary>Which network and assets can I use?</summary>
 
-The public prototype runs on HackCanton DevNet with simulated cBTC-demo and USDCx-demo holdings. These are test assets, not production cBTC or USDCx. The app has a separate local sandbox for rehearsals.
+The public prototype runs on HackCanton DevNet with simulated cBTC-demo and USDCx holdings. These are test assets, not production cBTC or USDCx. The app has a separate local sandbox for rehearsals.
 
 A wallet showing a similarly named token does not make it compatible with the app's demo holdings. Network, issuer and instrument identity must match.
 
@@ -37,7 +39,13 @@ A wallet showing a similarly named token does not make it compatible with the ap
 <details>
 <summary>Are there fees, rollover or an early-exit market?</summary>
 
-The prototype collects no Symbolon protocol fee. Network charges remain separate from the contractual repayment. There is no automatic rollover, refinance or tokenized secondary-market exit. Another financing term needs a new agreement.
+The prototype currently collects no Symbolon protocol fee. Network charges remain separate from the contractual repayment.
+
+The planned business model charges each counterparty **0.1% of the agreed term interest**: 0.1% from the borrower and 0.1% from the lender, for a combined 0.2% of interest. This is not a percentage of principal, and fee collection is not implemented in the demo.
+
+**Example:** 1,000 USDCx at 5.20% APR for 30 days has approximately 4.33333 USDCx interest under ACT/360. The proposed fee would be about 0.00433 USDCx per side, or 0.00867 USDCx in total. Final rounding and collection rules remain to be defined; these illustrative fees do not change the current demo repayment.
+
+There is no automatic rollover, refinance or tokenized secondary-market exit. Another financing term needs a new agreement.
 
 </details>
 
@@ -46,27 +54,30 @@ The prototype collects no Symbolon protocol fee. Network charges remain separate
 <details>
 <summary>How do I start as a lender?</summary>
 
-Connect your HackCanton account, select a party you can act for, open the market and choose **Lend**. Register that party for the selected market. A borrower can then approve sharing a new request with you.
+Connect your HackCanton account, select your own authorized party and open Offers for the supported market. Read a published request and choose Quote request. Review your automatic party label/full ID, set APR/validity and consent to reserve compatible existing cash.
 
-When a request arrives, enter your own APR and review the offer before sending it. Compatible unlocked cash is reserved when you send a funded offer. Follow [Lenders](dealer-oracle.md) for each step.
+There is no manual lender name, prior registration, request-access step or per-lender borrower approval. The label is not a verified human/company name; your full party ID and signing authority are authoritative.
 
-</details>
-
-<details>
-<summary>Why is there only one eligible lender?</summary>
-
-The count includes active registrations for the exact asset issuers, instruments, price source and network, excluding the borrower's own party. The account dropdown lists authorized signing parties; those parties are not automatically registered lenders.
-
-**Example:** if only Symbolon DevNet lender has registered, the borrower sees 1. Register a second authorized party under Lend for that same market, then return to Borrow and choose **Refresh lenders**. Registration does not retroactively add the party to requests already sent.
 
 </details>
 
 <details>
-<summary>Does registration prove I have enough cash?</summary>
+<summary>Do I need to register before quoting?</summary>
 
-No. Registration records willingness to receive requests, not solvency, creditworthiness or available liquidity. Funding is checked on the ledger when the party submits an offer.
+That count belonged to the earlier registered-lender discovery flow. New OpenRequest publications can be priced directly by authenticated connected parties without registration or per-lender detail approval.
 
-**Example:** a registered lender with 500 compatible cash cannot fund a 1,000 offer.
+Earlier private requests and archived records keep their original audiences. They are not automatically republished into the new flow.
+
+
+</details>
+
+<details>
+<summary>Does reading an open request mean I can fund it?</summary>
+
+No. Registration is unnecessary for new direct open quotes, and reading a published request is not a solvency or credit check. SubmitOpenQuote validates exact compatible available lender cash and reserves it; it does not auto-mint.
+
+**Example:** Blair can read a 1,000 request with a 500 balance, but cannot fund the 1,000 offer from that balance.
+
 
 </details>
 
@@ -82,7 +93,10 @@ The lender enters the annualized rate for its own offer. The borrower reviews th
 <details>
 <summary>What happens to an offer that is not accepted?</summary>
 
-An unaccepted funded offer remains separate from the winning agreement. Its reserved cash is not lent to the borrower. Use the applicable decline, cancellation or expiry-release action to unlock it under the offer's ledger rules. Do not assume acceptance releases every other offer automatically.
+Its reserved cash remains governed by that core quote's accept, reject and revoke actions. Withdrawal of OpenRequest stops new quotes but does not itself release existing reservations. Expiry prevents acceptance; it does not automatically submit a release transaction.
+
+The app's linked acceptance can reject other known, recorded, linked active offers. Unrelated/unknown core offers remain individual records to reconcile. Offers keeps closed request history in a collapsed Archive; archive placement is not financial cancellation.
+
 
 </details>
 
@@ -91,9 +105,10 @@ An unaccepted funded offer remains separate from the winning agreement. Its rese
 <details>
 <summary>Why does my request not immediately become an offer?</summary>
 
-Sending creates addressed requests only. A registered lender must open Lend, choose its APR and submit a funded offer. The current flow does not automatically request a standing 5.20% quote.
+Publication creates an OpenRequest and shares its full terms after one borrower disclosure consent. It moves no cash or collateral and does not assign an automatic APR. A connected lender chooses its rate and confirms a funded private quote with its own cash.
 
-In a same-account rehearsal, send as the borrower party, switch to the distinct lender party to quote, then switch back to the borrower to compare and accept.
+In a two-party rehearsal, publish as the borrower, switch/connect as the distinct lender to quote directly, then return to the borrower to compare and accept. No request-access or approval stage is needed.
+
 
 </details>
 
@@ -102,7 +117,7 @@ In a same-account rehearsal, send as the borrower party, switch to the distinct 
 
 It depends on the agreed price source, available compatible collateral and initial-cover terms. Review the required collateral before sending and again before accepting an offer.
 
-**Example:** 0.0250 cBTC-demo at a simulated price of 60,000 is worth 1,500 USDCx-demo. With 150% initial cover, it can support a 1,000 principal. An 80% LTV is a different term; it is not the default in this example.
+**Example:** 0.0250 cBTC-demo at a simulated price of 60,000 is worth 1,500 USDCx. With 150% initial cover, it can support a 1,000 principal. An 80% LTV is a different term; it is not the default in this example.
 
 </details>
 
@@ -172,11 +187,12 @@ The authorized oracle must publish or refresh the mark. Selecting another market
 <details>
 <summary>Who sees my request, each quote and the final position?</summary>
 
-All approved registered recipients see their own addressed request, including borrower identity and proposed terms. Each quote remains bilateral. The accepted position is shared with the borrower and winning lender; unrelated lenders do not automatically receive it.
+Unauthenticated visitors see only random listing ID, supported market/pair, open state and date. Publication consent deliberately shares borrower identity, requested cash, collateral quantity, tenor and financing rules with all authenticated connected Symbolon parties. Each APR/funded quote is bilateral; the settled position remains with borrower and winning lender under core rights.
 
-**Example:** C receives A's request, but cannot automatically inspect B's quote or the A–B position. Asset issuers and hosting operators remain trust dependencies. Privacy means controlled visibility, not anonymity.
+**Example:** Casey reads the published request but cannot automatically inspect Blair's rate or the Alex–Blair position. Operators, issuers, permitted witnesses and shared-party authority remain trust/inference considerations. Withdrawal does not erase information already disclosed.
 
-See [Privacy and Visibility](../architecture/privacy-and-trust.md) for the comparison.
+See [Privacy and Visibility](../architecture/privacy-and-trust.md) for the S/O/D matrix.
+
 
 </details>
 
@@ -194,12 +210,14 @@ The same party may borrow and lend in different agreements, but cannot be its ow
 
 Not merely by signing in. Each account's selector uses its own live CanActAs rights. A new user's party does not grant access to the builder's borrower, lender or governance parties. Explicitly shared authority is a separate arrangement.
 
+If two accounts are authorized for the same Canton party, both can access that party's same private records. Use distinct borrower and lender parties when testing privacy between counterparties.
+
 </details>
 
 <details>
 <summary>Why are two balances with the same token name separate?</summary>
 
-Issuer identity matters. USDCx-demo from Issuer X cannot replace USDCx-demo from Issuer Y when the agreement requires X. Holdings remain separated so you can identify which balance can actually fund or repay an offer.
+Issuer identity matters. USDCx from Issuer X cannot replace USDCx from Issuer Y when the agreement requires X. Holdings remain separated so you can identify which balance can actually fund or repay an offer.
 
 </details>
 

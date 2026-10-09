@@ -10,7 +10,7 @@ remain running, and the same financing frontend is connected over an SSH tunnel.
 The installed run and an additional browser repo both completed: the committee
 mark drove a UI margin call, top-up and repayment. See the [installed LocalNet
 evidence](../../submission/evidence/bitsafe-vps-localnet.md) and the [installation
-wrapper](https://github.com/EndPx/symbolon/blob/codex/public-devnet-app/infra/decman/README.md) for exact versions, commands and scope.
+wrapper](https://github.com/EndPx/symbolon/blob/main/infra/decman/README.md) for exact versions, commands and scope.
 This remains a one-host LocalNet setup for Contribution Pool; it does not add a
 live DevNet decentralized party.
 

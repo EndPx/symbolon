@@ -14,6 +14,6 @@ MainNet financing is not enabled in the current release. The intended production
 
 ## Example: why a wallet balance is not enough
 
-A user may hold a token called USDCx in a wallet. That does not make it interchangeable with USDCx-demo, or prove the current DemoAsset contracts can transfer that production token. The adapter, issuer and permitted transfer context need verification first.
+A user may hold a token called USDCx in a wallet. That does not make it interchangeable with Symbolon's simulated USDCx holdings, or prove the current DemoAsset contracts can transfer that production token. The adapter, issuer and permitted transfer context need verification first.
 
 There are no active Symbolon MainNet contract addresses to list for this release. Use Shared DevNet for the current hosted test workflow.

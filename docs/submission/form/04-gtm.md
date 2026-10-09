@@ -42,9 +42,9 @@ If interviews show little rate-budgeting pain, fixed-rate premiums are unaccepta
 
 ## 5. Business model
 
-- **Who pays and for what:** Hypothesis: a fund's CFO/head of treasury pays for a financing workflow workspace and operational support. The dealer earns the contractual financing interest; that is not Symbolon revenue.
-- **Pricing hypothesis:** Test a B2B workspace subscription around USD 200–500 per organization/month after observing a useful rehearsal. This is a proposed interview price range, not an implemented fee or customer agreement.
-- **Revenue on Canton:** Current Symbolon fees, subscriptions and revenue are **0**. Network fees are separate. A workflow fee or service license could be tested later; Featured App rewards are not an assumed business model or approved status.
+- **Who pays and for what:** The proposed transaction model charges the borrower and lender for using the financing workflow. The lender's contractual financing interest is separate from Symbolon revenue.
+- **Proposed pricing:** Charge **0.1% of the agreement's term interest to each party**, for **0.2% of interest in total**. The fee is not a percentage of principal or an additional annualized rate. For 5,000 in term interest, each side would contribute 5 and Symbolon would receive 10. Collection timing, rounding and treatment of default remain implementation decisions to validate before a paid release.
+- **Revenue on Canton:** The current prototype collects **0 protocol fees**, and current revenue is **0**. Pricing and willingness to pay remain unvalidated. Network fees are separate; Featured App rewards are not an assumed business model or approved status.
 - **Why now:** Canton asset and cash infrastructure makes a focused native financing pilot possible; readiness still depends on supported assets, permissions and counterparties.
 
 ## 6. First 90 days after the hackathon

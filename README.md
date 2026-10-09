@@ -8,7 +8,7 @@
 
 **Private fixed-rate financing on Canton.**
 
-[Live DevNet App](https://symbolon.endpx.cloud/app) Â· [Documentation](https://symbolon.gitbook.io/symbolon-docs/) Â· [Demo Guide](https://github.com/EndPx/symbolon/blob/main/docs/submission/hosted-devnet-demo.md) Â· [BitSafe Proof](https://github.com/EndPx/symbolon/blob/main/docs/submission/bitsafe-contribution.md)
+[Live DevNet App](https://symbolon.endpx.cloud/app) · [Documentation](https://symbolon.gitbook.io/symbolon-docs/) · [Demo Guide](https://github.com/EndPx/symbolon/blob/main/docs/submission/hosted-devnet-demo.md) · [BitSafe Proof](https://github.com/EndPx/symbolon/blob/main/docs/submission/bitsafe-contribution.md)
 
 [![Frontend verification](https://github.com/EndPx/symbolon/actions/workflows/web.yml/badge.svg?branch=main)](https://github.com/EndPx/symbolon/actions/workflows/web.yml)
 [![BitSafe LocalNet proof](https://github.com/EndPx/symbolon/actions/workflows/bitsafe-localnet.yml/badge.svg)](https://github.com/EndPx/symbolon/actions/runs/37341484064)
@@ -65,15 +65,16 @@ At 105% maintenance cover, that collateral has a health factor of approximately 
 | Evidence | What was demonstrated | Inspect it |
 | --- | --- | --- |
 | **Shared HackCanton DevNet** | A retained reference repo with 20 committed transactions, governed mark publication, margin handling, top-up and `ClosedRepo: Repurchased`. | [Reference run and receipts](https://github.com/EndPx/symbolon/blob/main/docs/submission/evidence/shared-devnet.md) |
-| **Public application on DevNet** | Browser-operated funded quote, settlement, collateral actions and repurchase, including execution from the public URL. | [Frontend evidence](https://github.com/EndPx/symbolon/blob/main/docs/submission/evidence/public-devnet.md) Â· [Workflow coverage](https://github.com/EndPx/symbolon/blob/main/docs/submission/evidence/frontend-e2e.md) |
-| **BitSafe three-participant LocalNet** | Below-threshold rejection, successful 2-of-3 execution and the resulting Symbolon collateral workflow. | [Reproducible CI run](https://github.com/EndPx/symbolon/actions/runs/37341484064) Â· [Retained evidence](https://github.com/EndPx/symbolon/blob/main/docs/submission/evidence/bitsafe-localnet.json) |
-| **Installed LocalNet and actual browser UI** | Three DecMan services, matching participant audits and browser margin/top-up/repurchase receipts against the governed feed. | [Installed-run report](https://github.com/EndPx/symbolon/blob/main/docs/submission/evidence/bitsafe-vps-localnet.md) Â· [Raw evidence](https://github.com/EndPx/symbolon/blob/main/docs/submission/evidence/bitsafe-vps-localnet.json) |
+| **Public application on DevNet** | Browser-operated funded quote, settlement, collateral actions and repurchase, including execution from the public URL. | [Frontend evidence](https://github.com/EndPx/symbolon/blob/main/docs/submission/evidence/public-devnet.md) · [Workflow coverage](https://github.com/EndPx/symbolon/blob/main/docs/submission/evidence/frontend-e2e.md) |
+| **Direct open-request cycle** | Publish once, lender quotes directly at 7%, borrower settles and repurchases 1,005.8333333333 USDCx-demo; the request closes and collateral returns. Founder-operated synthetic parties, with the original quote receipt reconciled without a second cash reserve. | [Latest run and identifiers](https://github.com/EndPx/symbolon/blob/main/docs/submission/evidence/open-rfq-devnet.md) |
+| **BitSafe three-participant LocalNet** | Below-threshold rejection, successful 2-of-3 execution and the resulting Symbolon collateral workflow. | [Reproducible CI run](https://github.com/EndPx/symbolon/actions/runs/37341484064) · [Retained evidence](https://github.com/EndPx/symbolon/blob/main/docs/submission/evidence/bitsafe-localnet.json) |
+| **Installed LocalNet and actual browser UI** | Three DecMan services, matching participant audits and browser margin/top-up/repurchase receipts against the governed feed. | [Installed-run report](https://github.com/EndPx/symbolon/blob/main/docs/submission/evidence/bitsafe-vps-localnet.md) · [Raw evidence](https://github.com/EndPx/symbolon/blob/main/docs/submission/evidence/bitsafe-vps-localnet.json) |
 
 Internal test roles and transactions are engineering evidence. They are not customer counts, independent operators or native wallet signatures. Core lifecycle checks also cover substitution, uncured-margin liquidation and maturity default; the linked shared-DevNet reference is a repurchase path.
 
 ## BitSafe Contribution Pool
 
-**Application integration / custom Daml module Â· LocalNet Â· shared control**
+**Application integration / custom Daml module · LocalNet · shared control**
 
 Symbolon integrates Decentralization Manager into collateral-price publication. The risk being addressed is unilateral control over a mark that can change collateral coverage and enable a margin call. Custom `GovernableAction` templates connect the governance workflow to Symbolon's `PriceFeed`.
 
@@ -99,22 +100,22 @@ The selected challenge is **Contribution Pool**, not Gold. The public DevNet app
 
 ### Contract visibility model
 
-The core Daml model separates contract visibility from choice authorization. The matrix below assumes distinct parties in each role and shows the normal active-contract view.
+The Daml model separates contract visibility from choice authorization. The matrix assumes distinct parties in each role. S/O describe the normal active-contract view; D* describes the separate borrower-consented request disclosure through the authenticated application API.
 
 | Contract | Asset issuer | Borrower | Addressed / winning lender | Oracle | Unrelated party |
 | --- | :---: | :---: | :---: | :---: | :---: |
-| `Holding` | S | O* | O* | O* | â€” |
-| `PriceFeed` | O* | O* | O* | S | â€” |
+| `Holding` | S | O* | O* | O* | — |
+| `PriceFeed` | O* | O* | O* | S | — |
 | `OpenRequest` after publication | D* | S | D* | D* | D* |
-| `QuoteRequest` | â€” | S | O | â€” | â€” |
-| `RepoQuote` | â€” | S | S | â€” | â€” |
-| `RepoPosition` | â€” | S | S | â€” | â€” |
-| `SubstitutionProposal` | â€” | S | S | â€” | â€” |
-| `ClosedRepo` | â€” | S | S | â€” | â€” |
+| `QuoteRequest` | — | S | O | — | — |
+| `RepoQuote` | — | S | S | — | — |
+| `RepoPosition` | — | S | S | — | — |
+| `SubstitutionProposal` | — | S | S | — | — |
+| `ClosedRepo` | — | S | S | — | — |
 
-**S** = signatory; **O** = observer; **â€”** = no default visibility. **O*** applies only when the party is the holding's owner, a configured viewer/lock party, or a price-feed reader. Choice controllers determine who can act: an observer can still control a choice, as the holding owner does for transfers. Signatory status on a funded quote does not mean financing has settled; the borrower must separately accept it.
+**S** = signatory; **O** = observer; **—** = no default visibility. **O*** applies only when the party is the holding's owner, a configured viewer/lock party, or a price-feed reader. **D*** is an explicit application disclosure to authenticated connected Symbolon parties after publication consent; it is not a Daml observer declaration. `OpenRequest` itself is signed only by the borrower. Choice controllers determine who can act: an observer can still control a choice, as the holding owner does for transfers. Signatory status on a funded quote does not mean financing has settled; the borrower must separately accept it.
 
-Parties with overlapping roles receive the union of those rights. The public test operator combines issuer, lender and oracle roles. Hosting operators remain a trust dependency, and later changes to access do not revoke information already disclosed or retained. [Core contracts](https://github.com/EndPx/symbolon/blob/main/daml/Symbolon/Repo.daml) Â· [Holding contract](https://github.com/EndPx/symbolon/blob/main/daml/Symbolon/DemoAsset.daml)
+Parties with overlapping roles receive the union of those rights. The public test operator combines issuer, lender and oracle roles. Hosting operators remain a trust dependency, and later changes to access do not revoke information already disclosed or retained. [Core contracts](https://github.com/EndPx/symbolon/blob/main/daml/Symbolon/Repo.daml) · [Holding contract](https://github.com/EndPx/symbolon/blob/main/daml/Symbolon/DemoAsset.daml)
 
 | Record or capability | Visibility / authority |
 | --- | --- |
@@ -128,7 +129,7 @@ Parties with overlapping roles receive the union of those rights. The public tes
 
 Privacy means controlled disclosure, not anonymity or secrecy from the hosting operator. The prototype uses `Symbolon.DemoAsset.Holding`, not production cBTC, USDCx or a completed CIP-56 adapter. Stale or unavailable marks cannot be treated as fresh health measurements. Closeout releases demo collateral; it does not establish a collateral sale, realized recovery or surplus/deficiency accounting.
 
-[Privacy and trust boundaries](https://github.com/EndPx/symbolon/blob/main/docs/gitbook/architecture/privacy-and-trust.md) Â· [Contracts and permissions](https://github.com/EndPx/symbolon/blob/main/docs/gitbook/architecture/daml.md)
+[Privacy and trust boundaries](https://github.com/EndPx/symbolon/blob/main/docs/gitbook/architecture/privacy-and-trust.md) · [Contracts and permissions](https://github.com/EndPx/symbolon/blob/main/docs/gitbook/architecture/daml.md)
 
 ## Try the current demo
 
@@ -136,7 +137,7 @@ Open **[symbolon.endpx.cloud/app](https://symbolon.endpx.cloud/app)** with a pro
 
 1. Confirm your account party and **DevNet** network.
 2. Use **Faucet** for matching cBTC-demo collateral and USDCx-demo cash.
-3. Publish the shared request as borrower. The distinct lender account opens **Lend â†’ Offers** and reads its terms directly.
+3. Publish the shared request as borrower. The distinct lender account opens **Lend → Offers** and reads its terms directly.
 4. The lender enters an APR and confirms a funded offer. The party label is automatic; no name or access-request form is required.
 5. Return to the borrower to review, settle, manage and repay the agreement.
 
@@ -217,9 +218,9 @@ Daml owns authoritative financing state. The web application builds commands and
 
 The intended business model charges **0.1% of term interest to the borrower and 0.1% to the lender**, for a combined **0.2% of interest**, with no principal-based fee. For an illustrative 5,000 interest payment, each side contributes 5 and Symbolon receives 10. The current prototype collects zero protocol fees; collection, rounding and willingness to pay remain future validation and implementation work.
 
-One informal borrower discussion includes a real Aave borrowing episode. The founder also reports approximately **3â€“5 informal app explorers** from Web3 communities and their personal network. Their exact count, roles, dates and completed steps have not yet been documented; this is early product feedback. Planning personas are excluded from user counts.
+One informal borrower discussion includes a real Aave borrowing episode. The founder also reports approximately **3–5 informal app explorers** from Web3 communities and their personal network. Their exact count, roles, dates and completed steps have not yet been documented; this is early product feedback. Planning personas are excluded from user counts.
 
-Institutional ICP fit, quantified financing-budget pain, switching intent, willingness to pay and an externally operated borrower/lender rehearsal remain open. [Discovery record](https://github.com/EndPx/symbolon/blob/main/docs/submission/borrower-discovery.md) Â· [Metrics and evidence](https://github.com/EndPx/symbolon/blob/main/docs/submission/form/03-metrics.md)
+Institutional ICP fit, quantified financing-budget pain, switching intent, willingness to pay and an externally operated borrower/lender rehearsal remain open. [Discovery record](https://github.com/EndPx/symbolon/blob/main/docs/submission/borrower-discovery.md) · [Metrics and evidence](https://github.com/EndPx/symbolon/blob/main/docs/submission/form/03-metrics.md)
 
 Next milestones are qualified treasury/lender interviews, an external simulated financing rehearsal, and operator-authorized asset integration. Real-asset deployment also needs reviewed token adapters, reliable price sourcing, permissions, closeout accounting and operating arrangements. [Roadmap](https://github.com/EndPx/symbolon/blob/main/docs/gitbook/mission/roadmap.md)
 

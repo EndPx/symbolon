@@ -1,34 +1,32 @@
 # Contracts and Permissions
 
-Daml defines which parties can perform a financing action and which conditions must hold. The app assembles commands; the ledger decides whether they are valid.
+The OpenRequest package lets the borrower authorize its financing terms once. A lender then funds a private core quote with its own authority. Existing core settlement and position contracts retain their bilateral party model.
 
-## Actions by party
+## Actions by Party
 
-| Action | Authorized actor | Main condition |
+| Action | Authorized actor | Main check |
 | --- | --- | --- |
-| Create request | Borrower | Valid counterparties and financing terms. |
-| Send funded offer | Addressed lender | Compatible, unlocked cash and valid rate/expiry. |
-| Accept offer | Quote's borrower | Unexpired quote, valid collateral and a current agreed mark. |
-| Repay | Position's borrower | Full agreed cash and an open repayment window. |
-| Add collateral | Position's borrower | Valid additional collateral that restores the required margin. |
-| Accept substitution | Position's lender | Compatible reserved replacement and valid coverage. |
-| Issue margin call | Position's lender | Fresh agreed mark proving a shortfall. |
-| Liquidate after cure | Position's lender | Expired call window and a fresh post-cure mark still below margin. |
-| Declare maturity default | Position's lender | Missed repurchase at maturity. |
-| Publish a price | Named oracle | Authority for that particular feed. |
+| Create/publish OpenRequest | Borrower | Valid immutable terms and explicit full-disclosure consent; API publication matches the confirmed ledger receipt. |
+| SubmitOpenQuote | Quoting lender | Lender differs from borrower; valid APR/expiry and exact available cash from the agreed issuer. No auto-mint or borrower-online permission. |
+| WithdrawOpenRequest | Borrower | Archives the active OpenRequest; later new quote exercises fail. |
+| Accept a funded core quote | Quote's borrower | Unexpired quote, compatible collateral and fresh agreed mark. |
+| Reject / revoke quote | Borrower / originating lender | Core reservation checks release that offer's cash. |
+| Repay / top up | Position's borrower | Full agreed repayment / valid collateral restoring required cover. |
+| Accept substitution / issue call / close out | Position's lender, as declared by each choice | Compatible replacement or the fresh-mark/deadline conditions required by the core. |
+| Publish a price | Named oracle | Authority for that feed; lending alone does not grant it. |
 
-## Example: knowing an ID does not grant control
+SubmitOpenQuote is **nonconsuming** on OpenRequest. It creates a bilateral core QuoteRequest and immediately exercises SubmitQuote, reserving the lender's existing cash and creating a private RepoQuote atomically. Borrower authority comes from the already-signed OpenRequest context; the borrower need not be online for each offer.
 
-Casey learns Blair's party ID from the public lender directory. That ID does not let Casey send a quote as Blair, accept Alex's offer, or move Blair's cash. Those commands still need the correct signing authority and contract conditions.
+## Disclosure Is Not Borrower Authority
 
-## Exact asset identities
+The template declares the borrower as its only signatory and no observers. Publication intentionally serves the full created-event disclosure to authenticated Symbolon parties. Default signatory-only visibility is therefore not a confidentiality promise for the published request.
 
-An asset is identified by its issuer and instrument, not its ticker alone. Locked holdings cannot be treated as freely spendable cash or collateral.
+**Example:** Casey can read the request and quote as Casey with compatible cash. Casey cannot withdraw it as Alex, accept Blair's offer as Alex or spend Blair's holding. The [visibility matrix](privacy-and-trust.md) separates published disclosure from core S/O roles.
 
-**Example:** a 1,000 USDCx-demo holding from Issuer X cannot repay an agreement requiring USDCx-demo from Issuer Y, even though both labels contain the same symbol.
+## Acceptance and Withdrawal Are Separate in the Core
 
-## Settlement and closeout
+Core AcceptQuote settles cash/collateral and creates RepoPosition; it does not itself archive OpenRequest. Withdrawal alone does not cancel existing funded quotes or release their cash. The app can combine selected acceptance, matched-request withdrawal and rejection of other known linked active offers, but unrelated/unknown core records require their own reconciliation and choices.
 
-Acceptance commits cash transfer, collateral transfer and position creation together. Repayment returns pledged collateral when the full agreed cash is paid. The simulated liquidation/default model releases collateral to the lender; it does not implement a sale, auction or surplus/deficiency accounting.
+Assets still use issuer-and-instrument identity and exact-sized available/reserved Holding checks. The simulated closeout releases collateral to the lender; it does not sell assets or calculate surplus/deficiency recovery.
 
-The [contract source](https://github.com/EndPx/symbolon/tree/codex/public-devnet-app/daml/Symbolon) and tests provide the detailed choices. The current demo model is not an official production-token adapter.
+Sources: [OpenRequest.daml](https://github.com/EndPx/symbolon/blob/main/daml-open-rfq/Symbolon/OpenRequest.daml), [core Repo.daml](https://github.com/EndPx/symbolon/blob/main/daml/Symbolon/Repo.daml) and [DemoAsset.daml](https://github.com/EndPx/symbolon/blob/main/daml/Symbolon/DemoAsset.daml). These are not completed native cBTC/USDCx adapters.

@@ -1,37 +1,36 @@
 # Overview
 
-Symbolon separates counterparty discovery from financial execution. The directory helps borrowers find registered lenders; Canton contracts authorize requests, offers, settlement and collateral management.
+Symbolon separates public discovery, borrower-consented request disclosure and bilateral financial execution. Unauthenticated readers get a minimal board. Authenticated connected parties can read a published request and quote directly; private funded quotes and positions remain in their counterparty views.
 
-![Symbolon components and data boundaries](../assets/component-map.png)
+![Open requests, verified disclosures and private ledger execution](../assets/component-map.png)
 
-## Three responsibilities
+## Three Responsibilities
 
-| Layer | Responsibility | What it cannot do by itself |
+| Layer | Responsibility | Important boundary |
 | --- | --- | --- |
-| Browser app | Display permitted records, explain terms and submit the user's chosen action. | Authorize a trade merely by showing an enabled button. |
-| Directory API and Neon database | Verify lender registration rights and store public lender names, party IDs and market preferences. | Set APR, reserve cash, settle a repo or read everyone's private positions. |
-| Canton/Daml contracts | Enforce counterparties, balances, locks, accepted terms and lifecycle conditions. | Establish that a simulated price represents a real market or that external tokens are supported. |
+| Browser app | Review publication consent, display permitted views and submit the user's selected request/quote action. | Hidden fields are not an authorization boundary; party identity and controller rights matter. |
+| Open RFQ API and Neon | Verify original ledger publication/quote/withdrawal receipts, serve minimal public and authenticated pricing views, and restrict private quote indexes to counterparties. | Operators can read stored disclosures and quote-index metadata. A database write does not move assets. |
+| Canton/Daml | OpenRequest authorizes independently funded quotes; existing core contracts enforce balances, locks, acceptance and lifecycle conditions. | A published disclosure is not a collateral proof, real-token adapter or guarantee of repayment. |
 
-## Example: registration is not a quote
+## Example: A Published Request Is Not Settlement
 
-Blair registers for the cBTC-demo / USDCx-demo market. The directory lists Blair as a possible recipient. Alex approves that audience and submits a separate ledger request to Blair.
-
-Blair's 7% offer is a later authorized ledger action backed by reserved cash. Changing Blair's directory label cannot alter that rate or move funds. Acceptance and repayment remain contract operations.
+Alex signs and publishes an OpenRequest. Blair reads its full terms after authentication, chooses 7% APR and reserves existing cash through SubmitOpenQuote. Alex can be offline during that quote step. The resulting RepoQuote is bilateral; only Alex's later acceptance exchanges cash and collateral and creates a position.
 
 ```mermaid
 flowchart TB
-    App["Symbolon browser"] --> Directory["Directory API: registration and discovery"]
-    Directory --> DB["Neon: public lender metadata"]
-    App --> Identity["Authorized account or compatible wallet"]
-    Identity --> Ledger["Canton participant and Daml contracts"]
-    Ledger --> View["Permitted request, quote and position view"]
-    View --> App
+    App["Symbolon browser"] --> API["Open RFQ API: verified receipt and party checks"]
+    API --> Minimal["Unauthenticated four-field listing view"]
+    API --> Pricing["Authenticated published full-request view"]
+    API --> DB["Neon: request disclosures and private quote indexes"]
+    App --> Ledger["Canton: OpenRequest and bilateral core contracts"]
+    Ledger --> Quote["Lender-only authority funds a private RepoQuote"]
+    Quote --> Position["Borrower acceptance settles a bilateral position"]
 ```
 
-## Explore the important boundaries
+## Explore the Important Boundaries
 
-- [Privacy and Visibility](privacy-and-trust.md) compares who receives each type of information.
-- [Onchain and Offchain Data](onchain-offchain.md) identifies the authoritative ledger records and offchain stores.
-- [Contracts and Permissions](daml.md) explains which party can perform each action.
+- [Privacy and Visibility](privacy-and-trust.md) distinguishes default template roles from explicit published disclosure.
+- [Onchain and Offchain Data](onchain-offchain.md) explains the authoritative records, stored disclosures and protected quote index.
+- [Contracts and Permissions](daml.md) explains who can publish, quote, withdraw and accept.
 
-Implementation and operator runbooks remain in the repository. The current public app uses simulated DevNet assets; real token adapters and independent operator deployment require separate work.
+The current asset model remains simulated DevNet Holding contracts. Native-token adapters, independent operating arrangements and a new external two-account funding lifecycle are not established by a package upload, a successful API read or these illustrations.

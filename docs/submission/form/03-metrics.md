@@ -64,7 +64,8 @@ All targets below are proposed goals, not achieved results or promises.
 | MainNet transactions | Verified real-network receipts | 0 | No MainNet target for current submission scope |
 | Actor parties in the DevNet run | Named roles in retained mapping | 7 synthetic roles / 1 account | Clearly labeled as roles, not users |
 | BitSafe LocalNet topology | Participant IDs and all-node audits | 3 participants / 3 DecMan services / 1 host | Reproducible pinned setup |
-| Automated checks | Dated test/CI results | 131 frontend tests passed locally on 10 October 2026 WIB; 11 core Daml Script entries, 2 BitSafe scripts and 7 runner/helper tests passed in their retained runs | Preserve tested revision and scope; SDK construction tests do not prove live wallet compatibility or a security audit |
+| Direct Open RFQ execution | Publication and funded quote linked to settlement/request withdrawal and repurchase | 1 new founder-operated synthetic-party cycle on shared DevNet; [identifiers and screenshots](../evidence/open-rfq-devnet.md) | Engineering evidence only; does not increase external cycles or user counts |
+| Automated checks | Dated test/CI results | 185 frontend/API/helper tests and build checks passed at `3e7bdef` in [Frontend verification](https://github.com/EndPx/symbolon/actions/runs/37991006851); 9 Open RFQ Daml Script tests passed locally. The 11 core Daml Script entries, 2 BitSafe scripts and 7 runner/helper tests remain separate retained runs | Preserve tested revision and scope; SDK construction tests do not prove live wallet compatibility or a security audit |
 
 ## 6. Success criteria after the hackathon
 

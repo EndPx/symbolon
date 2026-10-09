@@ -1,24 +1,24 @@
 # Troubleshooting
 
-Use the status shown by the app to identify which part of the workflow needs attention. Do not resend an uncertain command merely because a notification disappeared.
+Use the app's status and original receipt to identify the failed stage. A lost notification or offchain sync error is not evidence that a ledger action failed.
 
-| What you see | What it means | What to do |
+| What you see | Meaning | Next action |
 | --- | --- | --- |
-| 0 eligible lenders | No active registration matches the selected market, excluding your own party. | A lender opens that market in Lend, registers, then the borrower refreshes the directory. |
-| Directory unavailable | The recipient list could not be verified. | Retry directory discovery before sending; no demo recipient is substituted. |
-| Request awaiting quote | The request exists but its lender has not sent a funded offer. | The lender opens Lend using its addressed party and enters an APR. |
-| No request in lender view | The party was not addressed, registered later, or selected a different market. | Verify signing party and market; later registration needs a new borrower request. |
-| Insufficient cash or collateral | Compatible unlocked holdings do not cover the action. | Check issuer-separated Holdings and reserved amounts; use Faucet for test assets if needed. |
-| Price expired / Last mark | The estimate uses an old agreed price. | Obtain a valid fresh mark before a price-sensitive action. |
-| Offer expired | Its validity window ended. | The lender must revoke to release funding and issue a new offer for a new request if desired. |
-| Pending or uncertain | Commit or failure is not established. | Inspect the original transaction status/receipt in Account before retrying. |
+| Minimal request card only | You are reading without the authenticated pricing context. | Connect the authorized HackCanton account and select the supported market to read the published full terms. No request-access approval is needed. |
+| No open requests | No active publication is available from another borrower in this market, or the request was withdrawn. | Refresh the board and check the selected market. Legacy private records are not automatically republished. |
+| Request awaiting quote | Publication succeeded but no funded offer has been confirmed. | A lender opens Quote request, sets APR/validity and funds it from compatible existing cash. |
+| Not enough cash | The lender lacks unlocked Holding cash from the agreed issuer/instrument. | Check issuer-separated Holdings. A quote does not auto-mint; use the separate demo faucet if needed. |
+| Request closed or unavailable | The active OpenRequest was withdrawn or the current context could not be verified. | Do not submit another quote against a cached disclosure. Existing funded quotes keep their core lifecycle. |
+| Offer expired | Acceptance is no longer eligible. | Revoke/reject that quote to release reserved cash; expiry alone does not release it. |
+| Stale mark / Last mark | Price-sensitive acceptance or margin action needs a valid fresh mark. | Refresh the simulated public reference in review where permitted; other feeds need their authorized publisher. |
+| Ledger committed, sync failed | The API index has not reconciled the actual result. | Retry synchronization using the retained original publication/quote/withdrawal receipt, not another financial submission. |
 
-## Example: the lender cannot see Alex's request
+## Example: Blair Cannot Price the Request
 
-Alex sent a request before Casey registered. Registering Casey later does not copy that old request. Alex reviews the updated recipient list and sends a new request. Casey then selects the same issuer/oracle market from Casey's own signing party.
+Blair sees only a minimal card while disconnected. After connecting the intended account/party, Blair can read the published request and immediately quote. If the active contract is withdrawn, a cached disclosure does not make it quotable again.
 
-## Example: a top-up restores health but not an old price
+## Example: One Offer Settled, Another Still Exists
 
-A ledger read refresh retrieves records; it does not publish a new oracle timestamp. Position Details can show a neutral expired estimate until the agreed publisher supplies a current mark. The public test oracle has its own explicit refresh controls; private or committee feeds retain their own authority.
+Check the receipt and remaining core offers. The app may release other known, recorded, linked active offers in its acceptance submission. Unrelated or unknown offers do not disappear merely because a request was withdrawn or a position opened.
 
-If the account session expired, reconnect through the normal provider flow. Never share passwords, access tokens or private keys as a troubleshooting step.
+Reconnect an expired session through the provider's normal flow. Do not share credentials or access tokens when reporting a reproducible error.

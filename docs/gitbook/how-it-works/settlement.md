@@ -12,7 +12,7 @@ Acceptance is the point at which financing opens. The ledger checks the quote, a
 
 ## Example: opening the repo
 
-Alex accepts Blair's 7% APR offer for 1,000 USDCx-demo over 30 days. Alex receives 1,000 cash. The agreed 0.0250 cBTC-demo moves to Blair under locks, and a position records the fixed repayment and maturity.
+Alex accepts Blair's 7% APR offer for 1,000 USDCx over 30 days. Alex receives 1,000 cash. The agreed 0.0250 cBTC-demo moves to Blair under locks, and a position records the fixed repayment and maturity.
 
 If the quote expired or the agreed mark is unusable, acceptance fails rather than partially transferring one side.
 

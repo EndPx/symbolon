@@ -1,6 +1,6 @@
 # Symbolon submission materials
 
-Symbolon is a private, bilateral fixed-rate repo desk on Canton. Borrowers receive cash against pledged assets and agree the repurchase amount before settlement. Each dealer sees its own request and quote; the borrower compares the addressed offers. Fixed rate does not remove collateral or counterparty risk.
+Symbolon is a fixed-rate repo desk on Canton with open requests and private bilateral quotes. Borrowers publish financing terms once, lenders set their own APR and fund quotes directly, and the borrower compares the offers before receiving cash against pledged assets. The borrower knows the contractual repurchase amount before settlement. Fixed rate does not remove collateral or counterparty risk.
 
 The primary value is a known contractual principal-plus-interest amount rather than ongoing exposure to floating-rate interest changes. Use the [five separate submission Markdown files](form/README.md) for Value, ICP, Metrics, GTM and the project-page Elevator Pitch. They include the complete disclosed mechanism and distinguish test activity, customer hypotheses and proposed targets.
 
@@ -11,6 +11,7 @@ The primary value is a known contractual principal-plus-interest amount rather t
 3. Review the Daml tests, asset locks and exact settlement inputs. The repo model is `symbolon-v2` v0.2.0; the old shared DevNet package is separate.
 4. Review the BitSafe governance adapter and reproducible three-node LocalNet runner. Credit an official multi-node execution only when its JSON evidence and successful workflow run are available.
 5. Review the [shared DevNet record](evidence/shared-devnet.md): 20 committed receipts, the failed one-confirmation execution, governed mark, margin call, top-up and `Repurchased`. The [original JSON](evidence/shared-devnet.json) retains the exact actor mapping and timestamped states. This is a one-participant Ledger API run, separate from the three-participant LocalNet DecMan proof.
+6. Review the latest [direct Open RFQ cycle](evidence/open-rfq-devnet.md): an actual borrower publication, 7% private funded quote, atomic settlement/request withdrawal and repurchase from the public app. This is founder-operated synthetic-party evidence; it does not add external customer or pilot counts.
 
 ## Submission text
 

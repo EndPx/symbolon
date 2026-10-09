@@ -1,6 +1,8 @@
 ---
 description: Understand how changing borrowing rates affect a repayment budget, and what a fixed agreement makes predictable.
 ---
+
+
 # Why Fixed Rate?
 
 You should be able to answer a simple question before borrowing: **how much cash will I need to repay this agreement?** Symbolon makes that amount explicit before settlement.
@@ -29,7 +31,7 @@ Source: [Galaxy Research, *The State of Crypto Lending*, April 2025, pp. 22–23
 
 ## Example: Same Borrowing Need, Different Budget
 
-User A needs **1,000 USDCx-demo for 30 days**. Compare a fixed 7% agreement with a hypothetical changing rate. This is a simple-interest illustration on an unchanged principal, not historical Aave data or a forecast.
+User A needs **1,000 USDCx for 30 days**. Compare a fixed 7% agreement with a hypothetical changing rate. This is a simple-interest illustration on an unchanged principal, not historical Aave data or a forecast.
 
 ![Illustrative variable and fixed borrowing rates over three ten-day periods](../assets/fixed-rate-overview.png)
 
@@ -38,8 +40,8 @@ User A needs **1,000 USDCx-demo for 30 days**. Compare a fixed 7% agreement with
 | Days 1–10 | 7% | 7% |
 | Days 11–20 | 12% | 7% |
 | Days 21–30 | 20% | 7% |
-| Approximate term interest | 10.83 USDCx-demo | 5.83 USDCx-demo |
-| Approximate total repayment | 1,010.83 USDCx-demo | 1,005.83 USDCx-demo |
+| Approximate term interest | 10.83 USDCx | 5.83 USDCx |
+| Approximate total repayment | 1,010.83 USDCx | 1,005.83 USDCx |
 
 For the fixed agreement, **1,000 × 7% × 30 / 360 ≈ 5.83**. The variable example adds each ten-day period at its illustrative rate. Actual floating products may use different accrual and compounding rules.
 
@@ -115,7 +117,7 @@ This is an early problem signal, not a survey result or proof of adoption. Actua
 {% step %}
 ### Request an amount and duration
 
-Choose the collateral market, cash amount and term. Approve sharing with eligible registered lenders.
+Choose the collateral market, cash amount and term. Review the disclosure audience and publish the full request once. Connected lenders can then quote directly.
 {% endstep %}
 {% step %}
 ### Compare independently priced offers

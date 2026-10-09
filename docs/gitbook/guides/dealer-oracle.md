@@ -1,6 +1,8 @@
 ---
-description: Register for a market, set your APR and send a funded fixed-rate offer.
+description: Read a published request, choose your APR and send a private funded quote.
 ---
+
+
 # Lenders
 
 Lenders supply cash to a borrower and agree a fixed contractual cash return. You choose the APR for each request. Symbolon does not tokenize your position or automatically roll it into another agreement.
@@ -8,31 +10,33 @@ Lenders supply cash to a borrower and agree a fixed contractual cash return. You
 ## Prerequisites
 
 - A connected HackCanton account with CanActAs authority for your lender party.
-- Registration for the exact issuer pair and price source you want to finance.
+- An active published OpenRequest in the supported market. No prior lender registration or detail-access approval is required.
 - Sufficient unlocked cash from the request's specified issuer.
 - Acceptance of the counterparty, term and collateral obligations.
 
 ## Quick Start
 
 1. **Choose your lender party.** Confirm it under Account. Selecting Lend alone does not change the signer.
-2. **Open the market and register.** In Lend, enter a lender name and approve listing the party ID and market preference. Registration reserves no cash.
-3. **Receive a new request.** Borrowers send to all registered lenders in that market. Requests sent before you registered do not appear retroactively.
-4. **Enter your APR.** Select your addressed request and enter the annualized rate and offer validity.
+2. **Read an open request.** While connected, review borrower identity, amount, collateral, tenor and financing rules shared through publication consent. A disconnected visitor sees only the minimal board.
+3. **Quote directly.** Choose Quote request, confirm your automatic party label/full ID and set APR/validity. No manual name, registration, access request or borrower approval step is needed.
+4. **Review your APR and repayment.** Check annualized ACT/360 interest, validity, required reservation and exact full terms.
 5. **Review and fund the offer.** Sending an offer reserves the exact cash amount. It is not settlement yet.
 6. **Manage the position.** Borrower acceptance opens the repo. Follow collateral coverage and receive the agreed cash when the borrower repurchases.
 
 ## Example: offer 7% APR
 
-Alex requests **1,000 USDCx-demo**, **30 days**, against **0.0250 cBTC-demo**. Blair enters **7% APR** and a **60-minute** quote validity.
+Blair opens Alex's published request, which shows **1,000 USDCx**, **30 days**, against **0.0250 cBTC-demo**. Blair enters **7% APR** and a **60-minute** quote validity.
 
 | Stage | Blair's cash and agreement |
 | --- | --- |
-| Registered | No financing cash is reserved. |
+| Request read | Published full terms are visible while connected; no quote cash is reserved yet. |
 | Offer confirmed | 1,000 is reserved for Alex; the offer shows approximately 1,005.83 repayment. |
 | Alex accepts | The reserved cash goes to Alex and pledged collateral comes to Blair under restrictions. |
 | Alex repays | Blair receives the full agreed cash and the collateral returns to Alex. |
 
 The approximately 5.83 interest is the contractual return for this example, not guaranteed realized profit. Collateral and counterparty risks remain.
+
+The party ID is authoritative. An automatically derived display label is a convenience, not a verified human or company name.
 
 ## Understanding your position
 
@@ -60,4 +64,4 @@ Sent offers appear in Offers. Revoke an unwanted offer to release its reserved c
 
 A fresh agreed mark below the maintenance requirement can enable a margin call. Liquidation additionally needs an expired cure window and a fresh post-cure shortfall mark. Maturity default is a separate action. The demo closeout releases pledged collateral; it does not sell the asset or calculate net recovery.
 
-Stop receiving new requests removes your registration from future discovery. Existing requests, quotes and positions retain their ledger lifecycle. Oracle publication is a separate authority; being a lender does not grant the oracle role.
+Reading the published request is not a funded offer. SubmitOpenQuote reserves your compatible existing cash; it does not auto-mint. Withdrawing the open request prevents new quotes but does not cancel existing funded offers or positions. Offers combines active requests/private quotes with a collapsed Archive for closed request history. Oracle publication is a separate authority; being a lender does not grant the oracle role.

@@ -1,11 +1,11 @@
 # Position Lifecycle
 
-A position's state explains what happened and which action can follow. A submitted command, an open quote and a settled position are different stages.
+A position's state explains what happened and which action can follow. An OpenRequest stays active across independent nonconsuming quote submissions until withdrawn. Each funded quote then follows the bilateral lifecycle below; a submitted command, a funded quote and a settled position are different stages.
 
 ```mermaid
 stateDiagram-v2
     [*] --> Requested
-    Requested --> FundedOffer: Lender sets APR and reserves cash
+    Requested --> FundedOffer: Nonconsuming open quote reserves lender cash
     FundedOffer --> Active: Borrower accepts and settles
     Active --> UnderCall: Lender confirms fresh shortfall
     UnderCall --> Active: Coverage restored and call resolved
@@ -18,7 +18,7 @@ stateDiagram-v2
 
 ## Example: a successful repayment
 
-Alex sends a request; Blair creates a 7% offer; Alex accepts it. The position is Active. Alex pays the full agreed cash within the allowed window, collateral returns, and Activity records Repurchased.
+Alex publishes an OpenRequest; Blair directly funds a private 7% offer; Alex accepts it. The position is Active. Alex pays the full agreed cash within the allowed window, collateral returns, and Activity records Repurchased.
 
 ## Closing outcomes compared
 

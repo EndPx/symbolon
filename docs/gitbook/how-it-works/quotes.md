@@ -1,29 +1,38 @@
 # Requests and Offers
 
-A request asks lenders to price proposed financing. An offer is a lender's response containing its APR, expiry and funded terms. They are different ledger records.
+The borrower publishes one OpenRequest with full disclosure consent. Connected lenders read its terms and quote directly. Each funded quote remains private between that lender and the borrower; no per-lender request-access or approval step is needed for new requests.
 
-## Send a request to registered lenders
+## Publish Once
 
-Borrower review lists all eligible registrations for the selected network, deployment, issuer pair and oracle. The borrower approves sharing its identity, amount, collateral and proposed terms with those recipients. A separate QuoteRequest is created for each lender.
+The borrower reviews the cash amount, collateral quantity, duration and risk terms before signing. Publication intentionally shares the borrower identity and full request terms with all authenticated connected Symbolon parties. Unauthenticated visitors receive only the random listing ID, supported market/pair, open state and date.
 
-Registration means accepting requests for that market. It is not a liquidity guarantee, counterparty-vetting result or credit assessment. A directory failure or empty list blocks sending; a changed audience requires another review.
+Creating the OpenRequest records the request on the ledger. Publishing its verified disclosure links it to discovery. Neither action transfers cash or locks collateral; it is not a funded offer or settled position.
 
-## Example: two lenders, two offers
+## Lenders Set APR Directly
 
-Alex's 1,000 request is addressed separately to Blair and Casey. Blair enters 7% APR, Casey enters 7.5%. Each lender reserves 1,000 of its own compatible cash when its offer is confirmed. Alex compares approximately 1,005.83 versus 1,006.25 total repayment for 30 days.
+A lender opens an active request, selects its annualized rate and quote validity, then reviews the required cash reservation. SubmitOpenQuote needs only that lender's live signing authority and exact compatible available cash. It creates a transient bilateral QuoteRequest, consumes it into a funded RepoQuote and reserves cash atomically. It does not mint cash or require the borrower to come online for another permission.
+
+**Example:** Alex publishes 1,000 USDCx for 30 days. Blair funds 7% APR and Casey funds 7.5%. Alex compares approximately 1,005.83 and 1,006.25 repayment; neither lender automatically sees the other's rate.
 
 | Record | Alex sees | Blair sees | Casey sees |
 | --- | --- | --- | --- |
-| Request to Blair | Yes | Yes | Its own request instead |
-| Blair's 7% offer | Yes | Yes | No automatic access |
-| Casey's 7.5% offer | Yes | No automatic access | Yes |
+| Published full request, when authenticated | Full terms | Full terms | Full terms |
+| Blair's 7% funded quote | Yes | Yes | No automatic access |
+| Casey's 7.5% funded quote | Yes | No automatic access | Yes |
+| Position after selecting Blair | Yes | Yes | No automatic access |
 
-## Funding and expiry
+OpenRequest submission is nonconsuming for quotes, so other lenders can still quote while it remains active. The core bilateral QuoteRequest created inside each quote transaction is consumed; it is not a separate borrower approval screen.
 
-The offer reserves the exact cash needed for settlement. The borrower cannot spend it before acceptance. Expiry prevents acceptance, but it does not itself submit a transaction releasing the reservation.
+## Acceptance, Withdrawal and Unused Funding
 
-**Example:** Alex selects Blair. Casey's unused offer remains separate until Alex declines it or Casey revokes it. That authorized action releases Casey's reserved cash.
+The borrower reviews full repayment and collateral rules before accepting a funded offer. A request publication does not assign an automatic APR or create a standing 5.20% quote.
 
-## What happens next?
+WithdrawOpenRequest archives the open request and prevents new quotes. Already funded quotes remain governed by their own accept, reject and revoke choices. Quote expiry prevents acceptance but does not automatically release reserved cash. Core acceptance alone does not close the open request or reject competing offers.
 
-The borrower reviews the fixed repayment and risk terms, then accepts one offer. A request is consumed when its lender creates an offer, so the same request cannot be quoted twice. The app no longer requests an automatic standing 5.20% quote after borrower submission.
+The app's linked acceptance flow can combine the chosen acceptance, withdrawal of a still-active matched request and rejection of other **known, recorded, linked active offers** in one ledger submission. Unrelated or unknown core offers remain individual records; do not assume every reservation has disappeared. Confirm the actual receipt and review any remaining offers.
+
+If the ledger action committed but discovery synchronization failed, reconcile the original receipt. Retrying receipt synchronization does not publish another request or reserve quote cash again.
+
+## One Offers Workspace
+
+Offers brings the relevant open requests and private funded offers into one workspace for the selected Borrow/Lend activity. Closed request history is placed in a collapsed **Archive** section. Archiving is presentation, not deletion or automatic financial cancellation. Legacy private records keep their original audiences and are not automatically republished.

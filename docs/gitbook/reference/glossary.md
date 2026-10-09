@@ -1,6 +1,8 @@
 ---
 description: Plain meanings and practical examples for Symbolon's financing and Canton terms.
 ---
+
+
 # Glossary
 
 Use this page when a form, offer or position contains an unfamiliar term. Examples are illustrative and use simulated assets.
@@ -9,9 +11,14 @@ Use this page when a form, offer or position contains an unfamiliar term. Exampl
 
 | Term | Meaning | Example |
 | --- | --- | --- |
-| Borrower | The party receiving cash and agreeing to repay to recover collateral. | Alex requests 1,000 USDCx-demo. |
+| Borrower | The party receiving cash and agreeing to repay to recover collateral. | Alex requests 1,000 USDCx. |
 | Lender / dealer | The counterparty pricing and funding the agreement. Dealer is the code's field name. | Blair offers 7% APR. |
-| Request / RFQ | A request for quote, before a funded offer exists. | Alex asks registered lenders for 1,000 over 30 days. |
+| Discovery listing | Minimal anonymous offchain metadata visible to public board readers. | Opaque ID + market/pair + open state/date, without borrower identity or amounts. |
+| OpenRequest / Open RFQ | Borrower-signed request whose full payload is intentionally published to authenticated connected Symbolon parties. | Alex publishes 1,000 over 30 days once; Blair and Casey price it directly. |
+| Publication consent | One agreement to disclose identity and full request terms to the authenticated application audience. | It is not per-lender access approval or settlement consent. |
+| Disclosed contract | A verified ledger payload supplied for a permitted choice; disclosure does not grant another party's signing authority. | Blair quotes the published request as Blair, not as Alex. |
+| SubmitOpenQuote | Nonconsuming choice that creates/consumes a bilateral core request and reserves lender cash into a private quote atomically. | No auto-mint or borrower-online permission is needed. |
+| Request / RFQ | A financing request before a funded offer; distinguish the published OpenRequest from transient/legacy bilateral QuoteRequest. | New direct quotes keep using the unchanged bilateral core. |
 | Offer / quote | A lender's proposed fixed rate, validity and funded terms. | Blair reserves 1,000 for a 7% offer. |
 | APR | The annualized rate used for simple interest in Symbolon. | 7% APR for 30 days on 1,000 produces about 5.83 interest. |
 | APY | An annual yield measure that can include compounding; it is not the quote field used here. | Do not relabel Symbolon's simple APR as compounded APY. |
@@ -46,9 +53,9 @@ Use this page when a form, offer or position contains an unfamiliar term. Exampl
 | Issuer | Party identifying and issuing the asset. | Same-symbol holdings from X and Y remain separate. |
 | Oracle / price feed | Agreed publisher / record containing a mark, asset pair and timestamp. | A simulated cBTC-demo price of 60,000. |
 | Fresh mark | A valid timestamp within the agreed maximum age, not in the future. | An expired one-hour mark cannot authorize a price-sensitive action. |
-| Registered lender | A party opting into future requests for an exact market. | Registration lists Blair; funding is checked when Blair quotes. |
+| Registered lender | A legacy directory registration for earlier request discovery. | Earlier requests retain their audiences; new OpenRequest pricing does not require registration. |
 | Bilateral visibility | A record's direct audience is the relevant two counterparties. | Blair's quote is shared with Alex and Blair. |
-| Observer | A party entitled to read a contract. | Seeing reserved cash does not grant permission to spend it. |
+| Observer | A party explicitly entitled to read a contract; action rights come from declared controllers. | A Holding owner is an observer and can control owner choices, while an extra viewer has no spending authority solely from viewing. |
 | Signatory / controller | Authority involved in creating a contract / exercising a choice. | The borrower controls acceptance of its offer. |
 | Atomic settlement | Required effects commit together or do not commit. | Cash and collateral exchange in one acceptance transaction. |
 | Locked / reserved holding | Assets restricted for a quote or position. | Casey's unused quote cash stays reserved until an authorized release. |
