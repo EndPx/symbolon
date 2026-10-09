@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="brand/logo-mark.png" alt="Symbolon mark" width="80" />
+<img src="https://raw.githubusercontent.com/EndPx/symbolon/codex/public-devnet-app/brand/logo-mark.png" alt="Symbolon mark" width="80" />
 
 # Symbolon
 
@@ -8,7 +8,7 @@
 
 **Private fixed-rate financing on Canton.**
 
-[Live DevNet App](https://symbolon.endpx.cloud/app) · [Documentation](https://symbolon.gitbook.io/symbolon-docs/) · [Demo Guide](docs/submission/hosted-devnet-demo.md) · [BitSafe Proof](docs/submission/bitsafe-contribution.md)
+[Live DevNet App](https://symbolon.endpx.cloud/app) · [Documentation](https://symbolon.gitbook.io/symbolon-docs/) · [Demo Guide](https://github.com/EndPx/symbolon/blob/codex/public-devnet-app/docs/submission/hosted-devnet-demo.md) · [BitSafe Proof](https://github.com/EndPx/symbolon/blob/codex/public-devnet-app/docs/submission/bitsafe-contribution.md)
 
 [![Frontend verification](https://github.com/EndPx/symbolon/actions/workflows/web.yml/badge.svg?branch=codex%2Fpublic-devnet-app)](https://github.com/EndPx/symbolon/actions/workflows/web.yml)
 [![BitSafe LocalNet proof](https://github.com/EndPx/symbolon/actions/workflows/bitsafe-localnet.yml/badge.svg)](https://github.com/EndPx/symbolon/actions/runs/37341484064)
@@ -35,7 +35,7 @@ The value is repayment predictability. Fixed financing does not guarantee cheape
 
 ## The borrower and lender journey
 
-![An illustrative borrower comparing two private lender offers, settling one agreement and recovering collateral on repayment](docs/gitbook/assets/product-overview.png)
+![An illustrative borrower comparing two private lender offers, settling one agreement and recovering collateral on repayment](https://raw.githubusercontent.com/EndPx/symbolon/codex/public-devnet-app/docs/gitbook/assets/product-overview.png)
 
 1. **Register to lend.** A lender joins the exact market and obtains compatible cash holdings. Registration does not reserve funds.
 2. **Request financing.** The borrower specifies principal, term and collateral conditions, reviews **All registered lenders**, and approves sharing. One addressed request is created per eligible recipient.
@@ -64,10 +64,10 @@ At 105% maintenance cover, that collateral has a health factor of approximately 
 
 | Evidence | What was demonstrated | Inspect it |
 | --- | --- | --- |
-| **Shared HackCanton DevNet** | A retained reference repo with 20 committed transactions, governed mark publication, margin handling, top-up and `ClosedRepo: Repurchased`. | [Reference run and receipts](docs/submission/evidence/shared-devnet.md) |
-| **Public application on DevNet** | Browser-operated funded quote, settlement, collateral actions and repurchase, including execution from the public URL. | [Frontend evidence](docs/submission/evidence/public-devnet.md) · [Workflow coverage](docs/submission/evidence/frontend-e2e.md) |
-| **BitSafe three-participant LocalNet** | Below-threshold rejection, successful 2-of-3 execution and the resulting Symbolon collateral workflow. | [Reproducible CI run](https://github.com/EndPx/symbolon/actions/runs/37341484064) · [Retained evidence](docs/submission/evidence/bitsafe-localnet.json) |
-| **Installed LocalNet and actual browser UI** | Three DecMan services, matching participant audits and browser margin/top-up/repurchase receipts against the governed feed. | [Installed-run report](docs/submission/evidence/bitsafe-vps-localnet.md) · [Raw evidence](docs/submission/evidence/bitsafe-vps-localnet.json) |
+| **Shared HackCanton DevNet** | A retained reference repo with 20 committed transactions, governed mark publication, margin handling, top-up and `ClosedRepo: Repurchased`. | [Reference run and receipts](https://github.com/EndPx/symbolon/blob/codex/public-devnet-app/docs/submission/evidence/shared-devnet.md) |
+| **Public application on DevNet** | Browser-operated funded quote, settlement, collateral actions and repurchase, including execution from the public URL. | [Frontend evidence](https://github.com/EndPx/symbolon/blob/codex/public-devnet-app/docs/submission/evidence/public-devnet.md) · [Workflow coverage](https://github.com/EndPx/symbolon/blob/codex/public-devnet-app/docs/submission/evidence/frontend-e2e.md) |
+| **BitSafe three-participant LocalNet** | Below-threshold rejection, successful 2-of-3 execution and the resulting Symbolon collateral workflow. | [Reproducible CI run](https://github.com/EndPx/symbolon/actions/runs/37341484064) · [Retained evidence](https://github.com/EndPx/symbolon/blob/codex/public-devnet-app/docs/submission/evidence/bitsafe-localnet.json) |
+| **Installed LocalNet and actual browser UI** | Three DecMan services, matching participant audits and browser margin/top-up/repurchase receipts against the governed feed. | [Installed-run report](https://github.com/EndPx/symbolon/blob/codex/public-devnet-app/docs/submission/evidence/bitsafe-vps-localnet.md) · [Raw evidence](https://github.com/EndPx/symbolon/blob/codex/public-devnet-app/docs/submission/evidence/bitsafe-vps-localnet.json) |
 
 Internal test roles and transactions are engineering evidence. They are not customer counts, independent operators or native wallet signatures. Core lifecycle checks also cover substitution, uncured-margin liquidation and maturity default; the linked shared-DevNet reference is a repurchase path.
 
@@ -93,7 +93,7 @@ All participants and managers share one operator host. The demonstration establi
 
 The selected challenge is **Contribution Pool**, not Gold. The public DevNet app is separate product execution evidence. The current [BitSafe challenge sheet](https://bitsafe.notion.site/BitSafe-Challenge-Decentralizing-Apps-on-Canton-3db636dd0ba5804ba3e0ec08aec56638) excludes Gold applicants from Contribution Pool.
 
-**Reproduce:** [installation and run instructions](infra/decman/README.md). **Review:** [challenge submission and evidence map](docs/submission/bitsafe-contribution.md).
+**Reproduce:** [installation and run instructions](https://github.com/EndPx/symbolon/blob/codex/public-devnet-app/infra/decman/README.md). **Review:** [challenge submission and evidence map](https://github.com/EndPx/symbolon/blob/codex/public-devnet-app/docs/submission/bitsafe-contribution.md).
 
 ## Privacy and remaining risk
 
@@ -108,7 +108,7 @@ The selected challenge is **Contribution Pool**, not Gold. The public DevNet app
 
 Privacy means controlled disclosure, not anonymity or secrecy from the hosting operator. The prototype uses `Symbolon.DemoAsset.Holding`, not production cBTC, USDCx or a completed CIP-56 adapter. Stale or unavailable marks cannot be treated as fresh health measurements. Closeout releases demo collateral; it does not establish a collateral sale, realized recovery or surplus/deficiency accounting.
 
-[Privacy and trust boundaries](docs/gitbook/architecture/privacy-and-trust.md) · [Contracts and permissions](docs/gitbook/architecture/daml.md)
+[Privacy and trust boundaries](https://github.com/EndPx/symbolon/blob/codex/public-devnet-app/docs/gitbook/architecture/privacy-and-trust.md) · [Contracts and permissions](https://github.com/EndPx/symbolon/blob/codex/public-devnet-app/docs/gitbook/architecture/daml.md)
 
 ## Try the current demo
 
@@ -120,7 +120,7 @@ Open **[symbolon.endpx.cloud/app](https://symbolon.endpx.cloud/app)** with a pro
 4. Send the request as borrower; use the distinct lender party to enter an APR and submit a funded offer.
 5. Return to the borrower to review, settle, manage and repay the agreement.
 
-The [demo guide](docs/submission/hosted-devnet-demo.md) gives the two-sided sequence and a comprehension check. [Borrowers](docs/gitbook/guides/borrower.md), [Lenders](docs/gitbook/guides/dealer-oracle.md) and [FAQ](docs/gitbook/guides/faq.md) explain each role.
+The [demo guide](https://github.com/EndPx/symbolon/blob/codex/public-devnet-app/docs/submission/hosted-devnet-demo.md) gives the two-sided sequence and a comprehension check. [Borrowers](https://github.com/EndPx/symbolon/blob/codex/public-devnet-app/docs/gitbook/guides/borrower.md), [Lenders](https://github.com/EndPx/symbolon/blob/codex/public-devnet-app/docs/gitbook/guides/dealer-oracle.md) and [FAQ](https://github.com/EndPx/symbolon/blob/codex/public-devnet-app/docs/gitbook/guides/faq.md) explain each role.
 
 TestNet preparation remains in source with financing disabled. Its earlier public entry URLs redirect temporarily to DevNet. Grofty TestNet parties, balances and wallet permissions do not migrate when opening the DevNet app.
 
@@ -128,7 +128,14 @@ TestNet preparation remains in source with financing disabled. Its earlier publi
 
 ### Native Canton sandbox
 
-Requirements: **PowerShell 7**, **Daml SDK 3.5.2 through `dpm`**, compatible Java, and **Node.js 24 / npm**. From the repository root:
+Requirements: **Git**, **PowerShell 7**, **Daml SDK 3.5.2 through `dpm`**, compatible Java, and **Node.js 24 / npm**. Clone the delivery branch, which contains the current implementation and linked evidence:
+
+```powershell
+git clone --branch codex/public-devnet-app https://github.com/EndPx/symbolon.git
+Set-Location symbolon
+```
+
+Then run from the repository root:
 
 ```powershell
 ./scripts/demo.ps1 build
@@ -146,7 +153,7 @@ The build helper stages source in a space-free directory to avoid Windows Daml p
 
 ### BitSafe LocalNet reproduction
 
-Use the [separate Linux/Docker runbook](infra/decman/README.md) for Contribution Pool. It pins the upstream source, installs three participants and three DecMan services, distributes/vets the application DARs, and runs the threshold-to-repurchase proof. Requirements include Docker Compose 2.24.4+, 12 GB RAM, 4 CPUs and 20 GB free disk.
+Use the [separate Linux/Docker runbook](https://github.com/EndPx/symbolon/blob/codex/public-devnet-app/infra/decman/README.md) for Contribution Pool. It pins the upstream source, installs three participants and three DecMan services, distributes/vets the application DARs, and runs the threshold-to-repurchase proof. Requirements include Docker Compose 2.24.4+, 12 GB RAM, 4 CPUs and 20 GB free disk.
 
 Local ledgers and admin interfaces stay on loopback. Shared DevNet credentials are not used by this sandbox.
 
@@ -190,19 +197,19 @@ Daml owns authoritative financing state. The web application builds commands and
 
 One informal borrower discussion includes a real Aave borrowing episode. The founder also reports approximately **3–5 informal app explorers** from Web3 communities and their personal network. Their exact count, roles, dates and completed steps have not yet been documented; this is early product feedback. Planning personas are excluded from user counts.
 
-Institutional ICP fit, quantified financing-budget pain, switching intent, willingness to pay and an externally operated borrower/lender rehearsal remain open. [Discovery record](docs/submission/borrower-discovery.md) · [Metrics and evidence](docs/submission/form/03-metrics.md)
+Institutional ICP fit, quantified financing-budget pain, switching intent, willingness to pay and an externally operated borrower/lender rehearsal remain open. [Discovery record](https://github.com/EndPx/symbolon/blob/codex/public-devnet-app/docs/submission/borrower-discovery.md) · [Metrics and evidence](https://github.com/EndPx/symbolon/blob/codex/public-devnet-app/docs/submission/form/03-metrics.md)
 
-Next milestones are qualified treasury/lender interviews, an external simulated financing rehearsal, and operator-authorized asset integration. Real-asset deployment also needs reviewed token adapters, reliable price sourcing, permissions, closeout accounting and operating arrangements. [Roadmap](docs/gitbook/mission/roadmap.md)
+Next milestones are qualified treasury/lender interviews, an external simulated financing rehearsal, and operator-authorized asset integration. Real-asset deployment also needs reviewed token adapters, reliable price sourcing, permissions, closeout accounting and operating arrangements. [Roadmap](https://github.com/EndPx/symbolon/blob/codex/public-devnet-app/docs/gitbook/mission/roadmap.md)
 
 ## Review the submission
 
 | Resource | Purpose |
 | --- | --- |
 | [Published documentation](https://symbolon.gitbook.io/symbolon-docs/) | Product overview, role guides, diagrams, privacy and deployment scope. |
-| [Submission text pack](docs/submission/form/README.md) | Value, ICP, metrics, GTM and project-page material. |
-| [BitSafe Contribution Pool entry](docs/submission/bitsafe-contribution.md) | Challenge scope, tested source, reproduction and evidence links. |
-| [Recorded local core workflow](docs/submission/symbolon-local-demo.mp4) | Earlier simulated core repo demonstration; it does not show the installed DecMan integration. |
-| [60-second pitch](docs/submission/pitch.md) | Product narrative and evidence boundaries. |
+| [Submission text pack](https://github.com/EndPx/symbolon/blob/codex/public-devnet-app/docs/submission/form/README.md) | Value, ICP, metrics, GTM and project-page material. |
+| [BitSafe Contribution Pool entry](https://github.com/EndPx/symbolon/blob/codex/public-devnet-app/docs/submission/bitsafe-contribution.md) | Challenge scope, tested source, reproduction and evidence links. |
+| [Recorded local core workflow](https://github.com/EndPx/symbolon/blob/codex/public-devnet-app/docs/submission/symbolon-local-demo.mp4) | Earlier simulated core repo demonstration; it does not show the installed DecMan integration. |
+| [60-second pitch](https://github.com/EndPx/symbolon/blob/codex/public-devnet-app/docs/submission/pitch.md) | Product narrative and evidence boundaries. |
 | [PR #5](https://github.com/EndPx/symbolon/pull/5) | Current delivery branch and reviewable changes. |
 
-The delivery branch is **`codex/public-devnet-app`**; PR #5 is not merged. The repository includes an August 28, 2026 scaffold baseline. HackCanton delivery began September 18, and [the submission scope](docs/gitbook/mission/submission.md) distinguishes that baseline from later implementation and evidence.
+The delivery branch is **`codex/public-devnet-app`**; PR #5 is not merged. The repository includes an August 28, 2026 scaffold baseline. HackCanton delivery began September 18, and [the submission scope](https://github.com/EndPx/symbolon/blob/codex/public-devnet-app/docs/gitbook/mission/submission.md) distinguishes that baseline from later implementation and evidence.
