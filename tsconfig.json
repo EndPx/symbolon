@@ -1,0 +1,5 @@
+{
+  "extends": "./web/tsconfig.server.json",
+  "compilerOptions": {"typeRoots": ["./web/node_modules/@types"]},
+  "include": ["api", "web/server", "web/src/ledger/lender-directory-model.ts", "web/src/ledger/discovery-model.ts"]
+}

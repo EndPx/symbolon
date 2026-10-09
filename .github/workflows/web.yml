@@ -26,3 +26,5 @@ jobs:
         run: node scripts/verify-public-devnet-evidence.mjs
       - run: npm test
       - run: npm run build
+      - name: Repository-root API compilation
+        run: node node_modules/typescript/bin/tsc --noEmit -p ../tsconfig.json

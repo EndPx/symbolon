@@ -28,7 +28,7 @@ A floating borrowing rate can change while a position stays open. A treasury tea
 | Capability | What it gives the user |
 | --- | --- |
 | **Fixed contractual repayment** | Review principal, annualized APR, term interest and the amount due before accepting. Later rate changes do not reprice that agreement. |
-| **Independent lender offers** | Request financing from eligible registered lenders. Each lender sets its own APR and reserves cash to back its quote. |
+| **Open discovery, private details** | Publish a minimal opportunity. New lenders request access without registration; the borrower approves who receives the full terms. Each lender then sets its own APR and funds its bilateral quote. |
 | **Controlled visibility and atomic settlement** | Compare bilateral offers while Canton enforces authorization and the simultaneous cash/collateral exchange. |
 
 The value is repayment predictability. Fixed financing does not guarantee cheaper borrowing or remove collateral and counterparty risk. Network charges remain separate. The initial customer hypothesis is a treasury operator at a small or mid-sized digital-asset fund with Canton exposure or a concrete adoption plan.
@@ -37,8 +37,8 @@ The value is repayment predictability. Fixed financing does not guarantee cheape
 
 ![An illustrative borrower comparing two private lender offers, settling one agreement and recovering collateral on repayment](https://raw.githubusercontent.com/EndPx/symbolon/main/docs/gitbook/assets/product-overview.png)
 
-1. **Register to lend.** A lender joins the exact market and obtains compatible cash holdings. Registration does not reserve funds.
-2. **Request financing.** The borrower specifies principal, term and collateral conditions, reviews **All registered lenders**, and approves sharing. One addressed request is created per eligible recipient.
+1. **Publish an opportunity.** The borrower specifies principal, term and collateral conditions. The public board shows only the supported market, a random listing ID and listing time; publishing does not create a Canton request or move assets.
+2. **Approve lender access.** Any authorized Symbolon account can request details without prior lender registration. The borrower reviews that lender's party and explicitly creates a bilateral request sharing the full terms.
 3. **Price and fund a quote.** Each lender chooses its APR. Sending a funded quote reserves the exact cash amount; it does not settle financing.
 4. **Compare and settle.** The borrower reviews the full terms and accepts one funded quote. Cash reaches the borrower while collateral transfers to the lender under the position's restrictions.
 5. **Manage collateral.** Monitor the agreed price mark and coverage. Address a margin call with a sufficient top-up or an agreed substitution.
@@ -97,10 +97,29 @@ The selected challenge is **Contribution Pool**, not Gold. The public DevNet app
 
 ## Privacy and remaining risk
 
+### Contract visibility model
+
+The core Daml model separates contract visibility from choice authorization. The matrix below assumes distinct parties in each role and shows the normal active-contract view.
+
+| Contract | Asset issuer | Borrower | Addressed / winning lender | Oracle | Unrelated party |
+| --- | :---: | :---: | :---: | :---: | :---: |
+| `Holding` | S | O* | O* | O* | — |
+| `PriceFeed` | O* | O* | O* | S | — |
+| `QuoteRequest` | — | S | O | — | — |
+| `RepoQuote` | — | S | S | — | — |
+| `RepoPosition` | — | S | S | — | — |
+| `SubstitutionProposal` | — | S | S | — | — |
+| `ClosedRepo` | — | S | S | — | — |
+
+**S** = signatory; **O** = observer; **—** = no default visibility. **O*** applies only when the party is the holding's owner, a configured viewer/lock party, or a price-feed reader. Choice controllers determine who can act: an observer can still control a choice, as the holding owner does for transfers. Signatory status on a funded quote does not mean financing has settled; the borrower must separately accept it.
+
+Parties with overlapping roles receive the union of those rights. The public test operator combines issuer, lender and oracle roles. Hosting operators remain a trust dependency, and later changes to access do not revoke information already disclosed or retained. [Core contracts](https://github.com/EndPx/symbolon/blob/main/daml/Symbolon/Repo.daml) · [Holding contract](https://github.com/EndPx/symbolon/blob/main/daml/Symbolon/DemoAsset.daml)
+
 | Record or capability | Visibility / authority |
 | --- | --- |
-| Lender registration | Party ID and market preference are listed with consent for discovery. |
-| Financing request | The borrower approves the audience; eligible registered lenders receive separate addressed requests. |
+| Public opportunity | Market, random listing ID, open status and listing time are web-readable. No borrower identity, amount, collateral quantity or tenor. |
+| Private discovery records | The borrower sees its terms and incoming lender interests. A pending lender sees its own access status; approved lenders receive their bilateral details. The application database operator can read stored records. |
+| Financing request | The borrower approves each lender separately. A verified on-ledger `QuoteRequest` shares the full terms with that addressed lender. |
 | Funded quote | The borrower and that quoting lender can read their bilateral terms. Competing quotes remain separate. |
 | Accepted position and closing record | Shared with the borrower and winning lender under the contract's visibility rules. |
 | Demo holdings | The trusted issuer sees asset movements and retains mint/archive powers. |
@@ -116,8 +135,8 @@ Open **[symbolon.endpx.cloud/app](https://symbolon.endpx.cloud/app)** with a pro
 
 1. Confirm your account party and **DevNet** network.
 2. Use **Faucet** for matching cBTC-demo collateral and USDCx-demo cash.
-3. Have the lender register in the selected market before the borrower sends a new request.
-4. Send the request as borrower; use the distinct lender party to enter an APR and submit a funded offer.
+3. Publish a minimal opportunity as borrower. The distinct lender account opens **Lend → Open opportunities** and requests detail access.
+4. Approve that lender from **Your opportunities**. The lender reviews the addressed private request, enters an APR and submits a funded offer.
 5. Return to the borrower to review, settle, manage and repay the agreement.
 
 The [demo guide](https://github.com/EndPx/symbolon/blob/main/docs/submission/hosted-devnet-demo.md) gives the two-sided sequence and a comprehension check. [Borrowers](https://github.com/EndPx/symbolon/blob/main/docs/gitbook/guides/borrower.md), [Lenders](https://github.com/EndPx/symbolon/blob/main/docs/gitbook/guides/dealer-oracle.md) and [FAQ](https://github.com/EndPx/symbolon/blob/main/docs/gitbook/guides/faq.md) explain each role.

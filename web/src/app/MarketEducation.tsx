@@ -1,5 +1,6 @@
 import { useId } from "react";
 import type { TradeSide } from "./terminal-state";
+import { deployment } from "../ledger/deployment";
 
 const borrowing = [
   ["Request", "Choose cash amount, collateral and duration. Approve sharing with all registered lenders for this market. A request does not give you cash."],
@@ -16,10 +17,13 @@ const lending = [
 
 export function MarketEducation({side}:{side:TradeSide}) {
   const id=useId();
+  const discovery = !!deployment().publicDesk;
+  const journey = side === "lend" ? lending : borrowing;
+  const first = side === "lend" ? ["Find an opportunity", "Request detail access from the open board. The borrower approves a private request to your party before you set an APR. No lender registration is required."] : ["Publish an opportunity", "Choose the cash amount, collateral and duration. Publish a minimal listing, then approve each lender before sharing your full terms. Publishing does not give you cash."];
   return <div className="market-education">
     <section className="market-journey" aria-labelledby={`${id}-journey`}>
       <h3 id={`${id}-journey`}>{side==="lend"?"How lending works":"How borrowing works"}</h3>
-      <ol>{(side==="lend"?lending:borrowing).map(([title,text],index)=><li key={title}><span className="journey-number" aria-hidden="true">{index+1}</span><div><h4>{title}</h4><p>{text}</p></div></li>)}</ol>
+      <ol>{(discovery ? [first, ...journey.slice(1)] : journey).map(([title,text],index)=><li key={title}><span className="journey-number" aria-hidden="true">{index+1}</span><div><h4>{title}</h4><p>{text}</p></div></li>)}</ol>
     </section>
     <div className="market-assurance-grid">
       <section aria-labelledby={`${id}-cost`}><h3 id={`${id}-cost`}>{side==="lend"?"Know the agreed cash return":"Know the repayment before you accept"}</h3><p>Reference APR is indicative. The accepted offer fixes the rate and principal-plus-interest repayment. Early repayment still costs the full agreed amount.</p><p className="sm muted">Fixed repayment does not remove collateral risk. Network fees remain separate. Duration starts at settlement; this prototype has no automatic rollover.</p>
@@ -31,7 +35,7 @@ export function MarketEducation({side}:{side:TradeSide}) {
           <div><dt>Fees and test assets</dt><dd>This prototype has no Symbolon protocol fee. Network charges are separate. Demo assets and simulated prices do not represent real cBTC/USDCx funding.</dd></div>
         </dl></details>
       </section>
-      <section aria-labelledby={`${id}-privacy`}><h3 id={`${id}-privacy`}>Who can see your deal?</h3><p>You approve sharing your funding request with every registered lender for the selected market. Each receives a separate request and sees its own quote. The borrower compares the offers. The accepted position is shared with the borrower and winning lender.</p><p className="sm muted">The lender directory publishes names, party IDs and market preferences. Asset issuers can observe asset movements. Hosting operators remain a trust dependency.</p>
+      <section aria-labelledby={`${id}-privacy`}><h3 id={`${id}-privacy`}>Who can see your deal?</h3><p>{discovery ? "The open board reveals the market and listing status. You choose which lenders receive your identity, amount, collateral quantity and duration. Each receives a separate private request and sees its own quote. The accepted position is shared with the borrower and winning lender." : "A request is visible to its borrower and addressed lender. Each lender sees its own quote; the borrower compares their offers. The accepted position is shared with the borrower and winning lender."}</p><p className="sm muted">The application operator can access stored discovery details. Asset issuers can observe their holdings and asset movements. Hosting operators remain a trust dependency.</p>
         <details className="education-disclosure"><summary>Why Canton?</summary><p>Canton supports party-specific contract visibility and atomic cash/collateral settlement. That lets counterparties agree confidential terms and settle together. Privacy means controlled access, not anonymity.</p></details>
       </section>
     </div>

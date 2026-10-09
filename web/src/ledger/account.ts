@@ -140,6 +140,25 @@ export async function accountDirectoryRequest(body: unknown) {
   if (!response.ok) throw new LedgerError(result?.error ?? "Lender registration was not confirmed. Refresh the directory before retrying.");
   if (currentRevision !== revision) throw new LedgerError("The account changed. Refresh the lender directory.");
 }
+/** Same-origin discovery only; account credentials never leave this closure. */
+export async function accountDiscoveryRequest(method: "GET" | "POST", value: unknown): Promise<unknown> {
+  if (!context) throw new LedgerError("Connect your HackCanton account to manage discovery access.");
+  const body = value as { party?: unknown; market?: unknown; scope?: unknown };
+  if (!body || typeof body !== "object" || typeof body.party !== "string" || !context.parties.includes(body.party)) {
+    throw new LedgerError("Use an authorized party from your current account.");
+  }
+  const currentRevision = revision;
+  const token = await validToken();
+  if (currentRevision !== revision || !context) throw new LedgerError("The account changed. Refresh discovery from your current account.");
+  const query = method === "GET" ? `?${new URLSearchParams({market: JSON.stringify(body.market), scope: "mine", party: body.party})}` : "";
+  const response = await fetch(`/api/discovery${query}`, {method, credentials: "omit", redirect: "error", signal: AbortSignal.timeout(30000),
+    headers: {Authorization: `Bearer ${token}`, ...(method === "POST" ? {"Content-Type": "application/json"} : {})},
+    ...(method === "POST" ? {body: JSON.stringify(value)} : {})});
+  const result = await response.json().catch(() => null);
+  if (!response.ok) throw new LedgerError(redactedError(typeof result?.error === "string" ? result.error : "Discovery was not confirmed. Refresh before retrying."));
+  if (currentRevision !== revision) throw new LedgerError("The account changed. Refresh discovery from your current account.");
+  return result;
+}
 export async function uploadPublicAccessPackage(synchronizerId: string) {
   if (!context || !synchronizerId) throw new LedgerError("Connect an authorized HackCanton operator account first.");
   const file = await fetch("/packages/symbolon-public-0.1.0.dar", {credentials:"omit",signal:AbortSignal.timeout(15000)});
