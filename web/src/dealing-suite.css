@@ -640,7 +640,7 @@
   --terminal-canvas: var(--parchment, #f4e9ce); --terminal-surface: var(--desk-paper, #f9f2de);
   --terminal-soft: rgba(216,200,158,.18); --terminal-text: #221c19; --terminal-muted: #4a3a26;
   --terminal-border: rgba(34,28,25,.26); --terminal-control-border: rgba(34,28,25,.52); --terminal-radius: 16px; --terminal-control-radius: 8px; --terminal-motion: 150ms;
-  --terminal-workspace-max: 1440px;
+  --terminal-workspace-max: none;
   height: 100dvh; min-height: 0; display: flex; flex-direction: column; overflow: hidden;
   background: var(--terminal-canvas) url("/brand/grain.png"); background-size: 640px; background-blend-mode: soft-light;
   color: var(--terminal-text); font: 14px/1.5 "Libre Franklin", sans-serif;
