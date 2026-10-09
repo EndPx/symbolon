@@ -29,6 +29,6 @@ export function canRefreshTestPositionMark(session: Pick<Session, "kind" | "part
   try { if (decimalUnits(feed.price) !== decimalUnits(num(feed.price))) return false; } catch { return false; }
   const at = Date.parse(feed.asOf), age = num(position.maxPriceAgeSeconds);
   return session.party === d.publicDesk.operator && session.party === position.oracle && session.party === feed.oracle
-    && publicMarket(feed, d) && matchesPair(position, feed) && Number.isFinite(at) && at <= now
+    && publicMarket(feed, d) && matchesPair(position, feed) && feed.readers.includes(position.borrower) && Number.isFinite(at) && at <= now
     && Number.isFinite(age) && age > 0 && Number.isFinite(num(feed.price)) && num(feed.price) > 0 && !isFresh(feed, age, now);
 }

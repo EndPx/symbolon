@@ -68,7 +68,7 @@ test("position timestamp recovery belongs only to the bound public DevNet oracle
     assert.equal(canRefreshTestPositionMark(actor, position, mark, profile, now), false);
   for (const network of ["localnet", "mainnet"] as const)
     assert.equal(canRefreshTestPositionMark(session, position, mark, {...profile, network}, now), false);
-  for (const changed of [{...mark, instrumentIssuer: "foreign::c"}, {...mark, cashIssuer: "foreign::c"},
+  for (const changed of [{...mark, readers: []}, {...mark, instrumentIssuer: "foreign::c"}, {...mark, cashIssuer: "foreign::c"},
     {...mark, oracle: "committee::c"}, {...mark, asOf: new Date(now + 1).toISOString()},
     {...mark, asOf: new Date(now).toISOString()}, {...mark, price: "Infinity"}, {...mark, price: "9007199254740993.0000000000"}])
     assert.equal(canRefreshTestPositionMark(session, position, changed, profile, now), false);
