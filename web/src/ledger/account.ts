@@ -128,6 +128,18 @@ const ledgerRequest: LedgerRequest = async (method: Method, path, body) => {
   catch { throw new LedgerError("The participant returned an invalid JSON response."); }
 };
 export function activeAccountContext() { return context; }
+/** Directory registration shares public lender metadata, never ledger payloads. */
+export async function accountDirectoryRequest(body: unknown) {
+  if (!context) throw new LedgerError("Connect a HackCanton account to register as a lender.");
+  const currentRevision = revision;
+  const token = await validToken();
+  if (currentRevision !== revision || !context) throw new LedgerError("The account changed. Register from the current account.");
+  const response = await fetch("/api/lenders", {method: "POST", credentials: "omit", redirect: "error", signal: AbortSignal.timeout(30000),
+    headers: {Authorization: `Bearer ${token}`, "Content-Type": "application/json"}, body: JSON.stringify(body)});
+  const result = await response.json().catch(() => null);
+  if (!response.ok) throw new LedgerError(result?.error ?? "Lender registration was not confirmed. Refresh the directory before retrying.");
+  if (currentRevision !== revision) throw new LedgerError("The account changed. Refresh the lender directory.");
+}
 export async function uploadPublicAccessPackage(synchronizerId: string) {
   if (!context || !synchronizerId) throw new LedgerError("Connect an authorized HackCanton operator account first.");
   const file = await fetch("/packages/symbolon-public-0.1.0.dar", {credentials:"omit",signal:AbortSignal.timeout(15000)});

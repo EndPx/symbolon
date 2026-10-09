@@ -6,7 +6,9 @@ Dealer and oracle are different authorities. A dealer prices a counterparty and 
 
 ## Dealer: review an RFQ
 
-Open a market and select **Lend** in the right action panel. Choose a request addressed to your account, enter the rate and validity, and use **Review funded offer** before reserving cash.
+Open a market and select **Lend**. Use **Register as lender**, approving publication of the current party ID, lender name and preference for this exact market. Registration uses live HackCanton account CanActAs rights; copying another party ID does not grant registration authority. No funds are reserved by registration.
+
+Future borrower requests sent to **All registered lenders** include this party. Choose your addressed request, enter your own APR and validity, and use **Review funded offer** before reserving cash. There is no automatic quote when the borrower submits. Quotes from other lenders are not exposed to you. **Stop receiving new requests** removes this party from future recipient discovery; existing RFQs, offers and positions retain their ledger lifecycle.
 
 Check the requesting party, collateral and cash issuer/instrument, quantities, tenor, margin threshold, cure duration and oracle policy. Treat all sample instrument names as demo identities. An issuer/instrument pair must be acceptable; a matching ticker is insufficient.
 

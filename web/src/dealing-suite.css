@@ -791,6 +791,12 @@
 .terminal-collateral-summary { padding: 12px; border: 1px solid var(--terminal-border); border-radius: var(--terminal-control-radius); background: var(--terminal-soft); display: grid; gap: 4px; font-size: 12px; }
 .terminal-collateral-summary strong { font-size: 16px; font-variant-numeric: tabular-nums; }
 .terminal-trade-note { margin-top: 12px !important; font-size: 12px; color: var(--terminal-muted); }
+.lender-directory { display: grid; gap: var(--desk-space-2, 8px); padding-block: 12px; border-block: 1px solid var(--terminal-rule); min-width: 0; }
+.lender-directory h3, .lender-directory p { margin: 0; }
+.lender-directory h3 { font: 600 14px/1.5 "Libre Franklin", sans-serif; }
+.lender-directory code { display: block; white-space: normal; overflow-wrap: anywhere; }
+.directory-consent { display: flex; align-items: flex-start; gap: var(--desk-space-2, 8px); min-height: 44px; font: 400 12px/1.6 "Libre Franklin", sans-serif; cursor: pointer; }
+.directory-consent input[type=checkbox] { flex: 0 0 20px; width: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--terminal-text); }
 .terminal .acts { display: flex; flex-wrap: wrap; gap: 8px; }
 .terminal .desk-form > .seal { width: 100%; }
 .terminal .terminal-trade-panel .terminal-trade-note { margin-top: 0 !important; }

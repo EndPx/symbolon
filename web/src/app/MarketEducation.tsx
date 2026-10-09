@@ -2,13 +2,13 @@ import { useId } from "react";
 import type { TradeSide } from "./terminal-state";
 
 const borrowing = [
-  ["Request", "Choose cash amount, collateral and duration. A request does not give you cash."],
+  ["Request", "Choose cash amount, collateral and duration. Approve sharing with all registered lenders for this market. A request does not give you cash."],
   ["Receive offer", "Your lender quotes a fixed APR and the exact repayment amount."],
   ["Accept & settle", "Review the offer, then exchange collateral for cash in one ledger transaction."],
   ["Repay", "Pay the full agreed amount before the applicable deadline to recover collateral."],
 ];
 const lending = [
-  ["Receive request", "Share your party ID. Borrowers send requests addressed to your account."],
+  ["Receive request", "Register your lender party for this market. New borrower requests are addressed separately to each registered lender."],
   ["Quote", "Set your fixed rate. Sending a funded offer reserves cash for that borrower."],
   ["Settle", "Borrower acceptance exchanges your reserved cash for locked collateral."],
   ["Receive repayment", "Full repayment returns cash to you and collateral to the borrower."],
@@ -31,7 +31,7 @@ export function MarketEducation({side}:{side:TradeSide}) {
           <div><dt>Fees and test assets</dt><dd>This prototype has no Symbolon protocol fee. Network charges are separate. Demo assets and simulated prices do not represent real cBTC/USDCx funding.</dd></div>
         </dl></details>
       </section>
-      <section aria-labelledby={`${id}-privacy`}><h3 id={`${id}-privacy`}>Who can see your deal?</h3><p>Each lender sees its addressed request and own quote. The borrower sees offers addressed to them. The accepted position and terms are shared with the borrower and winning lender, not unrelated counterparties.</p><p className="sm muted">Asset issuers can observe asset movements. Hosting operators remain a trust dependency.</p>
+      <section aria-labelledby={`${id}-privacy`}><h3 id={`${id}-privacy`}>Who can see your deal?</h3><p>You approve sharing your funding request with every registered lender for the selected market. Each receives a separate request and sees its own quote. The borrower compares the offers. The accepted position is shared with the borrower and winning lender.</p><p className="sm muted">The lender directory publishes names, party IDs and market preferences. Asset issuers can observe asset movements. Hosting operators remain a trust dependency.</p>
         <details className="education-disclosure"><summary>Why Canton?</summary><p>Canton supports party-specific contract visibility and atomic cash/collateral settlement. That lets counterparties agree confidential terms and settle together. Privacy means controlled access, not anonymity.</p></details>
       </section>
     </div>

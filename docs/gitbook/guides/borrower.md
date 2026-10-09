@@ -10,7 +10,11 @@ Have repayment cash available for the demonstration. A repo gives you principal 
 
 ## 2. Request quotes
 
-Open a pair in **Markets** and choose **Borrow** in the action panel. Enter the amount and duration. The form shows collateral required and available collateral; **Advanced terms** holds lender selection, agreed oracle, coverage threshold, cure window and maximum mark age. Select one or more lenders. Submitting to two lenders creates two private request contracts; it does not create one record with the entire lender list as observers.
+Open a pair in **Markets** and choose **Borrow**. Enter amount and duration. The audience is **All registered lenders** for the exact issuer pair, oracle and deployment, excluding your own party. The directory lists lender identities and market preferences, not cash availability. **Advanced terms** holds the agreed oracle, coverage threshold, cure window and maximum mark age.
+
+Review the actual recipients and approve sharing your identity, requested amount, collateral and terms with them. A request is created separately for each lender; two lenders receive two contracts rather than one shared contract. If the registry is unavailable or empty, sending is blocked. A changed recipient list requires another review. New registrations receive future requests, not earlier requests.
+
+Sending creates requests only. The app does not generate a standing 5.20% offer. Each addressed lender opens **Lend**, enters an APR and sends a funded offer. If rehearsing both roles in one authorized HackCanton account, switch the signing party to the registered lender, then select Lend. Return to the borrower party to compare received offers.
 
 The collateral quantity and requested cash need to satisfy the initial coverage requirement under a valid price. Do not assume that a generous quote rate compensates for insufficient collateral: the rate and margin checks are separate.
 

@@ -77,11 +77,25 @@ and opens the review with actual collateral requirements. This click-triggered
 preparation applies only to the simulated public reference. Private/committee
 oracles and production prices retain their own freshness and authorization.
 
-Connect the account, select an authorized borrower party distinct from the dealer,
-claim DevNet assets, request a quote, review the fixed annualized rate and full
-repurchase amount, settle, then repay. Peer dealers can use their actual issued
-cash to quote requests addressed to them; the public standing dealer is a test
-counterparty and does not represent external liquidity or market demand.
+Before borrowing, a lender opens the exact market from its authorized party,
+selects **Lend**, and uses **Register as lender**. It explicitly publishes its
+name, party ID and market preference in the off-ledger directory. Registration
+is verified against live HackCanton CanActAs rights and does not reserve cash.
+
+The borrower uses **All registered lenders**, reviews the current recipient
+list and approves sharing its funding request. Sending creates one private RFQ
+per lender and waits. It does not request an automatic 5.20% standing offer.
+Each lender enters its own APR and sends a funded offer from Lend; the borrower
+then compares, accepts, settles and repays. In a same-account rehearsal, switch
+the authorized signing party between borrower and lender. Selecting Borrow or
+Lend changes the activity, not the signer.
+
+The directory is persistent discovery metadata, not proof of available cash or
+external market demand. Matching is scoped to network/deployment, both issuers
+and the agreed oracle. An empty or unavailable directory blocks sending.
+Deactivating a registration affects future requests, not existing ledger records.
+The public standing dealer contract remains available for historical test
+reproduction, but is no longer invoked automatically by the borrower form.
 
 ## Position health and expired marks
 
