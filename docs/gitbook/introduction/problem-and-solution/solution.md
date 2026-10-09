@@ -1,21 +1,23 @@
 # Solution
 
-Symbolon makes the contractual principal-plus-interest amount known before financing is accepted. A dealer offers a fixed annualized rate for the requested term; the borrower compares private quotes and accepts an exact repurchase amount. Collateral management and controlled visibility support that agreement on Canton. Each dealer manages its own request, quote and position.
+Symbolon turns a financing request into a choice between funded, fixed-rate offers. Before accepting, the borrower can see the annualized rate, duration, full repayment and collateral terms. Accepted financing terms remain fixed for that agreement.
 
-## Agree the economics before moving assets
+## Example: choose the repayment budget upfront
 
-An RFQ specifies cash, collateral, maturity, and proposed risk terms. A dealer responds with a fixed annualized simple rate and an expiry. The desk calculates the ACT/360 repurchase amount before acceptance.
+For 1,000 USDCx-demo over 30 days, a 7% APR offer produces approximately 5.83 interest and 1,005.83 total repayment. Alex reviews that obligation before settlement and can reserve the cash needed to repay. Later changes in available lender rates do not reprice this agreement.
 
-The quote reserves dealer cash on the ledger. Acceptance exchanges that cash against the borrower's exact collateral input atomically and creates the repo position. A failed acceptance does not leave one settlement leg committed by itself.
+| Borrower question | Symbolon response |
+| --- | --- |
+| How much can I receive? | The offer identifies the cash amount and exact issuer. |
+| What will I owe? | Principal plus fixed term interest is shown before acceptance. |
+| When is it due? | Maturity is determined by the accepted duration from settlement. |
+| Who sees the offer? | The borrower and the lender making that offer. |
+| What happens to collateral? | Title transfers to the lender at settlement, with restrictions while the repo is open. |
 
-## Manage the position through closure
+## Shared request, bilateral offers
 
-The position preserves the rate, maturity, oracle, and coverage requirement. A dealer can raise a margin call when a valid mark proves a shortfall. The borrower can restore coverage, propose collateral substitution, or pay the full repurchase amount to recover collateral.
+The borrower approves sharing its request with all registered lenders in the selected market. Each receives a separate request and sets its own APR. The accepted position is shared with the borrower and winning lender rather than becoming a global public position list.
 
-After an uncured call, dealer-led liquidation requires the elapsed cure window and a fresh matching mark that still proves a shortfall. A separate maturity-default choice handles the repayment deadline. The prototype records closure and releases collateral; it does not sell collateral or calculate realized recovery.
+## Keep the remaining risk visible
 
-## Limit unilateral oracle administration
-
-The BitSafe integration places simulated price-mark publication under 2-of-3 governance. A single confirmation cannot execute the proposal; two confirmations can publish the mark. The accepted mark affects repo health factor and margin behavior.
-
-This demonstrates authorization on the governed action path. It does not establish a correct market price, independent operators or an operator-resistant oracle. An account with native authority to act as the ordinary oracle party can invoke its oracle choices directly in the shared-node prototype. Production needs appropriate authority/hosting policy and verified price provenance. The [integration guide](../../guides/bitsafe-localnet.md) provides the working LocalNet setup and evidence.
+An accepted offer fixes repayment, not collateral value. A price decline can trigger a margin call. Early repayment still requires the full agreed amount. Those conditions appear before the borrower accepts.

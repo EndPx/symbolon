@@ -1,28 +1,38 @@
-# Product overview
+---
+description: Private fixed-rate financing on Canton, with repayment agreed before settlement.
+---
+# Overview
 
-Symbolon is a browser-based private fixed-rate bilateral repo desk. Its main value is a known contractual principal-plus-interest repayment amount: a borrower accepts a dealer's fixed annualized quote instead of leaving that agreement's interest exposed to later floating-rate changes. Proposed initial users are digital-asset fund treasury operators with Canton asset exposure or an adoption plan, plus dealers supplying financing capital. Customer demand and willingness to accept a fixed-rate premium have not yet been established through interviews.
+Symbolon connects borrowers who need cash with lenders who can finance their collateral. The borrower compares fixed-rate offers, chooses a lender, and knows the contractual repayment amount before the trade settles on Canton.
 
-## A trade with two counterparties
+![Product overview: User A requests cash, Users B and C quote, and A selects B before settlement and repayment](../assets/product-overview.png)
 
-The borrower chooses a cash amount, collateral quantity, term, oracle, coverage requirement, and cure window. Each selected dealer receives a separate request. A dealer can decline or respond with a rate and quote expiry. The borrower accepts one available quote, creating a repo position on Canton.
+**Read the overview:** User A brings collateral and needs cash. Users B and C each set an APR. A selects B's suitable offer, receives cash and later repays the agreed amount to recover the collateral. B receives principal plus interest if A repays.
 
-Maturity is configurable within the current contract range of 1–365 whole days. Fixed rate and bilateral privacy define the workflow; the example tenors do not restrict the intended product to one funding horizon.
+The current app uses simulated **cBTC-demo** collateral and **USDCx-demo** cash on HackCanton DevNet. These are test assets. Production cBTC and USDCx adapters remain planned work.
 
-There is no public order book, algorithm that matches unrelated users, or pooled deposit market. A dealer's quote is for the requesting borrower. This lets the contract model preserve counterparty-specific terms without needing a global trade feed.
+## The financing journey
 
-## The work continues after settlement
+1. A borrower requests an amount and duration from all registered lenders for the selected market.
+2. Each lender sets its own annualized rate and sends a funded offer.
+3. The borrower compares offers and accepts one. Cash and pledged collateral exchange together.
+4. The borrower manages collateral health, then pays the agreed amount to recover the collateral.
 
-Settlement is the beginning of collateral management. The dealer can submit a margin call when a valid agreed price feed shows a shortfall. The borrower can add collateral or propose an eligible substitute. Both parties retain the same rate and maturity through these updates. Repurchase returns collateral against the agreed cash amount; default records the alternative outcome when a contractual deadline has been reached.
+![From request to repayment](../assets/repo-journey.png)
 
-| Role | Main job | What Symbolon makes explicit |
+## Example: User A, User B and User C
+
+**User A (Alex)** requests **1,000 USDCx-demo for 30 days**, pledging **0.0250 cBTC-demo** at a simulated price of **60,000 USDCx-demo per cBTC-demo**. **User B (Blair)** offers **7% APR**; **User C (Casey)** offers **7.5% APR**.
+
+| Offer | Fixed term interest, approximately | Total repayment, approximately |
 | --- | --- | --- |
-| Borrower | Raise temporary cash and recover collateral | Competing private quotes, due amount, deadlines, and actions |
-| Dealer | Price financing and manage collateral exposure | Funding availability, collateral coverage, cure status, and closure |
-| Oracle operator | Publish a price for an identified instrument pair | Identity, price, timestamp, and parties entitled to read it |
-| Demo issuer | Create test holdings | Issuer identity and the simulated asset boundary |
+| User B: 7% APR | 5.83 USDCx-demo | 1,005.83 USDCx-demo |
+| User C: 7.5% APR | 6.25 USDCx-demo | 1,006.25 USDCx-demo |
 
-## What the prototype proves
+The examples use simple ACT/360 interest. The review dialog shows the ledger's exact amount before acceptance. Alex can choose Blair's cheaper offer if its other terms are suitable. Casey cannot automatically inspect Blair's quote.
 
-The prototype supplies an executable Daml model and a browser client for that model. It is intended to demonstrate authorization, atomic transfers, collateral state changes, and party-specific views. Actual cash financing additionally requires supported token contracts, suitable operational controls, accepted valuation, and agreements outside this demo.
+## What becomes predictable?
 
-Read [features and boundaries](features.md) before interpreting screenshots or test data as live financial activity.
+The accepted rate, duration and principal-plus-interest repayment stay fixed. Collateral prices can still fall, and a margin call can require additional collateral. Fixed financing solves rate uncertainty; it does not remove collateral risk.
+
+Start with [Getting Started](../guides/public-devnet.md), then follow the [Borrowers](../guides/borrower.md) or [Lenders](../guides/dealer-oracle.md) guide.

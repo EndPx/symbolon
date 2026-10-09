@@ -2,13 +2,37 @@
   "schemaVersion": 1,
   "network": "devnet",
   "walletNetwork": "devnet",
-  "participant": null,
-  "synchronizerId": null,
+  "participant": "https://ledger-api-json.participant.hackcanton-01.devnet.naas.noders.services",
+  "synchronizerId": "global-domain::1220be58c29e65de40bf273be1dc2b266d43a9a002ea5b18955aeef7aac881bb471a",
   "corePackageId": "1d40e972b56e42c279140639d33dc362b432f2c0f608c77ec36410f0395f3e19",
-  "tradingEnabled": false,
-  "releaseEvidence": null,
+  "tradingEnabled": true,
+  "releaseEvidence": "https://github.com/EndPx/symbolon/blob/codex/public-devnet-app/docs/submission/evidence/public-devnet.md",
+  "publicPackageId": "c2eeb6d65814e813ecc6dc2c3e583b31f20bf9b8781f956fd6250d8b720cd04b",
+  "publicDesk": {
+    "contractId": "00e16002aadc1044748a4b560d48e71aec87eb88b49f49d65e017af48e0bd8639bca1212204e445d12cb185ccfeee0e0ad4720de77f0295db561f87fc5c61ad56bd70cfc5a",
+    "createdEventBlob": "CgMyLjESwgQKRQDhYAKq3BBEdIpLVg1I5xrsh+uItJ9J1l4BevSOC9hjm8oSEiBORF0Syxhcz+7g4K1HIN538CldtWH4f8XGGtVr1wz8WhIPc3ltYm9sb24tcHVibGljGmQKQGMyZWViNmQ2NTgxNGU4MTNlY2M2ZGMyYzNlNTgzYjMxZjIwYmY5Yjg3ODFmOTU2ZmQ2MjUwZDhiNzIwY2QwNGISCFN5bWJvbG9uEgpQdWJsaWNEZXNrGgpQdWJsaWNEZXNrIt0BatoBCnEKbzptMjI5NTQ3YmMtc3ltYm9sb24tcHJvb2YtYzY4NWI2ZDEtZGVhbGVyOjoxMjIwNGE5ZDg4M2QxMTU4MTQxZDhmMDk5ZDA2ZGQyZTQyY2I1MjYxNWRlYjQyZGE1YTQ2ZjA0MmM4ZDBlMWRiZGYwZQoaChhCFlN5bWJvbG9uIERldk5ldCBkZWFsZXIKEAoOMgwwLjA1MjAwMDAwMDAKFAoSMhA2MDAwMC4wMDAwMDAwMDAwCgUKAxigOAoUChIyEDEwMDAwLjAwMDAwMDAwMDAKBAoCWgAqbTIyOTU0N2JjLXN5bWJvbG9uLXByb29mLWM2ODViNmQxLWRlYWxlcjo6MTIyMDRhOWQ4ODNkMTE1ODE0MWQ4ZjA5OWQwNmRkMmU0MmNiNTI2MTVkZWI0MmRhNWE0NmYwNDJjOGQwZTFkYmRmMGU5zJN/jUFdBgBCKgomCiQIARIgmqK1EFm09R0ljL6JNhomSlAMDIsjWmHBqs7yRvjWNX0QHg==",
+    "operator": "229547bc-symbolon-proof-c685b6d1-dealer::12204a9d883d1158141d8f099d06dd2e42cb52615deb42da5a46f042c8d0e1dbdf0e",
+    "label": "Symbolon DevNet dealer",
+    "referencePrice": "60000.0000000000",
+    "rate": "0.0520000000",
+    "maxPrincipal": "10000.0000000000"
+  },
   "assets": {
-    "collateral": { "symbol": "cBTC", "admin": null, "adapter": "demo-holding", "packageIds": [] },
-    "cash": { "symbol": "USDCx", "admin": null, "adapter": "demo-holding", "packageIds": [] }
+    "collateral": {
+      "symbol": "cBTC-demo",
+      "admin": "229547bc-symbolon-proof-c685b6d1-dealer::12204a9d883d1158141d8f099d06dd2e42cb52615deb42da5a46f042c8d0e1dbdf0e",
+      "adapter": "demo-holding",
+      "packageIds": [
+        "1d40e972b56e42c279140639d33dc362b432f2c0f608c77ec36410f0395f3e19"
+      ]
+    },
+    "cash": {
+      "symbol": "USDCx-demo",
+      "admin": "229547bc-symbolon-proof-c685b6d1-dealer::12204a9d883d1158141d8f099d06dd2e42cb52615deb42da5a46f042c8d0e1dbdf0e",
+      "adapter": "demo-holding",
+      "packageIds": [
+        "1d40e972b56e42c279140639d33dc362b432f2c0f608c77ec36410f0395f3e19"
+      ]
+    }
   }
 }

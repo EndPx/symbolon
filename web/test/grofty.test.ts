@@ -7,6 +7,7 @@ import {
   groftyError, openGroftySession, supportedGroftyVersion,
 } from "../src/ledger/grofty.ts";
 import { connectWallet, rememberedSession, restoreSession } from "../src/ledger/session.ts";
+import { listWalletOptions } from "../src/ledger/session.ts";
 
 // The actual SDK sits between the adapter and this provider; no wallet or network is used.
 class FakeProvider implements Cip0103Provider {
@@ -48,6 +49,43 @@ class FakeProvider implements Cip0103Provider {
   listenerCount() { return [...this.listeners.values()].reduce((count, listeners) => count + listeners.size, 0); }
 }
 const commands = [create("#symbolon:Symbolon.Repo:QuoteRequest", { borrower: "alice::namespace" })];
+test("Grofty-only TestNet excludes Send and clears old Send restoration without a wallet prompt", async () => {
+  const f = new FakeProvider();f.network="canton:testnet";f.account.networkId="canton:testnet";f.status.network={networkId:"canton:testnet"};
+  const priorWindow=Object.getOwnPropertyDescriptor(globalThis,"window"), priorStorage=Object.getOwnPropertyDescriptor(globalThis,"localStorage"), priorFetch=globalThis.fetch;
+  const storage=new Map([["symbolon.session.v3",JSON.stringify({kind:"wallet",walletId:"send",network:"testnet"})]]);
+  const {loadDeployment,defaultDeployment}=await import("../src/ledger/deployment.ts");
+  globalThis.fetch=async()=>new Response(JSON.stringify({...defaultDeployment,network:"testnet",walletNetwork:"testnet"}));await loadDeployment();
+  Object.defineProperty(globalThis,"window",{configurable:true,value:Object.assign(new EventTarget(),{cantonWallet:f,location:{hostname:"symbolon-testnet.vercel.app"}})});
+  Object.defineProperty(globalThis,"localStorage",{configurable:true,value:{getItem:(key:string)=>storage.get(key)??null,setItem:(key:string,value:string)=>storage.set(key,value),removeItem:(key:string)=>storage.delete(key)}});
+  try {
+    assert.deepEqual((await listWalletOptions()).map(wallet=>wallet.id),["grofty"]);
+    const before=f.calls.length;
+    assert.equal(await restoreSession(),null);
+    await assert.rejects(connectWallet("send","testnet"),/uses Grofty/);
+    assert.equal(f.calls.length,before);
+    assert.equal(storage.size,0);
+  } finally {
+    globalThis.fetch=async()=>new Response(JSON.stringify(defaultDeployment));await loadDeployment();globalThis.fetch=priorFetch;
+    if(priorWindow)Object.defineProperty(globalThis,"window",priorWindow);else Reflect.deleteProperty(globalThis,"window");
+    if(priorStorage)Object.defineProperty(globalThis,"localStorage",priorStorage);else Reflect.deleteProperty(globalThis,"localStorage");
+  }
+});
+test("Grofty TestNet binds the live party and rejects a switch to MainNet before reading", async () => {
+  const provider = new FakeProvider();
+  provider.network = "canton:testnet";
+  provider.status.network = { networkId: "canton:da-testnet" };
+  provider.account.networkId = "canton:testnet";
+  const session = await openGroftySession(new GroftyClient(provider), true, () => {}, "testnet");
+  assert.ok(session);
+  assert.equal(session.networkId, "canton:testnet");
+  assert.equal((await session.read()).length, 1);
+  await assert.rejects(session.submit(commands), /read-only/);
+  assert.equal(provider.calls.some(call => call.method === "prepareExecuteAndWait"), false);
+  const readsBefore = provider.calls.filter(call => call.method === "ledgerApi").length;
+  provider.network = GROFTY_NETWORK_ID;
+  await assert.rejects(session.read(), WalletSessionChanged);
+  assert.equal(provider.calls.filter(call => call.method === "ledgerApi").length, readsBefore);
+});
 async function ready(provider = new FakeProvider(), forget = () => {}) {
   const session = await openGroftySession(new GroftyClient(provider), true, forget);
   assert.ok(session);
@@ -245,7 +283,7 @@ test("matching deployment restores silently and a delayed restore cannot replace
     removeItem: (key: string) => storage.delete(key),
   } });
   try {
-    await assert.rejects(connectWallet("grofty", "devnet"), /MainNet only/);
+    await assert.rejects(connectWallet("grofty", "devnet"), /matching MainNet or TestNet/);
     assert.equal(provider.calls.length, 0);
     const connected = await connectWallet("grofty", "mainnet");
     const beforeSigning = provider.calls.length;

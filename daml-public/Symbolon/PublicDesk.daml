@@ -1,0 +1,95 @@
+-- A public entry contract for the shared-DevNet application. This authorizes
+-- simulated asset issuance and standing dealer quotes; it cannot move Splice
+-- tokens or real cBTC/USDCx. The original bilateral repo model is unchanged.
+module Symbolon.PublicDesk where
+
+import Symbolon.DemoAsset
+import Symbolon.Repo
+
+data AccessGrant = AccessGrant
+  with
+    collateralCid : ContractId Holding
+    cashCid : ContractId Holding
+    feedCid : ContractId PriceFeed
+  deriving (Eq, Show)
+
+template PublicDesk
+  with
+    operator : Party
+    label : Text
+    rate : Decimal
+    referencePrice : Decimal
+    quoteValiditySeconds : Int
+    maxPrincipal : Decimal
+    readers : [Party]
+  where
+    signatory operator
+    observer readers
+    ensure label /= "" && validRate rate && referencePrice > 0.0
+      && quoteValiditySeconds >= 1 && quoteValiditySeconds <= 86400
+      && maxPrincipal > 0.0 && maxPrincipal <= 10000.0
+
+    -- Disclosure of this stable contract allows new parties to use the choice
+    -- without giving them the operator's read or act-as permissions. Grants
+    -- are fixed-size, repeatable test assets, not a production token faucet.
+    nonconsuming choice ClaimDevnetAssets : AccessGrant
+      with
+        claimant : Party
+      controller claimant
+      do
+        assertMsg "the dealer must use a separate borrower party" (claimant /= operator)
+        collateralCid <- create Holding with
+          issuer = operator; owner = claimant; instrument = "cBTC-demo"
+          amount = 0.1; viewers = []; lockParties = []
+        cashCid <- create Holding with
+          issuer = operator; owner = claimant; instrument = "USDCx-demo"
+          amount = 5000.0; viewers = []; lockParties = []
+        now <- getTime
+        feedCid <- create PriceFeed with
+          oracle = operator; instrumentIssuer = operator
+          instrument = "cBTC-demo"; cashIssuer = operator
+          cashInstrument = "USDCx-demo"; price = referencePrice
+          asOf = now; readers = [claimant]
+        pure AccessGrant with collateralCid; cashCid; feedCid
+
+    -- The operator pre-authorizes only quotes backed by newly issued test
+    -- cash and only for an RFQ signed by the requesting borrower. SubmitQuote
+    -- consumes that RFQ, so the same request cannot be quoted twice.
+    nonconsuming choice RequestFundedQuote : ContractId RepoQuote
+      with
+        borrower : Party
+        requestCid : ContractId QuoteRequest
+      controller borrower
+      do
+        request <- fetch requestCid
+        assertMsg "request does not belong to this borrower" (request.borrower == borrower)
+        assertMsg "request is not addressed to this dealer" (request.dealer == operator)
+        assertMsg "only the public desk's simulated asset pair is supported"
+          (request.oracle == operator && request.collateralIssuer == operator
+            && request.cashIssuer == operator
+            && request.collateralInstrument == "cBTC-demo"
+            && request.cashInstrument == "USDCx-demo")
+        assertMsg "requested principal exceeds this desk's limit"
+          (request.cashAmount <= maxPrincipal)
+        cashCid <- create Holding with
+          issuer = operator; owner = operator; instrument = "USDCx-demo"
+          amount = request.cashAmount; viewers = []; lockParties = []
+        exercise requestCid SubmitQuote with
+          rate; validSeconds = quoteValiditySeconds; cashCid
+
+    -- A borrower may refresh its own simulated mark to the operator's fixed
+    -- reference price. This is explicitly not a governed or live-market mark.
+    nonconsuming choice RefreshReferenceMark : ContractId PriceFeed
+      with
+        requester : Party
+        feedCid : ContractId PriceFeed
+      controller requester
+      do
+        feed <- fetch feedCid
+        assertMsg "feed is not this desk's simulated reference"
+          (feed.oracle == operator && feed.instrumentIssuer == operator
+            && feed.cashIssuer == operator
+            && feed.instrument == "cBTC-demo" && feed.cashInstrument == "USDCx-demo")
+        assertMsg "requester must be a reader of this feed" (elem requester feed.readers)
+        now <- getTime
+        exercise feedCid SetPrice with newPrice = referencePrice; at = now

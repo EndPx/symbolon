@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {"types": ["node"], "resolveJsonModule": true},
+  "include": ["server", "api", "src/ledger/lender-directory-model.ts"]
+}

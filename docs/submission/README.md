@@ -22,7 +22,7 @@ The primary value is a known contractual principal-plus-interest amount rather t
 
 **Challenge focus:** BitSafe Contribution Pool. Gold deployment and Grofty bounty work are deferred.
 
-**Target user:** A treasury manager at a digital-asset fund holding tokenized assets on Canton, plus its financing dealer. The profile remains a hypothesis; there are no customer interviews or external users yet.
+**Target user:** A treasury manager at a small or mid-sized digital-asset fund with Canton asset exposure or a concrete adoption plan, plus its financing lender. The profile remains a hypothesis. One informal borrower conversation and episode follow-up are recorded in [borrower discovery](borrower-discovery.md); institutional ICP interviews and external app use remain unverified.
 
 **Product evidence:** Eleven core Daml Script entries; two BitSafe governance scripts; frontend and deployment tests; real local Canton lifecycle and browser evidence. Record final counts and revision from the release run. Do not use an older passing log to claim a changed release passes.
 

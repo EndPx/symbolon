@@ -21,5 +21,8 @@ jobs:
       - name: Retained shared DevNet evidence
         working-directory: .
         run: node scripts/verify-shared-devnet-evidence.mjs
+      - name: Exported public borrower receipt
+        working-directory: .
+        run: node scripts/verify-public-devnet-evidence.mjs
       - run: npm test
       - run: npm run build

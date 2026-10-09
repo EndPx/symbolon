@@ -4,6 +4,16 @@ Symbolon's BitSafe integration is a Daml proposal that uses DecMan's `Governable
 
 ## What has run
 
+On **8 October 2026 WIB**, the stack was also installed on the team's existing
+VPS with private loopback bindings. The three managers and participant topology
+remain running, and the same financing frontend is connected over an SSH tunnel.
+The installed run and an additional browser repo both completed: the committee
+mark drove a UI margin call, top-up and repayment. See the [installed LocalNet
+evidence](../../submission/evidence/bitsafe-vps-localnet.md) and the [installation
+wrapper](https://github.com/EndPx/symbolon/blob/codex/public-devnet-app/infra/decman/README.md) for exact versions, commands and scope.
+This remains a one-host LocalNet setup for Contribution Pool; it does not add a
+live DevNet decentralized party.
+
 On **5 October 2026**, the official three-participant DecMan LocalNet passed on [revision d261376](https://github.com/EndPx/symbolon/actions/runs/37341484064). Both governed initialization and price update executed with matching committed update IDs on all three participants. A one-confirmation execution failed for the actual threshold requirement. The lower mark then drove a repo margin call, top-up and repurchase. [Public evidence](../../submission/evidence/bitsafe-localnet.json) and the CI artifact contain the closing contract and all-node audits. The earlier single-participant runs below are historical evidence; the current proof includes DecMan services and participant topology.
 
 The `symbolon-bitsafe` DAR builds against BitSafe's pinned governance-action DAR. Its Daml Script creates a repo, checks that one confirmation cannot execute the mark, then executes with two of three confirmations. It checks that the old feed is archived, the replacement price is 60, and the dealer can issue a Symbolon margin call. The script passed both in the Daml test runner and twice against a native wall-clock Canton 3.5.6 sandbox on 29 September 2026. Those September runs were **single-participant evidence**; the successful October 5 run above supplies the later three-service DecMan proof.

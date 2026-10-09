@@ -1,0 +1,12 @@
+services:
+  decman-1:
+    container_name: symbolon-localnet-decman-1
+    logging: &logs
+      driver: json-file
+      options: { max-size: "20m", max-file: "3" }
+  decman-2:
+    container_name: symbolon-localnet-decman-2
+    logging: *logs
+  decman-3:
+    container_name: symbolon-localnet-decman-3
+    logging: *logs

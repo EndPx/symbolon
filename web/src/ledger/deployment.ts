@@ -9,28 +9,45 @@ export interface AssetDeployment {
 }
 export interface Deployment {
   schemaVersion: 1;
-  network: "devnet" | "mainnet";
+  network: "localnet" | "devnet" | "testnet" | "mainnet";
   walletNetwork: string;
   participant: string | null;
   synchronizerId: string | null;
   corePackageId: string | null;
   tradingEnabled: boolean;
   releaseEvidence: string | null;
+  publicPackageId?: string | null;
+  publicDesk?: {
+    contractId: string; createdEventBlob: string; operator: string; label: string;
+    referencePrice: string; rate: string; maxPrincipal: string;
+  } | null;
   assets: { collateral: AssetDeployment; cash: AssetDeployment };
 }
 export const normalizeNetwork = (value?: string) => {
   const name = value?.toLowerCase();
-  if (name === "devnet" || name === "canton:da-devnet") return "devnet";
-  if (name === "mainnet" || name === "canton:da-mainnet") return "mainnet";
+  if (name === "localnet") return "localnet";
+  if (["devnet", "canton:da-devnet", "canton:devnet", "canton_network_dev"].includes(name ?? "")) return "devnet";
+  if (["testnet", "canton:da-testnet", "canton:testnet", "canton_network_test"].includes(name ?? "")) return "testnet";
+  if (["mainnet", "canton:da-mainnet", "canton:mainnet", "canton_network"].includes(name ?? "")) return "mainnet";
   return name;
 };
+export const networkLabel = (network: string = active.network): string =>
+  (({ localnet: "LocalNet", devnet: "DevNet", testnet: "TestNet", mainnet: "MainNet" } as Record<string, string>)[normalizeNetwork(network) ?? ""] ?? network);
+export function walletConnectionError(error: unknown) {
+  const mismatch = error as { actual?: unknown; expected?: unknown };
+  if (typeof mismatch?.actual === "string" && typeof mismatch.expected === "string") {
+    return `Your wallet is on Canton ${networkLabel(mismatch.actual)}. Symbolon is on Canton ${networkLabel(mismatch.expected)}. Switch the wallet to ${networkLabel(mismatch.expected)}, then reconnect.`;
+  }
+  const message = (error as {message?: unknown} | null)?.message;
+  return error instanceof Error ? error.message : typeof message === "string" ? message.slice(0,300) : "The wallet connection could not be completed. Open your wallet and try again.";
+}
 const packageHash = /^[a-f0-9]{64}$/;
 export function parseDeployment(value: unknown): Deployment {
   if (!value || typeof value !== "object") throw new Error("Missing deployment configuration.");
   const d = value as Deployment;
-  const allowed = ["schemaVersion", "network", "walletNetwork", "participant", "synchronizerId", "corePackageId", "tradingEnabled", "releaseEvidence", "assets"];
+  const allowed = ["schemaVersion", "network", "walletNetwork", "participant", "synchronizerId", "corePackageId", "tradingEnabled", "releaseEvidence", "assets", "publicPackageId", "publicDesk"];
   if (Object.keys(d).some(key => !allowed.includes(key))) throw new Error("Unexpected deployment field. Credentials must stay outside public configuration.");
-  if (d.schemaVersion !== 1 || !["devnet", "mainnet"].includes(d.network)
+  if (d.schemaVersion !== 1 || !["localnet", "devnet", "testnet", "mainnet"].includes(d.network)
     || normalizeNetwork(d.walletNetwork) !== d.network || typeof d.tradingEnabled !== "boolean") {
     throw new Error("Invalid deployment network or schema.");
   }
@@ -38,6 +55,23 @@ export function parseDeployment(value: unknown): Deployment {
     if (d[field] !== null && (typeof d[field] !== "string" || !d[field]?.trim())) throw new Error(`Invalid ${field}.`);
   }
   if (d.corePackageId !== null && !packageHash.test(d.corePackageId)) throw new Error("Invalid core package ID.");
+  if (d.publicPackageId != null && !packageHash.test(d.publicPackageId)) throw new Error("Invalid public access package ID.");
+  if (d.network === "localnet" && (d.participant !== null || d.tradingEnabled || d.publicDesk != null || d.publicPackageId != null)) {
+    throw new Error("LocalNet must use the development proxy with remote signing disabled.");
+  }
+  if (d.network === "testnet" && d.publicDesk != null) throw new Error("TestNet cannot reuse the public DevNet demo desk.");
+  if (Object.keys(d.assets ?? {}).some(key => !["collateral", "cash"].includes(key))) throw new Error("Unexpected deployment asset field.");
+  if (d.publicDesk != null) {
+    const p = d.publicDesk;
+    if (!d.publicPackageId || !d.synchronizerId || !p.operator?.includes("::")
+      || typeof p.contractId !== "string" || !p.contractId || typeof p.createdEventBlob !== "string" || !p.createdEventBlob
+      || typeof p.label !== "string" || !p.label || !(Number(p.referencePrice) > 0)
+      || !(Number(p.rate) >= 0 && Number(p.rate) <= 1) || !(Number(p.maxPrincipal) > 0 && Number(p.maxPrincipal) <= 10000)
+      || Object.keys(p).some(key => !["contractId", "createdEventBlob", "operator", "label", "referencePrice", "rate", "maxPrincipal"].includes(key))) {
+      throw new Error("Invalid public desk disclosure or policy.");
+    }
+    if (Object.values(d.assets).some(a => a.admin !== p.operator)) throw new Error("The public desk must match both asset administrators.");
+  }
   if (d.participant !== null) {
     const url = new URL(d.participant);
     if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash) {
@@ -52,6 +86,7 @@ export function parseDeployment(value: unknown): Deployment {
       throw new Error(`Invalid ${role} asset identity.`);
     }
     if (Object.keys(a).some(key => !["symbol", "admin", "adapter", "packageIds"].includes(key))) throw new Error(`Unexpected ${role} asset field.`);
+    if (d.network === "localnet" && a.adapter !== "demo-holding") throw new Error("LocalNet supports demo holdings only.");
   }
   return d;
 }
@@ -80,8 +115,10 @@ export async function loadDeployment() {
   }
 }
 export function tradingBlocker(network?: string, d = active): string | null {
+  if (d.network === "localnet") return "LocalNet uses the development party picker. Remote wallet and hosted-account signing are disabled.";
   if (normalizeNetwork(network) !== d.network) return `This deployment uses ${d.network}. Connect a wallet on that network.`;
-  if (!d.tradingEnabled) return `${d.network === "mainnet" ? "MainNet" : "DevNet"} trading is disabled in this deployment configuration.`;
+  if (d.network === "testnet") return "TestNet financing is not enabled yet. Verify the Symbolon packages, token adapters and settlement on the wallet participants first.";
+  if (!d.tradingEnabled) return `${networkLabel(d.network)} trading is disabled in this deployment configuration.`;
   if (!d.corePackageId || !d.participant || !d.synchronizerId || !d.releaseEvidence) return "The deployment needs a pinned package, participant, synchronizer and release evidence.";
   // This release has only the trusted-issuer demo adapter. Configuration cannot
   // make a simulated Holding into a real cBTC/USDCx contract.

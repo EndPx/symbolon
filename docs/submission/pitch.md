@@ -2,7 +2,7 @@
 
 Today's floating borrowing rate does not tell a treasury team how much interest it will pay by the time it repays.
 
-Symbolon is a private, bilateral fixed-rate financing desk on Canton. A borrower asks selected dealers for quotes, agrees a rate and term, and knows the exact contractual principal-plus-interest repurchase amount before settlement. The rate remains fixed for that agreement; collateral risk and network costs remain.
+Symbolon is a private, bilateral fixed-rate financing desk on Canton. A borrower approves sharing with eligible registered lenders, compares their independently priced quotes, agrees a rate and term, and knows the exact contractual principal-plus-interest repurchase amount before settlement. The rate remains fixed for that agreement; collateral risk and network costs remain.
 
 We are building for treasury managers at digital-asset funds holding tokenized assets on Canton, and the dealers who finance those holdings. This customer profile still needs validation.
 
@@ -14,4 +14,4 @@ Our next step is an operator pilot and official cBTC/USDCx asset adapters. We wa
 
 ## Presenter boundaries
 
-The asset and price examples are simulations. Do not imply they settle real cBTC or USDCx. The [shared DevNet flow](evidence/shared-devnet.md) uses ordinary hosted parties and Ledger API submission, without wallet signing or a DevNet decentralized party. The three-participant DecMan evidence remains LocalNet. The recorded browser quote comparison is local. No discovery interviews or usage metrics have been completed.
+The asset and price examples are simulations. Do not imply they settle real cBTC or USDCx. The [shared DevNet flow](evidence/shared-devnet.md) uses ordinary hosted parties and Ledger API submission, without wallet signing or a DevNet decentralized party. The three-participant DecMan evidence remains LocalNet. The recorded browser quote comparison is local. One informal borrower discussion and follow-up have started [human discovery](borrower-discovery.md); institutional ICP fit, willingness to switch/pay, external app use and pilot participation remain unvalidated.

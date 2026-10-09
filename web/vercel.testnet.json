@@ -1,0 +1,10 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm run build:testnet",
+  "outputDirectory": "dist",
+  "redirects": [
+    { "source": "/", "destination": "https://symbolon.endpx.cloud/app", "permanent": false },
+    { "source": "/app", "destination": "https://symbolon.endpx.cloud/app", "permanent": false },
+    { "source": "/demo", "destination": "https://symbolon.endpx.cloud/app", "permanent": false }
+  ]
+}

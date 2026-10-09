@@ -1,21 +1,21 @@
-# Canton ecosystem contribution
+# Contribution to the Canton Ecosystem
 
-Symbolon explores a bilateral fixed-term financing workflow for assets represented on Canton. The contribution is the lifecycle model: separate dealer requests, rate agreement, atomic opening and closing exchanges, oracle-checked margin, borrower top-up, mutually accepted substitution and a recorded default outcome.
+Symbolon demonstrates a financing workflow for assets and counterparties on Canton: discover lenders, negotiate bilateral offers, settle cash against collateral, and manage the agreement through repayment or permitted closeout.
 
-## Why this workflow uses Canton
+## A practical privacy use case
 
-The borrower and dealer need to coordinate asset transfers and shared obligations while limiting routine disclosure to other dealers. Daml supplies explicit authority and contract-level participants. Canton supplies the execution and party-specific ledger views needed to run that model. The implementation is therefore more than a public web form with confidential fields hidden by CSS.
+The borrower approves the funding request's audience, while lender quotes and the resulting position retain their separate counterparties. The ledger applies visibility and signing authority alongside financial checks.
 
-## Reusable engineering work
+**Example:** Blair and Casey both price Alex's request. Alex compares 7% and 7.5%, then chooses Blair. Casey does not automatically receive the accepted Alex/Blair position.
 
-- A compact repo state machine with testable authorization and time boundaries.
-- A separation between economic workflow and the demo asset/price dependencies.
-- A browser transport boundary that can target a local ledger or a wallet.
-- Reproducible checks for privacy, funding, asset identity and stale inputs.
-- Documentation that states what a local proof does and does not demonstrate.
+## A reusable integration boundary
 
-These components may be useful to other Canton builders even if customer research changes the initial commercial direction. Their reuse still requires evaluating the source, limitations and license terms; this documentation is not an audit endorsement.
+The offchain directory stores public discovery metadata, while Daml controls the financing records and asset movements. This keeps registration separate from the authority to quote or settle.
 
-## What is not claimed
+**Example:** changing Blair's directory name cannot change a 7% quote, unlock reserved cash or repay Alex's position. Those are ledger actions with their own controllers.
 
-Symbolon does not claim to be the first repo application on Canton, to replace existing institutional infrastructure, or to serve real customers today. It has not shown a live-token integration, economic volume, market liquidity or multi-institution production deployment. The [pilot plan](validation.md) describes how those assumptions could be tested in a narrower setting.
+## Governed price-publication demonstration
+
+The separate BitSafe LocalNet integration demonstrates a 2-of-3 governed price change affecting a real simulated repo workflow. A lower mark enabled a margin call, the borrower topped up, and the original repayment remained unchanged.
+
+The evidence is a reproducible technical demonstration, not proof of independent institutions, production token adapters or customer demand. Current discovery and the proposed external rehearsal are described in the Roadmap.

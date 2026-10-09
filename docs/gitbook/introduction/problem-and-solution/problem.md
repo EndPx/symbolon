@@ -1,23 +1,19 @@
 # Problem
 
-Floating-rate borrowing makes future interest expense uncertain while a position remains open. A borrower budgeting a repayment cannot assume today's rate will remain unchanged; later liquidity and utilization changes can increase the interest charged. Symbolon's primary problem is that uncertainty in the contractual repayment budget.
+A borrower needs cash today but also needs to know how much cash to allocate for repayment. With floating-rate financing, the interest rate can change while the position remains open. A budget prepared at entry may need revision later.
 
-## Predictable financing terms
+## A practical example
 
-A variable borrowing rate can change the cost of an existing position. An operator budgeting a future payment needs to understand that uncertainty. A fixed-rate agreement makes the contractual repayment amount known when the deal opens; collateral and counterparty risks remain.
+Suppose a treasury expects to borrow 1,000 units for 30 days. At a constant 5% annualized rate, simple ACT/360 interest would be about 4.17 units. If rates move during the term, actual interest depends on the rate path and the protocol's accounting. The entry rate alone no longer defines the final obligation.
 
-The agreed number covers principal and financing interest, not all future costs. Network fees and additional collateral requirements remain separate. A fixed quote can carry a premium and may cost more than a floating alternative if later rates fall. Fixed-rate financing already exists; Symbolon implements it with private Canton counterparties and asset workflows.
+This is an illustration, not a measurement of an Aave position. Symbolon's borrower discovery has identified concern about growing debt and health factor, but has not quantified an actual budget disruption.
 
-Symbolon's proposed initial user is a treasury manager at a digital-asset fund holding tokenized assets on Canton. The manager wants financing while retaining an agreed route to recover those assets. Maturity follows the deal's needs rather than defining the product as short-term lending.
+## Financing terms can reveal business information
 
-## A connected operating workflow
+A request can reveal how much liquidity a borrower needs and which collateral it can provide. A lender's offer reveals its pricing. Publishing every quote and position to all competitors can expose information that the counterparties only need to share with one another.
 
-Quotes, settlement records, collateral valuations, and repayment instructions can sit in separate conversations and tools. That separation creates opportunities for stale terms, missed deadlines, or disagreement about which action has completed. Our hypothesis is that some treasury teams benefit from managing these obligations together.
+For example, Blair may offer Alex 7% while Casey offers 7.5%. Alex needs both offers to compare them; Casey does not need Blair's exact price or the resulting exposure.
 
-This hypothesis has not yet been validated through customer interviews. Existing dealer relationships and institutional repo systems may already meet a prospective customer's needs. Research must establish the actual friction and access constraints before claiming time savings or a lower financing cost.
+## The trade-off to test
 
-## Confidential dealer negotiations
-
-A financing request can disclose cash needs, holdings, and timing. A dealer quote can disclose commercial pricing. The borrower needs to compare offers without automatically giving each dealer access to competing terms or an unrelated completed repo.
-
-The [privacy chapter](../privacy.md) explains those visibility requirements and the limits imposed by hosting operators, asset issuers, and oracle access.
+Borrowers may value predictable repayment and private quotes, but they may also value flexible early exit or floating terms. Symbolon needs to test whether the benefit justifies its full fixed-repayment and collateral obligations with the intended treasury users.

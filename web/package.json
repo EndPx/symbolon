@@ -5,20 +5,29 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "dev:sandbox": "vite --config vite.sandbox.config.ts",
+    "dev:testnet": "vite --config vite.testnet.config.ts",
+    "build": "tsc --noEmit && tsc --noEmit -p tsconfig.server.json && vite build",
+    "build:testnet": "npm run build && node scripts/testnet-build-profile.mjs",
     "preview": "vite preview",
     "test": "tsx --test test/*.test.ts",
     "doctor": "react-doctor . --yes"
   },
   "dependencies": {
+    "@console-wallet/dapp-sdk": "2.2.8",
     "@google/model-viewer": "^4.3.1",
     "@groftylabs/dapp-sdk": "0.2.0",
+    "@lithiumdigital/cauri-dapp-sdk": "0.2.0",
+    "@neondatabase/serverless": "1.2.0",
+    "@partylayer/adapter-send": "1.2.6",
     "@partylayer/react": "^2.3.3",
     "@partylayer/sdk": "^0.18.1",
+    "@sigilry/dapp": "3.4.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
   "devDependencies": {
+    "@types/node": "24.19.1",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "@vitejs/plugin-react": "^4.5.0",

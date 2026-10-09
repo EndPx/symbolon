@@ -1,6 +1,6 @@
 # GTM — Go-to-Market
 
-This is a proposed pilot strategy. No customers, partnerships, outreach responses or revenue are claimed.
+This is a proposed pilot strategy. Human discovery has started with one informal borrower conversation and follow-up; no customer commitments, partnerships or revenue are claimed. Institutional ICP fit and external app adoption remain unvalidated.
 
 ## 1. Positioning
 
@@ -26,6 +26,8 @@ The agreement is bilateral: a dealer supplies and reserves the cash, the borrowe
 | Reusable BitSafe LocalNet example and developer community | Reaches integrators who could enable a pilot | Share the pinned reproduction and ask 3 independent developers to run it and report blockers | Engineering/support time; this is an integration channel, not a borrower count |
 
 No outreach has been sent under this plan yet.
+
+The immediate discovery task is two additional real-episode interviews, alongside clarifying the existing borrower's comfortable LTV, reason for closing, actual rate changes and acceptance of fixed maturity/full early repayment. Wallet-access preparation can proceed in parallel; receiving an invitation is an integration milestone, not demand validation. [Discovery record and interview guide](../borrower-discovery.md)
 
 ## 4. Acquisition hypotheses
 

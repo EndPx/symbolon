@@ -1,0 +1,32 @@
+-- Test setup only: a historically matured position on a disposable LocalNet.
+-- This fixture does not claim the financing agreement was opened through UI.
+module Symbolon.UiFixtures where
+
+import DA.Time
+import Daml.Script
+import Symbolon.DemoAsset
+import Symbolon.Repo
+
+data Actors = Actors
+  with
+    borrower : Party
+    dealer : Party
+    issuer : Party
+    oracle : Party
+  deriving (Eq, Show)
+
+expiredPosition : Actors -> Script (ContractId RepoPosition)
+expiredPosition a = do
+  now <- getTime
+  pledged <- submit a.issuer $ createCmd Holding with
+    issuer = a.issuer; owner = a.dealer; instrument = "CETH"
+    amount = 15.0; viewers = []; lockParties = [a.borrower]
+  let start = addRelTime now (days (-2))
+  submitMulti [a.borrower, a.dealer] [] $ createCmd RepoPosition with
+    borrower = a.borrower; dealer = a.dealer; oracle = a.oracle
+    collateralIssuer = a.issuer; collateralInstrument = "CETH"
+    collateralAmount = 15.0; cashIssuer = a.issuer; cashInstrument = "CUSD"
+    cashAmount = 1000.0; repurchasePrice = 1000.0 + 1000.0 * 0.052 / 360.0
+    rate = 0.052; termDays = 1; marginThresholdPct = 1.05
+    cureSeconds = 60; maxPriceAgeSeconds = 3600; pledgedCids = [pledged]
+    startTime = start; maturity = addRelTime start (days 1); status = Active

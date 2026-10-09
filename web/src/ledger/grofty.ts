@@ -4,6 +4,8 @@ import {
 import { LedgerApi, LedgerError, parseResponse, type Method, type SubmissionOptions, type Transport } from "./api";
 import type { Session } from "./session";
 import { partyLabel } from "./symbolon";
+import { normalizeNetwork, networkLabel } from "./deployment";
+import { probeParticipant, probeError, symbolonCorePackage } from "./participant-probe";
 
 export const GROFTY_WALLET_ID = "grofty";
 export const GROFTY_NETWORK_ID = "canton:da-mainnet";
@@ -40,7 +42,7 @@ export function groftyError(error: unknown): Error {
     4001: "You declined the Grofty request. No approval was given.",
     4100: "Grofty is locked, signed out, or no longer connected. Unlock it and reconnect.",
     4900: "Grofty disconnected. Reconnect before continuing.",
-    4901: "Grofty lost its MainNet connection. Reconnect before continuing.",
+    4901: "Grofty lost its network connection. Reconnect before continuing.",
     [-32601]: "This Grofty capability is unavailable. Install Grofty Wallet 2.0.4 or newer.",
     [-32602]: "Grofty rejected the request parameters. Check the connected party, network and contract inputs.",
     [-32603]: "Grofty could not confirm the request. Approval may have expired after 3 minutes, or an internal error occurred. Check wallet history and refresh the book before retrying.",
@@ -48,33 +50,34 @@ export function groftyError(error: unknown): Error {
   return new GroftyRequestError(messages[code] ?? `Grofty request failed (code ${code}). Check the wallet before retrying.`, code);
 }
 
-function checkProvider(status: StatusEvent) {
+function checkProvider(status: StatusEvent, expectedNetwork = GROFTY_NETWORK_ID) {
   if (!status?.provider || !/grofty/i.test(status.provider.id)) {
     throw new Error("The discovered provider did not identify itself as Grofty.");
   }
   if (!supportedGroftyVersion(status.provider.version)) {
     throw new Error(`Grofty Wallet ${GROFTY_MIN_VERSION} or newer is required. Reported version: ${status.provider.version || "unknown"}.`);
   }
-  if (status.network && status.network.networkId !== GROFTY_NETWORK_ID) {
-    throw new WalletSessionChanged("Grofty must report Canton MainNet. This connection cannot use the DevNet or local desk.");
+  if (status.network && normalizeNetwork(status.network.networkId) !== normalizeNetwork(expectedNetwork)) {
+    const reported = typeof status.network.networkId === "string" ? status.network.networkId.slice(0,100) : "unknown";
+    throw new WalletSessionChanged(`Grofty reports ${reported}. Select Canton ${networkLabel(expectedNetwork)} in the wallet, then reconnect.`);
   }
 }
 
-function checkAccount(account: CantonAccount | null): asserts account is CantonAccount {
+function checkAccount(account: CantonAccount | null, expectedNetwork = GROFTY_NETWORK_ID): asserts account is CantonAccount {
   if (!account?.primary || !account.partyId || account.status !== "allocated") {
     throw new WalletSessionChanged("Grofty needs an allocated primary Canton party before the desk can connect.");
   }
-  if (account.networkId !== GROFTY_NETWORK_ID) {
-    throw new WalletSessionChanged("The Grofty account is not on Canton MainNet.");
+  if (normalizeNetwork(account.networkId) !== normalizeNetwork(expectedNetwork)) {
+    throw new WalletSessionChanged(`The Grofty account is not on Canton ${networkLabel(expectedNetwork)}.`);
   }
 }
 
-export async function discoverGrofty() {
+export async function discoverGrofty(expectedNetwork = GROFTY_NETWORK_ID) {
   const client = await createGroftyClient({ discoveryTimeoutMs: 700, timeoutMs: 5000 });
   if (!client) return { installed: false, unavailableReason: "Install Grofty Wallet 2.0.4 or newer." };
   try {
     const status = await client.status();
-    checkProvider(status);
+    checkProvider(status, expectedNetwork);
     return { installed: true, version: status.provider.version };
   } catch (error) {
     return { installed: true, unavailableReason: groftyError(error).message };
@@ -86,10 +89,11 @@ export async function openGroftySession(
   client: GroftyClient,
   interactive: boolean,
   forget: () => void = () => {},
+  expectedNetwork = GROFTY_NETWORK_ID,
 ): Promise<Session | null> {
   try {
     const initial = await client.status();
-    checkProvider(initial);
+    checkProvider(initial, expectedNetwork);
     if (!interactive && !initial.connection.isConnected) return null;
     if (interactive) {
       const connected = await client.connect();
@@ -98,23 +102,23 @@ export async function openGroftySession(
     const [status, network, account] = await Promise.all([
       client.status(), client.getActiveNetwork(), client.getPrimaryAccount(),
     ]);
-    checkProvider(status);
-    checkAccount(account);
+    checkProvider(status, expectedNetwork);
+    checkAccount(account, expectedNetwork);
     if (!status.connection.isConnected || status.connection.isNetworkConnected === false
-      || network.networkId !== GROFTY_NETWORK_ID) {
-      throw new WalletSessionChanged("Grofty is not connected to Canton MainNet.");
+      || normalizeNetwork(network.networkId) !== normalizeNetwork(expectedNetwork)) {
+      throw new WalletSessionChanged(`Grofty is not connected to Canton ${networkLabel(expectedNetwork)}.`);
     }
-    return bindGroftySession(client, account, status.provider.version, forget);
+    return bindGroftySession(client, account, status.provider.version, forget, expectedNetwork);
   } catch (error) { throw groftyError(error); }
 }
 
-export async function connectGrofty(interactive: boolean, forget: () => void) {
+export async function connectGrofty(interactive: boolean, forget: () => void, expectedNetwork = GROFTY_NETWORK_ID) {
   const client = await createGroftyClient({ discoveryTimeoutMs: 1000, timeoutMs: GROFTY_REQUEST_TIMEOUT_MS });
   if (!client) {
     if (!interactive) return null;
     throw new Error("Grofty Wallet was not found. Install version 2.0.4 or newer and reload this page.");
   }
-  return openGroftySession(client, interactive, forget);
+  return openGroftySession(client, interactive, forget, expectedNetwork);
 }
 
 function validateOptions(options: SubmissionOptions) {
@@ -129,7 +133,7 @@ function validateOptions(options: SubmissionOptions) {
   }
 }
 
-function bindGroftySession(client: GroftyClient, account: CantonAccount, version: string, forget: () => void): Session {
+function bindGroftySession(client: GroftyClient, account: CantonAccount, version: string, forget: () => void, expectedNetwork: string): Session {
   const party = account.partyId;
   const listeners = new Set<(reason: string) => void>();
   let invalidReason: string | null = null;
@@ -162,11 +166,11 @@ function bindGroftySession(client: GroftyClient, account: CantonAccount, version
       const [status, network, current] = await Promise.all([
         client.status(), client.getActiveNetwork(), client.getPrimaryAccount(),
       ]);
-      try { checkProvider(status); }
+      try { checkProvider(status, expectedNetwork); }
       catch (error) { throw new WalletSessionChanged(groftyError(error).message); }
-      checkAccount(current);
+      checkAccount(current, expectedNetwork);
       if (!status.connection.isConnected || status.connection.isNetworkConnected === false
-        || network.networkId !== GROFTY_NETWORK_ID || current.partyId !== party) {
+        || normalizeNetwork(network.networkId) !== normalizeNetwork(expectedNetwork) || current.partyId !== party) {
         throw new WalletSessionChanged();
       }
       assertBound();
@@ -174,15 +178,15 @@ function bindGroftySession(client: GroftyClient, account: CantonAccount, version
   };
   subscriptions.push(client.on("accountsChanged", accounts => {
     const primary = accounts.find(candidate => candidate.primary);
-    if (primary?.partyId !== party || primary.status !== "allocated" || primary.networkId !== GROFTY_NETWORK_ID) {
+    if (primary?.partyId !== party || primary.status !== "allocated" || normalizeNetwork(primary.networkId) !== normalizeNetwork(expectedNetwork)) {
       invalidate("The Grofty account changed. Reconnect to load the new party's book.");
     }
   }));
   subscriptions.push(client.on("statusChanged", status => {
     try {
-      checkProvider(status);
+      checkProvider(status, expectedNetwork);
       if (!status.connection.isConnected || status.connection.isNetworkConnected === false) {
-        invalidate("Grofty disconnected or lost MainNet connectivity. Reconnect to continue.");
+        invalidate("Grofty disconnected or lost network connectivity. Reconnect to continue.");
       }
     } catch (error) { invalidate(groftyError(error).message); }
   }));
@@ -214,6 +218,7 @@ function bindGroftySession(client: GroftyClient, account: CantonAccount, version
     },
     async submit(requestedParty, commands, options = {}) {
       assertBound();
+      if (normalizeNetwork(expectedNetwork) === "testnet") throw new LedgerError("TestNet financing is not enabled yet. This wallet connection is read-only.");
       if (requestedParty !== party) throw new Error("Grofty can only submit for its connected party.");
       validateOptions(options);
       if (submitting) throw new Error("A Grofty approval is already pending. Finish it before submitting again.");
@@ -240,9 +245,27 @@ function bindGroftySession(client: GroftyClient, account: CantonAccount, version
   const api = new LedgerApi(transport);
   return {
     kind: "wallet", party, label: partyLabel(party), wallet: GROFTY_WALLET_ID,
-    networkId: GROFTY_NETWORK_ID, walletVersion: version,
+    networkId: account.networkId, walletVersion: version,
     async read() { await verifyBound(); return api.activeContracts(party); },
     submit: (commands, options) => api.submit(party, commands, options),
+    async inspectParticipant() {
+      await verifyBound();
+      const result = await probeParticipant(party, async resource => {
+        await verifyBound();
+        const value = await client.request("ledgerApi", {requestMethod: "GET", resource});
+        await verifyBound();
+        const wrapped = value as {response?: unknown};
+        return parseResponse(wrapped?.response ?? value);
+      });
+      try {
+        const value = await client.getActiveContracts({templateIds:[`${symbolonCorePackage}:Symbolon.Repo:QuoteRequest`],includeCreatedEventBlob:false});
+        const wrapped = value as {response?:unknown};
+        const rows = parseResponse(wrapped?.response ?? value);
+        if (!Array.isArray(rows)) throw new Error("The wallet returned no contract-query result.");
+        result.checks.push({label:"Symbolon template query",status:"passed",detail:`The permitted contract-query endpoint accepted the filter and returned ${rows.length} record(s). This alone does not establish installation or vetting.`});
+      } catch (error) { result.checks.push({label:"Symbolon template query",status:"unavailable",detail:probeError(error)}); }
+      await verifyBound(); return result;
+    },
     onInvalidated(listener) {
       if (invalidReason) listener(invalidReason);
       else listeners.add(listener);

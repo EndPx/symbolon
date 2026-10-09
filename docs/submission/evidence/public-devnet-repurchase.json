@@ -1,0 +1,199 @@
+{
+  "updateId": "1220b616db5e7faf6bb71b6dad93967c42d1f055a30cef4564d77d8a1c59356e2137",
+  "commandId": "symbolon-public-c3fad475-25b8-462c-bbae-37a018df8e72",
+  "workflowId": "",
+  "effectiveAt": "2026-10-07T15:19:21.417935Z",
+  "events": [
+    {
+      "ExercisedEvent": {
+        "offset": 2324835,
+        "nodeId": 0,
+        "contractId": "00bee117615f92fd961e2cb372243914bb817ceb559692d2ef12147b72572eeb0dca121220c26f2ff69a18dd56f94dfdb6c73b43659d8c0789dfd398c5bcca1e135154c4ff",
+        "templateId": "1d40e972b56e42c279140639d33dc362b432f2c0f608c77ec36410f0395f3e19:Symbolon.Repo:RepoPosition",
+        "interfaceId": null,
+        "choice": "Repurchase",
+        "choiceArgument": {
+          "cashCid": "00dba71ddf4b25841e51bc0c16a30a626e0d73199193944fce19be1f4fe8f18bf7ca121220c9656179988b9d874197f556104b5907a3f9acda7e594c9264f1856ffd6335c2"
+        },
+        "actingParties": [
+          "229547bc-e4e3-47e5-ae3a-7548aaebb39a::12204a9d883d1158141d8f099d06dd2e42cb52615deb42da5a46f042c8d0e1dbdf0e"
+        ],
+        "consuming": true,
+        "witnessParties": [
+          "229547bc-e4e3-47e5-ae3a-7548aaebb39a::12204a9d883d1158141d8f099d06dd2e42cb52615deb42da5a46f042c8d0e1dbdf0e"
+        ],
+        "lastDescendantNodeId": 7,
+        "exerciseResult": "00d0217a48492e2fd7ade664f995bfcedbfd377e5fa8cf841f8d5dd955f0bffdcaca121220b76b58e8bb66b76893a0cbbb57bdbb7442d51b02cd606d4d9c9d37a609baa57e",
+        "packageName": "symbolon-v2",
+        "implementedInterfaces": [],
+        "acsDelta": true
+      }
+    },
+    {
+      "ExercisedEvent": {
+        "offset": 2324835,
+        "nodeId": 2,
+        "contractId": "00dba71ddf4b25841e51bc0c16a30a626e0d73199193944fce19be1f4fe8f18bf7ca121220c9656179988b9d874197f556104b5907a3f9acda7e594c9264f1856ffd6335c2",
+        "templateId": "1d40e972b56e42c279140639d33dc362b432f2c0f608c77ec36410f0395f3e19:Symbolon.DemoAsset:Holding",
+        "interfaceId": null,
+        "choice": "Transfer",
+        "choiceArgument": {
+          "to": "229547bc-symbolon-proof-c685b6d1-dealer::12204a9d883d1158141d8f099d06dd2e42cb52615deb42da5a46f042c8d0e1dbdf0e",
+          "qty": "1004.3333333333",
+          "newViewers": []
+        },
+        "actingParties": [
+          "229547bc-e4e3-47e5-ae3a-7548aaebb39a::12204a9d883d1158141d8f099d06dd2e42cb52615deb42da5a46f042c8d0e1dbdf0e"
+        ],
+        "consuming": true,
+        "witnessParties": [
+          "229547bc-e4e3-47e5-ae3a-7548aaebb39a::12204a9d883d1158141d8f099d06dd2e42cb52615deb42da5a46f042c8d0e1dbdf0e"
+        ],
+        "lastDescendantNodeId": 3,
+        "exerciseResult": {
+          "_1": "00697e3228ff81052f850a254caa6cd29d66ed88bbae3bc23e102643cbaecf2e23ca1212202726218cc095b18d5659d2d9f203d191b6e3460392f58fe464aabbca799326a4"
+        },
+        "packageName": "symbolon-v2",
+        "implementedInterfaces": [],
+        "acsDelta": true
+      }
+    },
+    {
+      "CreatedEvent": {
+        "offset": 2324835,
+        "nodeId": 3,
+        "contractId": "00697e3228ff81052f850a254caa6cd29d66ed88bbae3bc23e102643cbaecf2e23ca1212202726218cc095b18d5659d2d9f203d191b6e3460392f58fe464aabbca799326a4",
+        "templateId": "1d40e972b56e42c279140639d33dc362b432f2c0f608c77ec36410f0395f3e19:Symbolon.DemoAsset:Holding",
+        "contractKey": null,
+        "contractKeyHash": "",
+        "createArgument": {
+          "issuer": "229547bc-symbolon-proof-c685b6d1-dealer::12204a9d883d1158141d8f099d06dd2e42cb52615deb42da5a46f042c8d0e1dbdf0e",
+          "owner": "229547bc-symbolon-proof-c685b6d1-dealer::12204a9d883d1158141d8f099d06dd2e42cb52615deb42da5a46f042c8d0e1dbdf0e",
+          "instrument": "USDCx-demo",
+          "amount": "1004.3333333333",
+          "viewers": [],
+          "lockParties": []
+        },
+        "interfaceViews": [],
+        "witnessParties": [
+          "229547bc-e4e3-47e5-ae3a-7548aaebb39a::12204a9d883d1158141d8f099d06dd2e42cb52615deb42da5a46f042c8d0e1dbdf0e"
+        ],
+        "signatories": [
+          "229547bc-symbolon-proof-c685b6d1-dealer::12204a9d883d1158141d8f099d06dd2e42cb52615deb42da5a46f042c8d0e1dbdf0e"
+        ],
+        "observers": [],
+        "createdAt": "2026-10-07T15:19:21.417935Z",
+        "packageName": "symbolon-v2",
+        "representativePackageId": "1d40e972b56e42c279140639d33dc362b432f2c0f608c77ec36410f0395f3e19",
+        "acsDelta": false
+      }
+    },
+    {
+      "ExercisedEvent": {
+        "offset": 2324835,
+        "nodeId": 5,
+        "contractId": "0012ceb33e9c385772d144326aa35b85ca443753490f1edf9bc341ec8b8da664abca121220e62b923f427e20d3b2a0fc438724cf6e41061d21a8906dabc6294235dbf518d6",
+        "templateId": "1d40e972b56e42c279140639d33dc362b432f2c0f608c77ec36410f0395f3e19:Symbolon.DemoAsset:Holding",
+        "interfaceId": null,
+        "choice": "Transfer",
+        "choiceArgument": {
+          "to": "229547bc-e4e3-47e5-ae3a-7548aaebb39a::12204a9d883d1158141d8f099d06dd2e42cb52615deb42da5a46f042c8d0e1dbdf0e",
+          "qty": "0.0250000000",
+          "newViewers": []
+        },
+        "actingParties": [
+          "229547bc-e4e3-47e5-ae3a-7548aaebb39a::12204a9d883d1158141d8f099d06dd2e42cb52615deb42da5a46f042c8d0e1dbdf0e",
+          "229547bc-symbolon-proof-c685b6d1-dealer::12204a9d883d1158141d8f099d06dd2e42cb52615deb42da5a46f042c8d0e1dbdf0e"
+        ],
+        "consuming": true,
+        "witnessParties": [
+          "229547bc-e4e3-47e5-ae3a-7548aaebb39a::12204a9d883d1158141d8f099d06dd2e42cb52615deb42da5a46f042c8d0e1dbdf0e"
+        ],
+        "lastDescendantNodeId": 6,
+        "exerciseResult": {
+          "_1": "00808b119c2c87b7de574faad154d37f2a1a3c83dceb1721c48fbca133558885c1ca12122004c70c743319a6cd243c6d2b56373276a6058ee998646ab4bb0f8036b4e5e30e"
+        },
+        "packageName": "symbolon-v2",
+        "implementedInterfaces": [],
+        "acsDelta": true
+      }
+    },
+    {
+      "CreatedEvent": {
+        "offset": 2324835,
+        "nodeId": 6,
+        "contractId": "00808b119c2c87b7de574faad154d37f2a1a3c83dceb1721c48fbca133558885c1ca12122004c70c743319a6cd243c6d2b56373276a6058ee998646ab4bb0f8036b4e5e30e",
+        "templateId": "1d40e972b56e42c279140639d33dc362b432f2c0f608c77ec36410f0395f3e19:Symbolon.DemoAsset:Holding",
+        "contractKey": null,
+        "contractKeyHash": "",
+        "createArgument": {
+          "issuer": "229547bc-symbolon-proof-c685b6d1-dealer::12204a9d883d1158141d8f099d06dd2e42cb52615deb42da5a46f042c8d0e1dbdf0e",
+          "owner": "229547bc-e4e3-47e5-ae3a-7548aaebb39a::12204a9d883d1158141d8f099d06dd2e42cb52615deb42da5a46f042c8d0e1dbdf0e",
+          "instrument": "cBTC-demo",
+          "amount": "0.0250000000",
+          "viewers": [],
+          "lockParties": []
+        },
+        "interfaceViews": [],
+        "witnessParties": [
+          "229547bc-e4e3-47e5-ae3a-7548aaebb39a::12204a9d883d1158141d8f099d06dd2e42cb52615deb42da5a46f042c8d0e1dbdf0e"
+        ],
+        "signatories": [
+          "229547bc-symbolon-proof-c685b6d1-dealer::12204a9d883d1158141d8f099d06dd2e42cb52615deb42da5a46f042c8d0e1dbdf0e"
+        ],
+        "observers": [
+          "229547bc-e4e3-47e5-ae3a-7548aaebb39a::12204a9d883d1158141d8f099d06dd2e42cb52615deb42da5a46f042c8d0e1dbdf0e"
+        ],
+        "createdAt": "2026-10-07T15:19:21.417935Z",
+        "packageName": "symbolon-v2",
+        "representativePackageId": "1d40e972b56e42c279140639d33dc362b432f2c0f608c77ec36410f0395f3e19",
+        "acsDelta": true
+      }
+    },
+    {
+      "CreatedEvent": {
+        "offset": 2324835,
+        "nodeId": 7,
+        "contractId": "00d0217a48492e2fd7ade664f995bfcedbfd377e5fa8cf841f8d5dd955f0bffdcaca121220b76b58e8bb66b76893a0cbbb57bdbb7442d51b02cd606d4d9c9d37a609baa57e",
+        "templateId": "1d40e972b56e42c279140639d33dc362b432f2c0f608c77ec36410f0395f3e19:Symbolon.Repo:ClosedRepo",
+        "contractKey": null,
+        "contractKeyHash": "",
+        "createArgument": {
+          "borrower": "229547bc-e4e3-47e5-ae3a-7548aaebb39a::12204a9d883d1158141d8f099d06dd2e42cb52615deb42da5a46f042c8d0e1dbdf0e",
+          "dealer": "229547bc-symbolon-proof-c685b6d1-dealer::12204a9d883d1158141d8f099d06dd2e42cb52615deb42da5a46f042c8d0e1dbdf0e",
+          "collateralIssuer": "229547bc-symbolon-proof-c685b6d1-dealer::12204a9d883d1158141d8f099d06dd2e42cb52615deb42da5a46f042c8d0e1dbdf0e",
+          "collateralInstrument": "cBTC-demo",
+          "collateralAmount": "0.0250000000",
+          "cashIssuer": "229547bc-symbolon-proof-c685b6d1-dealer::12204a9d883d1158141d8f099d06dd2e42cb52615deb42da5a46f042c8d0e1dbdf0e",
+          "cashInstrument": "USDCx-demo",
+          "repurchasePrice": "1004.3333333333",
+          "outcome": "Repurchased",
+          "closedAt": "2026-10-07T15:19:21.417935Z"
+        },
+        "interfaceViews": [],
+        "witnessParties": [
+          "229547bc-e4e3-47e5-ae3a-7548aaebb39a::12204a9d883d1158141d8f099d06dd2e42cb52615deb42da5a46f042c8d0e1dbdf0e"
+        ],
+        "signatories": [
+          "229547bc-e4e3-47e5-ae3a-7548aaebb39a::12204a9d883d1158141d8f099d06dd2e42cb52615deb42da5a46f042c8d0e1dbdf0e",
+          "229547bc-symbolon-proof-c685b6d1-dealer::12204a9d883d1158141d8f099d06dd2e42cb52615deb42da5a46f042c8d0e1dbdf0e"
+        ],
+        "observers": [],
+        "createdAt": "2026-10-07T15:19:21.417935Z",
+        "packageName": "symbolon-v2",
+        "representativePackageId": "1d40e972b56e42c279140639d33dc362b432f2c0f608c77ec36410f0395f3e19",
+        "acsDelta": true
+      }
+    }
+  ],
+  "offset": 2324835,
+  "synchronizerId": "global-domain::1220be58c29e65de40bf273be1dc2b266d43a9a002ea5b18955aeef7aac881bb471a",
+  "traceContext": {
+    "traceparent": "00-ec84eff46a5cebc111b2cfb05998f320-62ec0547b5b53f8d-03",
+    "tracestate": null
+  },
+  "recordTime": "2026-10-07T15:19:23.03603Z",
+  "externalTransactionHash": null,
+  "paidTrafficCost": 3975,
+  "transactionHash": null
+}
