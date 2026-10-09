@@ -59,7 +59,7 @@ For each interview, record date, anonymized role, permission for attribution, ep
 ## What to do while wallet access is pending
 
 - Run the two interviews and complete the existing borrower follow-up; neither requires a new wallet.
-- Prepare an external walkthrough covering rate, ACT/360 repayment, maturity, margin risk, full early repayment and who sees bilateral terms.
+- Use the [five-minute hosted-account demo](hosted-devnet-demo.md) for an external walkthrough covering rate, ACT/360 repayment, maturity, margin risk, full early repayment and who sees bilateral terms.
 - Use the existing hosted-account demo for an explanation only if access is available; report whether the founder or the external person actually operated it.
 - Follow the [Cauri readiness checklist](cauri-readiness.md) once access and participant package readiness are confirmed. A staged SDK adapter or invitation alone is not an external rehearsal.
 
