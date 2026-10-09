@@ -1,21 +1,20 @@
 # Overview
 
-The [Symbolon app](https://symbolon.endpx.cloud/app) opens the financing desk. An authorized Canton party session determines which requests, quotes, holdings, and positions a user can read and which actions they can submit.
+These guides explain how to use the public Symbolon app. Begin with your HackCanton account and test assets, then choose the activity you want to perform.
 
-## Getting started
-
-For a reproducible environment, follow [Local setup](local-setup.md). It builds the Daml packages, starts Canton, creates simulated assets, and seeds borrower and dealer parties. Open /app on the local server and select a seeded role.
-
-For the published DevNet app, follow [Getting Started](public-devnet.md). An existing authorized HackCanton/NODERS account can claim test assets, request a funded reference offer, settle, manage collateral and repurchase. Each account uses its own permitted parties. Borrow and Lend are activities of the selected party, not separate identities allocated automatically on login.
-
-The [Wallets and DevNet readiness](wallet-devnet.md) guide explains participant, package, asset and permission prerequisites for a wallet connection. Independently operated external-account rehearsals and native wallet signing remain separate verification steps.
-
-## Choose your role
-
-| Guide | Main actions |
+| Guide | Use it when you want to… |
 | --- | --- |
-| [For borrowers](borrower.md) | Request quotes, compare repayment terms, settle, manage collateral, and repurchase |
-| [For dealers and oracle operators](dealer-oracle.md) | Fund quotes, monitor coverage, raise margin calls, and submit permitted closure or marks |
-| [Frequently Asked Questions](faq.md) | Fixed rate, maturity, repayment, privacy, and deployment scope |
+| [Getting Started](public-devnet.md) | Connect an account, choose a party and obtain test assets. |
+| [Borrowers](borrower.md) | Request financing, compare offers and recover collateral through repayment. |
+| [Lenders](dealer-oracle.md) | Register for a market, price requests and fund an offer. |
+| [Frequently Asked Questions](faq.md) | Understand repayment, risk and account behavior. |
+| [Troubleshooting](troubleshooting.md) | Resolve an empty directory, expired price or incompatible balance. |
+| [Glossary](../reference/glossary.md) | Look up a term using a plain definition and example. |
 
-The [local repo walkthrough](demo.md) is a complete ledger-backed rehearsal. The [BitSafe LocalNet guide](bitsafe-localnet.md) covers the separate three-participant governance environment.
+## Example: which guide should I choose?
+
+If Alex has collateral and needs 1,000 cash, follow Borrowers. If Blair has cash and wants to price Alex's request, follow Lenders. The same authorized party can perform either activity in separate agreements.
+
+Borrow and Lend change the activity shown. They do not change the signing party. If rehearsing both counterparties in one test account, choose the borrower or lender under **Account → Advanced account controls → Authorized account party**.
+
+Local setup commands and complete developer demonstrations are kept in the [source repository](https://github.com/EndPx/symbolon). You do not need to install a local ledger to use the published app.

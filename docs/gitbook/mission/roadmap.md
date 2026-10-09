@@ -1,39 +1,25 @@
 # Roadmap
 
-The roadmap orders work by the evidence needed to justify the next step. It is not a promise of launch dates or a claim that all listed capabilities are underway.
+The roadmap progresses from a working simulated workflow to customer discovery and a bounded asset pilot. Each phase needs evidence before the next commitment.
 
-## Phase 1: reproducible prototype
+| Phase | Current state | Next useful result |
+| --- | --- | --- |
+| Reproducible prototype | LocalNet and shared DevNet workflows demonstrated with simulated assets. | Keep the request, funded offer, settlement and repayment path reproducible. |
+| Lender discovery | Registered-lender discovery is deployed; each lender prices its own request. | Rehearse the workflow with an external borrower/lender pair. |
+| Customer discovery | One informal borrower discussion and same-person episode follow-up. | Two more interviews about actual borrowing decisions and rate pain. |
+| Real-asset preparation | Intended cBTC / USDCx pair; adapters and operating controls remain work. | Verify assets, permissions, oracle policy and closeout accounting. |
+| Controlled pilot | No external pilot commitment established. | One agreed rehearsal followed by a decision about a separately authorized real-asset pilot. |
 
-Deliver a coherent local environment, contract checks, browser workflows, and a complete demonstration of quote, settlement, collateral management, repurchase and default. Keep simulated instruments explicit. Record exact build and test results, including rejected adversarial actions and party visibility.
+## Example: what would pilot activation look like?
 
-Completion requires that a reviewer can start from a fresh environment and reproduce the published walkthrough without relying on an undisclosed administrator session.
+An interested treasury borrower and a participating lender use the same supported market. The borrower requests financing, the lender enters an APR, and the borrower can explain the repayment and collateral obligations before accepting. The pair then rehearses a collateral change and closure without developer intervention.
 
-## Phase 2: BitSafe Contribution Pool LocalNet
+That would provide more useful adoption evidence than a compliment about the fixed-rate concept. It has not yet been reported as an external customer result.
 
-**Completed technically on 5 October 2026:** the pinned three-participant starter, custom governed mark, threshold rejection and successful execution, actual repo margin/top-up/repurchase and matching all-node audit receipts passed in CI. [Evidence](../reference/status.md). Judging/award decisions remain with the sponsor.
+## Go-to-market approach
 
-Run the pinned BitSafe LocalNet starter from a clean setup and document exact prerequisites and commands. Integrate the DecMan decentralized-party workflow with a material Symbolon operation, then show the threshold outcome in the repo lifecycle. A generic governance vote without a Symbolon effect is not sufficient evidence of app integration.
+The initial customer hypothesis is a treasury manager at a small or mid-sized digital-asset fund with Canton exposure or a concrete adoption plan. Proposed channels are Canton ecosystem introductions, direct treasury outreach and developer communities that can connect both counterparties.
 
-On **7 October 2026**, the current release also completed the governed mark, margin call, top-up and repurchase on shared HackCanton DevNet. [Retained receipts and snapshots](../deployments/devnet.md) add external network execution to the separate LocalNet proof. All assets remain simulated, and the DevNet run used an ordinary hosted oracle on one participant. Gold's own participant and peer-hosting work, and Grofty's MainNet wallet flow, are deferred.
+Measure time to a usable quote, manual handoffs, completion, failure recovery and interest in repeating the workflow. Pricing and willingness to switch remain discovery questions; the prototype collects no Symbolon protocol fee.
 
-## Phase 3: one real asset integration
-
-The intended pair is cBTC collateral and USDCx cash. Verify each network's administrators and supported packages. Implement the official asset adapters, issuer matching, restriction handling, transfer contexts and failure recovery. Review oracle sourcing, a single agreed feed lineage, closeout valuation, surplus/shortfall accounting, eligibility and legal/operational requirements before any real-value test. The current health-factor closeout uses only simulated holdings.
-
-## Phase 4: operator pilot
-
-Validate the initial customer and dealer hypotheses through interviews and a controlled workflow rehearsal. Use observed failure modes to prioritize features. A narrowly useful product is more valuable than adding pooling, cross-chain routing or token trading without a verified need.
-
-## Later candidates
-
-Manual renewal by a new agreement, dealer-operated risk automation, audit exports, richer asset policy, and controlled data disclosure may be useful after the core path is stable. Transferable positions, vaults, FX, pooled liquidity and public benchmarks require separate product and privacy decisions.
-
-BitSafe Contribution Pool LocalNet work is the active challenge path; see [challenge scope](challenges.md). Gold's own-node deployment is deferred. cBTC collateral with a verified USD cash asset is planned for Phase 3, after the LocalNet proof; no real-token settlement is claimed now. Grofty source code remains present, but its bounty is outside the current submission scope.
-
-## Go-to-market pilot
-
-The initial customer hypothesis is a treasury manager at a digital-asset fund holding Canton assets, working with financing dealers. Reach prospective operators through Canton issuer introductions and direct outreach to treasury and collateral leads. These are proposed channels; no response rate or partnership is claimed.
-
-The first activation milestone is one observed financing rehearsal: request quotes, review the fixed repayment amount, settle, handle a collateral change, and close the position. Measure time to a usable quote, manual handoffs, rejected actions, completed repayments, and whether the operator asks to repeat the workflow. Interview evidence should determine the next feature before broader acquisition.
-
-A small pilot pairs an interested borrower with a participating dealer and a supported asset. Repeat use and referrals depend on completing that workflow reliably. A workspace fee or usage-based financing workflow fee is a commercial hypothesis to test; the prototype implements neither fee collection nor revenue.
+The [User Validation and Pilot Plan](validation.md) explains what is known, the next interview questions and the pilot decision gates.

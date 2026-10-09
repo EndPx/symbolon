@@ -1,41 +1,29 @@
-# Private requests and quotes
+# Requests and Offers
 
-An RFQ expresses proposed terms before a repo exists. The borrower creates one `QuoteRequest` for each selected dealer. The records share economic terms but have separate counterparties and contract IDs. A dealer does not need to know whom else the borrower approached.
+A request asks lenders to price proposed financing. An offer is a lender's response containing its APR, expiry and funded terms. They are different ledger records.
 
-## Request terms
+## Send a request to registered lenders
 
-The request identifies the borrower, dealer and agreed oracle; the collateral issuer/instrument and quantity; the cash issuer/instrument and amount; the term in days; the required coverage ratio; the margin cure duration; and the maximum accepted price age. The issuer is part of an asset's identity. Two tokens called CUSD from different issuers are not interchangeable.
+Borrower review lists all eligible registrations for the selected network, deployment, issuer pair and oracle. The borrower approves sharing its identity, amount, collateral and proposed terms with those recipients. A separate QuoteRequest is created for each lender.
 
-These terms should be reviewed before the request is submitted. A short demo cure window is useful for observing health-factor liquidation, but should never be presented as a researched production risk setting.
+Registration means accepting requests for that market. It is not a liquidity guarantee, counterparty-vetting result or credit assessment. A directory failure or empty list blocks sending; a changed audience requires another review.
 
-## Dealer response
+## Example: two lenders, two offers
 
-The dealer supplies an annualized rate, a quote-validity duration, and a suitable cash holding. The quote operation reserves the exact required cash under the contract's lock mechanism. The remaining dealer cash is separate from the reserved slice. Funding does not become spendable by a borrower simply because the borrower can observe it.
+Alex's 1,000 request is addressed separately to Blair and Casey. Blair enters 7% APR, Casey enters 7.5%. Each lender reserves 1,000 of its own compatible cash when its offer is confirmed. Alex compares approximately 1,005.83 versus 1,006.25 total repayment for 30 days.
 
-A quote creates a potential commitment and ties up the reserved demo amount until settlement or an explicit release action. Neither an expired UI countdown nor a page refresh should be interpreted as an automatic release. The API reference lists the available quote choices.
+| Record | Alex sees | Blair sees | Casey sees |
+| --- | --- | --- | --- |
+| Request to Blair | Yes | Yes | Its own request instead |
+| Blair's 7% offer | Yes | Yes | No automatic access |
+| Casey's 7.5% offer | Yes | No automatic access | Yes |
 
-## Acceptance
+## Funding and expiry
 
-The borrower supplies the collateral holding and a valid agreed price feed. The contract checks expiry, instrument identities, available amounts, feed freshness and initial coverage, then moves both asset legs in one transaction. If any check fails, no partial repo settlement commits.
+The offer reserves the exact cash needed for settlement. The borrower cannot spend it before acceptance. Expiry prevents acceptance, but it does not itself submit a transaction releasing the reservation.
 
-```mermaid
-sequenceDiagram
-    participant B as Borrower
-    participant L as Canton ledger
-    participant D as Dealer
-    B->>L: Create QuoteRequest for Dealer
-    L-->>D: Dealer's authorized request view
-    D->>L: SubmitQuote with rate and cash holding
-    L->>L: Reserve exact demo cash and create RepoQuote
-    L-->>B: Quote and relevant funding view
-    B->>L: AcceptQuote with collateral and feed
-    L->>L: Validate and commit cash + collateral + RepoPosition
-    L-->>B: Position and settlement result
-    L-->>D: Position and settlement result
-```
+**Example:** Alex selects Blair. Casey's unused offer remains separate until Alex declines it or Casey revokes it. That authorized action releases Casey's reserved cash.
 
-## Race conditions and separate requests
+## What happens next?
 
-Quotes are ledger contracts, so concurrent acceptance, rejection or revocation can consume the same input. One command can succeed while another finds the contract inactive. The client must refresh and show the actual outcome instead of resubmitting a guessed equivalent command.
-
-Accepting a quote does not make other offers disappear. Reject or revoke unused quotes so their funding can be released. Quote cleanup is operational work; there is no central matching service managing the borrower's entire shortlist.
+The borrower reviews the fixed repayment and risk terms, then accepts one offer. A request is consumed when its lender creates an offer, so the same request cannot be quoted twice. The app no longer requests an automatic standing 5.20% quote after borrower submission.

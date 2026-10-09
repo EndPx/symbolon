@@ -1,28 +1,29 @@
-# Why Fixed-Rate
+# Why Fixed Rate?
 
-Symbolon fixes the repurchase amount when a quote is accepted. A borrower can therefore budget the cash required to recover collateral at the agreed maturity. A dealer can calculate the contractual cash inflow for that term. This is useful for a financing need with a known horizon; it is not a claim that fixed-rate borrowing is always cheaper.
+Fixed-rate financing helps a borrower plan an agreed repayment budget. The borrower knows the annualized rate and contractual principal-plus-interest amount before settlement.
 
-## What is fixed
+## Floating and fixed financing
 
-The accepted annualized rate, principal and tenor determine simple term interest:
+| Question | Floating-rate financing | Symbolon agreement |
+| --- | --- | --- |
+| Can the rate change during the position? | It can change under the protocol's rate model. | The accepted annualized rate stays fixed. |
+| Can I know interest expense at entry? | It depends on subsequent rates and accounting. | The contractual term interest is agreed before settlement. |
+| Does collateral risk remain? | Yes. | Yes. |
+| Does early repayment reduce interest? | Depends on the product. | The full agreed repayment remains due. |
+
+## Example: APR is not the 30-day cost
+
+At **7% APR**, a **1,000** principal for **30 days** has approximately:
 
 ```text
-interest = purchasePrice × annualizedRate × termDays / 360
-repurchasePrice = purchasePrice + interest
+Term interest = 1,000 × 0.07 × 30 ÷ 360 = 5.83
+Total repayment ≈ 1,005.83
 ```
 
-For 100,000 units, a 5% annualized rate and 30 days, interest is approximately 416.6666667 units. The contract retains its Daml Decimal amount. A display rounded to two places is a presentation choice; the settlement must satisfy the contract amount.
+The 7% is an annualized simple rate, not a 7% charge for 30 days. Figures here are rounded; the app's review displays the ledger's exact amount.
 
-The rate does not compound within a position. It is an annualized simple rate under the prototype's ACT/360-style whole-day convention, not an APY promise. [Economics reference](../reference/economics.md) explains rounding, maturity and early repurchase.
+## What fixed rate does not promise
 
-## What remains variable
+A fixed quote need not be cheaper than floating borrowing. A lender can require a premium or different collateral terms. The collateral can still lose value, network fees remain separate, and the borrower must meet the agreement's deadlines.
 
-Collateral prices, coverage, financing availability for a future trade, external asset conditions, and the cost of obtaining repayment cash can all change. A fixed rate does not remove default, liquidity, issuer, oracle or operational risks. Nor does it give the borrower free termination: the current early-repurchase choice requires the full agreed repurchase price.
-
-If a future version offers renewal, the renewed trade will require new terms and funding. The existing position does not roll over automatically.
-
-## Why combine this with Canton
-
-The product needs two properties at once: counterparties agree a predictable obligation, and parties that do not participate in the resulting repo are not automatically granted its business data. Daml expresses who authorizes each action and who can observe each contract. Canton executes those workflows across participating nodes with scoped transaction visibility. See Digital Asset's [privacy model](https://docs.digitalasset.com/overview/3.5/explanations/ledger-model/ledger-privacy.html).
-
-These capabilities fit an RFQ workflow in which dealers may price the same borrower differently. Fixed-rate terms are useful on their own; Canton provides a way to combine them with controlled disclosure and atomic workflow execution. The [privacy chapter](privacy.md) explains why this matters to the intended user and where the prototype's guarantees end.
+**Example:** even with repayment fixed at about 1,005.83, a falling collateral mark can require a top-up. The repayment budget and collateral budget are different obligations.

@@ -1,43 +1,63 @@
-# Lender and oracle guide
+---
+description: Register for a market, set your APR and send a funded fixed-rate offer.
+---
+# Lenders
 
-The application displays the financing counterparty as **Lender**; the Daml templates retain their `dealer` field names. Borrow and Lend share one market workspace and use the currently connected signing party.
+Lenders supply cash to a borrower and agree a fixed contractual cash return. You choose the APR for each request. Symbolon does not tokenize your position or automatically roll it into another agreement.
 
-Dealer and oracle are different authorities. A dealer prices a counterparty and manages a repo. The oracle publishes marks. The prototype may host both on a local sandbox for convenience, but their separate parties and choices remain important.
+## Prerequisites
 
-## Dealer: review an RFQ
+- A connected HackCanton account with CanActAs authority for your lender party.
+- Registration for the exact issuer pair and price source you want to finance.
+- Sufficient unlocked cash from the request's specified issuer.
+- Acceptance of the counterparty, term and collateral obligations.
 
-Open a market and select **Lend**. Use **Register as lender**, approving publication of the current party ID, lender name and preference for this exact market. Registration uses live HackCanton account CanActAs rights; copying another party ID does not grant registration authority. No funds are reserved by registration.
+## Quick Start
 
-Future borrower requests sent to **All registered lenders** include this party. Choose your addressed request, enter your own APR and validity, and use **Review funded offer** before reserving cash. There is no automatic quote when the borrower submits. Quotes from other lenders are not exposed to you. **Stop receiving new requests** removes this party from future recipient discovery; existing RFQs, offers and positions retain their ledger lifecycle.
+1. **Choose your lender party.** Confirm it under Account. Selecting Lend alone does not change the signer.
+2. **Open the market and register.** In Lend, enter a lender name and approve listing the party ID and market preference. Registration reserves no cash.
+3. **Receive a new request.** Borrowers send to all registered lenders in that market. Requests sent before you registered do not appear retroactively.
+4. **Enter your APR.** Select your addressed request and enter the annualized rate and offer validity.
+5. **Review and fund the offer.** Sending an offer reserves the exact cash amount. It is not settlement yet.
+6. **Manage the position.** Borrower acceptance opens the repo. Follow collateral coverage and receive the agreed cash when the borrower repurchases.
 
-Check the requesting party, collateral and cash issuer/instrument, quantities, tenor, margin threshold, cure duration and oracle policy. Treat all sample instrument names as demo identities. An issuer/instrument pair must be acceptable; a matching ticker is insufficient.
+## Example: offer 7% APR
 
-Use the pass action if you do not want to quote. Otherwise, ensure you have enough compatible unlocked cash and choose a rate and expiry. Quote creation reserves the required amount under the model. It is not a promise that unreserved cash elsewhere in your balance is available to that borrower.
+Alex requests **1,000 USDCx-demo**, **30 days**, against **0.0250 cBTC-demo**. Blair enters **7% APR** and a **60-minute** quote validity.
 
-## Dealer: manage outstanding offers
+| Stage | Blair's cash and agreement |
+| --- | --- |
+| Registered | No financing cash is reserved. |
+| Offer confirmed | 1,000 is reserved for Alex; the offer shows approximately 1,005.83 repayment. |
+| Alex accepts | The reserved cash goes to Alex and pledged collateral comes to Blair under restrictions. |
+| Alex repays | Blair receives the full agreed cash and the collateral returns to Alex. |
 
-Open **Offers → Sent offers** to inspect or revoke your funded quotes.
+The approximately 5.83 interest is the contractual return for this example, not guaranteed realized profit. Collateral and counterparty risks remain.
 
-Keep track of cash associated with each live quote. Revoke an offer that you no longer want outstanding through its authorized choice. Expiry prevents acceptance; it should not be assumed to cause an automatic transaction releasing a holding. Confirm the returned free cash after revocation or rejection.
+## Understanding your position
 
-Never reuse a stale cash contract ID after a merge, reservation or transfer. Refresh active contracts before building a new command.
+| Field | What it means for the lender |
+| --- | --- |
+| Principal | Cash delivered to the borrower when the offer settled. |
+| Fixed APR | The accepted annualized rate, rather than a rate updated from later market quotes. |
+| Repayment | Full contractual cash due from the borrower. |
+| Maturity | Due time measured from settlement, shown in the app's timezone. |
+| Collateral and health | Pledged quantity, current coverage and the agreed margin boundary. |
 
-## Dealer: manage a position
+## What happens at maturity?
 
-Use the market's **Positions** tab, or **Portfolio → Positions** across markets.
+The borrower must pay the full agreed amount to recover collateral. A confirmed repayment returns the agreed cash to the lender and records Repurchased. If repayment is missed at maturity, the lender has a separate default choice under the contract.
 
-A margin call needs a genuine shortfall under a valid agreed feed. The ledger refuses a call against a healthy position, the wrong oracle/asset pair or an invalid timestamp. The call establishes a cure deadline. Track the state after a borrower top-up because the previous position contract ID has been consumed.
+**Example:** Blair's 7% agreement does not automatically become a new 7% loan next month. Another term needs another agreement. A default closeout is not evidence that Blair received principal and interest in cash.
 
-For substitution, review the replacement issuer, instrument, quantity and price basis. Acceptance gives the joint authority needed for the exchange; do not treat an automatically populated price as investment approval. The ledger separately verifies coverage and freshness.
+## Offer expiry and unused funding
 
-Once an open cure deadline is reached, request a new mark from the agreed oracle. If it was published after the deadline and the health factor remains below `1.00`, the dealer may submit `Liquidate`. The ledger records the closeout mark and factor, then releases the pledged demo collateral to the dealer. If the mark has recovered, liquidation must fail; the borrower can clear the margin call before maturity. A separate `DeclareDefault` choice applies at maturity. The demo does not sell collateral or calculate realized proceeds, surplus or shortfall.
+Sent offers appear in Offers. Revoke an unwanted offer to release its reserved cash. An expiry makes acceptance ineligible but does not automatically submit the cash-release transaction.
 
-## Oracle: publish a mark
+**Example:** if Casey's 7.5% offer is not chosen, Alex can decline it or Casey can revoke it. Accepting Blair's offer does not itself unlock Casey's reservation.
 
-Connect as the oracle party. Under **Account → Advanced account controls → Oracle administration**, locate the feed for the correct collateral issuer/instrument and cash issuer/instrument. Enter a positive simulated price. Updating the feed creates a new contract version, so consumers must refresh its contract ID. DecMan-controlled marks use the committee workflow described in the BitSafe LocalNet guide; the ordinary account controls do not bypass its threshold.
+## Collateral monitoring
 
-For demonstration, announce the original price, the new simulated price and the purpose of the change. Do not describe this input as a live market feed. When testing invalid marks, use the adversarial script rather than weakening the UI or pretending that manually entered data is authenticated market data.
+A fresh agreed mark below the maintenance requirement can enable a margin call. Liquidation additionally needs an expired cure window and a fresh post-cure shortfall mark. Maturity default is a separate action. The demo closeout releases pledged collateral; it does not sell the asset or calculate net recovery.
 
-## Automation boundary
-
-No neutral keeper automatically calls, liquidates or defaults every repo. A future dealer-operated agent would require narrowly scoped dealer credentials, a schedule, monitoring and a way to recover from unsuccessful commands. It would remain subject to the same contract checks. Oracle automation likewise needs a verified source and failure policy before it can replace the manual simulator.
+Stop receiving new requests removes your registration from future discovery. Existing requests, quotes and positions retain their ledger lifecycle. Oracle publication is a separate authority; being a lender does not grant the oracle role.

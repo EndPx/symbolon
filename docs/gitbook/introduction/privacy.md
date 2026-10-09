@@ -1,37 +1,37 @@
-# Why privacy is required
+# Why Privacy Matters
 
-A financing request can reveal information before a trade even occurs: how much cash a firm needs, which asset it is prepared to provide, how long it needs funding, and what price it is willing to accept. A completed position adds maturity obligations and exposure. Margin events can reveal changes in the counterparty's situation.
+A financing conversation reveals business information. A borrower discloses its funding need and collateral; a lender discloses its pricing and, after settlement, its exposure. Symbolon shares those details with the parties needed for the workflow.
 
-The product hypothesis is that treasury operators and dealers need to share these details with the relevant counterparty without automatically publishing them to every competitor. This is a workflow requirement to validate with users, not a promise of anonymity.
+## Example: Alex, Blair and Casey
 
-## Privacy changes the contract design
+Alex requests 1,000 USDCx-demo for 30 days and approves sharing that request with every registered lender in the selected market. Blair and Casey each receive a separate copy addressed to their own party.
 
-Symbolon creates an individual `QuoteRequest` for each dealer. Dealer A does not become an observer of Dealer B's request merely because the borrower approached both. Each quote carries its own terms. The accepted `RepoPosition` has the borrower and winning dealer as signatories.
+Blair quotes 7%; Casey quotes 7.5%. Alex can compare both. Blair can see Blair's own offer, and Casey can see Casey's own offer. Choosing Blair does not give Casey automatic access to Blair's rate or the accepted position.
 
-```mermaid
-flowchart LR
-    B[Borrower] --> RA[Request to Dealer A]
-    B --> RB[Request to Dealer B]
-    RA --> A[Dealer A quote]
-    RB --> D[Dealer B quote]
-    A --> P[Accepted repo: Borrower and Dealer A]
-    D --> X[Unaccepted quote remains separate]
-```
+![Request visibility and private lender offers](../assets/privacy-map.png)
 
-The losing dealer can still see its own request, quote, and their cancellation or expiry-related state. It should not receive the winning rate or resulting position solely because it was asked for a quote. Inference from off-ledger communication or visible changes to its own quote is a separate issue; a ledger access test cannot prove that a party learns nothing from every possible source.
+## What is shared, and with whom?
 
-## Controlled disclosure, not secrecy from all infrastructure
+| Information | Audience | Why it is shared |
+| --- | --- | --- |
+| Registered lender name, party ID and market preference | Directory readers | Borrowers need to discover willing counterparties. |
+| Borrower identity, requested amount, collateral and proposed terms | All registered lenders approved in the request review | Each needs enough information to decide whether to quote. |
+| Blair's APR, quote expiry and funded terms | Alex and Blair | They negotiate that potential agreement. |
+| Casey's APR, quote expiry and funded terms | Alex and Casey | They negotiate their separate potential agreement. |
+| Accepted position, repayment, maturity and collateral management | Alex and the winning lender | They manage the settled agreement. |
 
-The trading parties necessarily know their agreement. A participant operator hosting a party handles that party's ledger data. An issuer can observe the demo holdings it signs. Oracle readers see published marks. Local developers with administrator access to the sandbox can inspect its storage and operate its parties.
+**The funding request is not secret from its approved recipients.** Privacy begins with knowing that audience and consenting to it. Quotes and positions remain bilateral within the contract model.
 
-A shared participant demo establishes party-level application visibility. It does not prove infrastructure isolation from that participant's operator. Stronger operational separation requires an appropriate hosting topology, credentials, authorization and deployment testing. Digital Asset describes the node's role in its [participant architecture](https://docs.digitalasset.com/operate/3.4/overview/index.html) and [party hosting documentation](https://docs.digitalasset.com/overview/3.4/explanations/canton/external-party.html).
+Registration means opting into the same issuer/oracle market. It does not certify a lender's cash balance, creditworthiness or institutional approval. Review the actual recipients before sharing the funding need.
 
-## What the product must avoid
+## Why Canton is useful here
 
-- A global position list that joins private trades across counterparties.
-- Public analytics containing borrower identities, accepted rates or exact maturities without authorization.
-- Reusing a funding disclosure to reveal a dealer's unrelated cash balance.
-- Uploading ledger payloads or wallet credentials to a marketing analytics service.
-- Treating a hidden UI component as a substitute for ledger authorization.
+Canton applies party-specific visibility and authorization to contracts while coordinating settlement between participants. Symbolon can therefore record an agreement and exchange its cash and collateral without making every private record a public market feed.
 
-The [privacy and trust matrix](../architecture/privacy-and-trust.md) turns these principles into implementation-level expectations and test boundaries.
+**Example:** Casey's participant receives the request and quote records Casey is entitled to see. That entitlement does not turn Casey into an observer of Alex and Blair's position.
+
+## Privacy has boundaries
+
+Privacy means controlled visibility, not anonymity. Counterparties know the party identities in their agreement. Asset issuers can observe asset movements they are entitled to see, and hosting operators remain a trust dependency. A single-operator demo demonstrates party-scoped views; it does not demonstrate independent infrastructure operators or legal confidentiality by itself.
+
+The technical [Privacy and Visibility](../architecture/privacy-and-trust.md) page compares the direct contract audiences and remaining trust boundaries.

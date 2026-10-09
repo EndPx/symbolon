@@ -1,37 +1,49 @@
 # Frequently Asked Questions
 
-## What does fixed-rate mean here?
+## Is 7% APR a 7% charge for a 30-day loan?
 
-The accepted annualized simple rate, principal, and term determine a fixed repurchase amount. A collateral mark changing later does not change that amount. It can change coverage and the actions required to keep the position active.
+No. Symbolon uses an annualized simple rate with ACT/360. For 1,000 over 30 days at 7%, interest is approximately 5.83 and total repayment approximately 1,005.83. The review shows the exact ledger amount.
 
-## Does maturity have to be short-term?
+## Can the lender increase my rate after acceptance?
 
-Maturity is an agreed parameter. The current prototype supports 1–365 whole days. Symbolon's focus is predictable financing terms and private collateral workflows.
+The accepted financing terms stay fixed. A new 8% quote for another agreement does not reprice your existing 7% position.
 
-## Can I repay early?
+## Does early repayment reduce the interest?
 
-The borrower can repurchase before maturity by paying the full stored repurchase amount. The prototype does not rebate interest for early repurchase. Review that amount before acceptance.
+No. The full agreed repayment is due even when repurchasing early. For example, closing on day 10 still requires the contractual amount agreed for the 30-day term.
 
-## What does health factor measure?
+## Why does a request not immediately show an offer?
 
-It compares pledged collateral value with the agreed required collateral value. Below 1 means the position is below margin. The dealer must submit a valid margin-call choice; a displayed number alone does not change ledger state.
+Sending creates requests only. A registered lender opens Lend, enters an APR and sends a funded offer. No standing 5.20% offer is requested automatically in the new app flow.
 
-## What happens after a margin call?
+## Can I act as both borrower and lender?
 
-The borrower has the agreed cure window to restore coverage or repurchase. Liquidation requires the expired window and a fresh matching post-cure mark that still proves health factor below 1. The prototype releases pledged collateral to the dealer; it does not auction it or calculate sale proceeds.
+The same party can perform either activity in different agreements, but cannot be its own counterparty. For a same-account rehearsal, use distinct authorized parties. Selecting Borrow or Lend does not switch the signer.
 
-## Can other dealers see competing quotes?
+## Can another user select my test parties?
 
-Requests and quotes are bilateral. A borrower compares offers addressed to them, while a dealer reads its own offers. This does not hide all information from issuers or hosting operators; the [trust model](../architecture/privacy-and-trust.md) explains the boundaries.
+Not merely by signing in. The account selector uses that user's live CanActAs rights. A new account's own party does not grant authority over the builder's lender, borrower or governance test parties.
 
-## Are cBTC and USDCx integrated?
+## Who sees a request sent to all registered lenders?
 
-They are the intended production pair. Verified workflows use simulated holdings. Matching symbols do not establish official instrument identity, compatible adapters, or real-token settlement.
+Every approved registered recipient sees its own request copy, including the borrower identity and proposed terms. Each resulting quote remains bilateral. Casey receiving a request does not automatically expose Blair's quote to Casey.
 
-## Is MainNet trading available?
+## Does registration prove a lender has enough cash?
 
-No. The repo and governed mark have executed on LocalNet and shared DevNet with simulated assets. Real assets, oracle lineage, closeout accounting, wallet execution, and operational review remain MainNet gates.
+No. Registration records willingness to receive requests for a market, not solvency or available liquidity. A funded offer checks compatible unlocked cash on the ledger. A lender with only 500 free cash cannot fund a 1,000 offer.
 
-## What does BitSafe add?
+## Is liquidation automatic below the displayed price?
 
-Two of three governance members must approve simulated oracle marks affecting repo coverage. One confirmation fails to execute; two can publish the mark. The official LocalNet run links it to margin handling and repurchase. Threshold approval does not guarantee a correct price.
+No. A fresh price below the margin boundary can enable a margin call. Liquidation needs an expired cure window and a fresh post-cure mark still proving a shortfall. Maturity default is separate.
+
+## Why are two USDCx-demo balances separate?
+
+Issuer identity matters. USDCx-demo from Issuer X cannot be substituted for the same symbol from Issuer Y when the agreement requires X.
+
+## Are the app's assets real cBTC and USDCx?
+
+The current release uses simulated test holdings. The intended production pair needs official token adapters and operating arrangements. A wallet-reported token balance is not automatically an eligible demo holding.
+
+## Are there network fees or automatic renewal?
+
+The prototype collects no Symbolon protocol fee; network charges remain separate. There is no automatic rollover, refinance or tokenized secondary-market exit. A further term needs a new agreement.

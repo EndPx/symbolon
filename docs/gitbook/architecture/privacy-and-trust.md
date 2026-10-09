@@ -1,42 +1,37 @@
-# Privacy and trust model
+# Privacy and Visibility
 
-Privacy has three layers: the stakeholders and witnesses defined by Daml, the rights enforced on Ledger API access, and the operators of the infrastructure hosting those parties. Symbolon must satisfy all three in a real deployment. Hiding data in the browser addresses none of them on its own.
+Reading a contract and being allowed to act on it are different permissions. Symbolon uses both the ledger's visibility rules and the signing party's authority.
 
-## Expected contract visibility
+## Direct audiences compared
 
-This matrix describes direct stakeholder visibility in the model. Transaction witnesses can also receive consequences of actions they are entitled to see. It is therefore not a claim that every non-stakeholder can never learn an individual field in any transaction.
+| Record or action | Borrower | Addressed lender | Other lender | Public directory reader |
+| --- | --- | --- | --- | --- |
+| Lender registration metadata | Can read | Can read | Can read | Can read |
+| Request sent to Blair | Can read | Blair can read | Receives only its own separately addressed request if included | No automatic access |
+| Blair's funded quote | Can read | Blair can read | No automatic access | No automatic access |
+| Winning position with Blair | Can read | Blair can read | No automatic access | No automatic access |
+| Position management and closure | Can read relevant results | Winning lender can read relevant results | No automatic access solely from being asked to quote | No automatic access |
 
-| Record | Borrower | Relevant dealer | Other dealer | Oracle | Demo issuer |
-| --- | --- | --- | --- | --- | --- |
-| RFQ addressed to Dealer A | Yes | Dealer A | No automatic access | Not by its oracle role | Not by its issuer role |
-| Dealer A quote | Yes | Dealer A | No automatic access | Not by its oracle role | Sees related asset effects where entitled |
-| RepoPosition | Yes | Winning dealer | No automatic access | Not a position stakeholder | Not a position stakeholder solely as issuer |
-| SubstitutionProposal | Yes | Position dealer | No automatic access | Not by its oracle role | Sees related asset effects where entitled |
-| ClosedRepo | Yes | Position dealer | No automatic access | Not by its oracle role | Not a receipt stakeholder solely as issuer |
-| PriceFeed | If listed as reader | If listed as reader | If listed as reader | Signatory | Only if independently entitled |
-| Demo Holding | If owner/viewer/lock party | If owner/viewer/lock party | Only if independently entitled | Only if independently entitled | Signatory |
+The table describes direct application and contract audiences. It is not a promise that entitled transaction witnesses or infrastructure operators can never learn a related field.
 
-The issuer is not a neutral party that disappears from the transaction. It signs demo holdings and can observe their lifecycle. Asset transfers can reveal information even when the issuer is not a stakeholder of the repo position itself. A production adapter must document the real token's disclosure model.
+## Example: who sees 7%?
 
-## Authority is separate from visibility
+Alex approves sharing a 1,000 request with Blair and Casey. Both see the funding need through their separate requests. Blair quotes 7%; Casey quotes 7.5%. Alex sees both. Casey does not automatically receive Blair's 7% quote or the settled position after Alex chooses Blair.
 
-An observer can see a contract but cannot automatically exercise every choice. A controller has authority for the named choice. Signatories authorize contract creation and consequences under Daml's authorization rules. The contract model uses these roles to compose settlement without asking the UI to impersonate another party. Refer to Digital Asset's [templates](https://docs.digitalasset.com/build/3.4/reference/daml/templates.html) and [choices](https://docs.digitalasset.com/build/3.4/reference/daml/choices.html) references.
+![Shared request and bilateral offers](../assets/privacy-map.png)
 
-## Trust dependencies
+## Who can act?
 
-| Actor or system | What must be trusted | What the prototype does not solve |
-| --- | --- | --- |
-| Borrower/dealer wallet | Correct party, intended approvals, protected keys | Compromised browser or wallet |
-| Hosting participant operator | Correct access control and handling of hosted data | Privacy from an administrator hosting all parties |
-| Demo issuer | Honest creation and handling of demo holdings | Asset authenticity, reserves, redemption or issuer revocation |
-| Oracle | Economically correct mark for the identified pair | Price manipulation or independent price discovery |
-| Synchronizer/network | Required infrastructure availability and protocol operation | Guaranteed availability under outage |
-| Application host | Untampered frontend delivered to users | A malicious replacement browser bundle |
+| Permission | Example |
+| --- | --- |
+| Directory reader | Can discover Blair's published party ID; cannot sign as Blair. |
+| CanActAs for a party | Can register that party and submit its permitted choices. |
+| Request's addressed lender | Can price that request using its own compatible cash. |
+| Borrower of a quote | Can accept or reject that offer under the contract checks. |
+| Agreed oracle | Can publish its own price feed; being a lender alone does not grant this authority. |
 
-## Tests and their limits
+## Remaining trust boundaries
 
-Party-scoped queries can demonstrate that a losing dealer does not see the winning position or another dealer's quote. They do not establish that parties use independent participant operators, that no operator has privileged access, or that no information is inferred from off-ledger messages.
+The directory operator can see the registration metadata stored in Neon. It does not store financing requests, quote APRs, balances or positions. Account tokens are checked against the pinned participant and are not persisted in the directory.
 
-For a multi-node privacy demonstration, record the party-to-participant topology, credentials, permitted readers, test queries and contract IDs. Verify both positive access for the counterparties and negative access for an unrelated party. Avoid publishing the sensitive payloads being used to prove that they are private.
-
-No anonymous identity scheme, traffic-analysis defense, universal compliance policy, or legal confidentiality undertaking is supplied by this prototype.
+Asset issuers can see entitled asset effects, and hosting operators remain a dependency. The demo's roles share an operator. Party-specific views therefore do not prove infrastructure isolation between independent institutions or anonymity.

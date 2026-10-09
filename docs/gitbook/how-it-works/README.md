@@ -1,28 +1,36 @@
 # Overview
 
-The borrower and dealer agree a private financing deal, settle it on Canton, and manage its collateral until closure. The annualized rate and full repurchase amount are fixed when the quote is accepted. Collateral value can change during the term.
+Symbolon follows a request → offer → settlement → repayment workflow. The borrower chooses the cash amount and duration; lenders independently price the request. Acceptance fixes the contractual repayment and opens the position.
 
-![Symbolon repo journey](../assets/repo-journey.png)
+![Symbolon financing journey, drawn in Excalidraw](../assets/repo-journey.png)
+
+## Example: one agreement from start to finish
+
+Alex requests 1,000 USDCx-demo for 30 days, pledging 0.0250 cBTC-demo at a simulated mark of 60,000. Blair quotes 7% APR. After Alex accepts, the cash goes to Alex and the pledged collateral transfers to Blair under restrictions. The full repayment is approximately 1,005.83, with the exact amount shown before acceptance.
+
+If Alex repays on time, Blair receives the agreed cash and Alex recovers the collateral. If coverage falls during the term, Alex may need to restore margin before the applicable deadline. Fixed repayment and changing collateral value are separate parts of the agreement.
 
 ```mermaid
 flowchart TB
-    RFQ["Separate private RFQs"] --> Quote["Dealers reserve cash and quote fixed rates"]
-    Quote --> Review["Borrower reviews repayment and risk terms"]
-    Review --> Settle["Atomic cash and collateral exchange"]
-    Settle --> Position["Repo with agreed maturity"]
-    Position --> Repay["Full repurchase returns collateral"]
-    Position --> Mark["Oracle mark changes coverage"]
-    Mark --> Call["Dealer issues margin call"]
-    Call --> Cure["Borrower restores coverage"]
-    Cure --> Position
-    Call --> Closeout["Uncured deadline and fresh shortfall: dealer closeout"]
+    Request["Borrower approves request recipients"] --> Offers["Lenders set APR and fund separate offers"]
+    Offers --> Compare["Borrower compares full repayment terms"]
+    Compare --> Settle["Accepted cash and collateral exchange together"]
+    Settle --> Position["Open position with fixed repayment and maturity"]
+    Position --> Repay["Full repayment returns collateral"]
+    Position --> Risk["Fresh price reveals collateral shortfall"]
+    Risk --> Call["Lender issues margin call"]
+    Call --> Restore["Borrower restores margin before deadline"]
+    Restore --> Position
+    Call --> Closeout["Uncured call plus fresh post-cure shortfall permits closeout"]
 ```
 
-## Follow the stages
+## Follow each stage
 
-1. [Private requests and quotes](quotes.md) explains offer visibility and dealer cash reservations.
-2. [Settlement and repurchase](settlement.md) explains atomic movements and repayment arithmetic.
-3. [Health factor, margin, and liquidation](collateral.md) explains price changes, cure windows, and closeout.
-4. [Repo lifecycle](lifecycle.md) maps ledger states and closing outcomes.
+| Stage | What the reader learns |
+| --- | --- |
+| [Requests and Offers](quotes.md) | Who receives a request, how lenders price it, and why funding is reserved. |
+| [Settlement and Repayment](settlement.md) | What moves at acceptance and what amount returns at repayment. |
+| [Collateral and Health](collateral.md) | How coverage changes, when a margin call can occur and how to respond. |
+| [Position Lifecycle](lifecycle.md) | What Active, UnderCall and the closing outcomes mean. |
 
-The current contract accepts whole-day terms from 1 to 365 days. A 30-day example illustrates the calculation; fixed-rate financing is the product's focus.
+Terms run from 1 to 365 whole days after settlement. The examples use 30 days to make the calculation easy to follow.

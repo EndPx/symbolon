@@ -1,48 +1,61 @@
+---
+description: Plain meanings and practical examples for Symbolon's financing and Canton terms.
+---
 # Glossary
 
-| Term | Meaning in Symbolon |
-| --- | --- |
-| Active contract set (ACS) | Contracts that remain active and are visible within an authorized party view. It is not a public list of every trade. |
-| Annualized rate | Simple interest rate expressed per year; `0.05` denotes 5%. Symbolon uses term days divided by 360. |
-| Atomic transaction | A transaction whose effects commit together or do not commit; it does not promise that funding or a valid price is always available. |
-| Borrower | Party that receives the cash purchase price and agrees to repurchase the collateral. |
-| Cash instrument | The issuer/instrument identity in which the opening and closing cash legs settle. |
-| ClosedRepo | Receipt recording repurchase, health-factor liquidation or maturity default within the demo model. |
-| Collateral | Asset transferred to the dealer under the repo, subject to the position's restrictions and return workflow. |
-| Contract ID | Identifier for one contract instance. Consuming and recreating a state changes its ID. |
-| Controller | Party or parties that must authorize a specific Daml choice. |
-| Coverage | Current collateral value divided by the value required by the position's threshold. |
-| Cure deadline | Ledger time after which an unresolved margin call may be liquidated if a post-cure agreed mark still proves health factor below `1.00`. |
-| Dealer | Financing counterparty that quotes a rate, pays the purchase price and manages collateral exposure. |
-| Defaultable | At maturity, the dealer may declare default for missed repurchase. An expired cure window instead permits health-factor liquidation under additional mark checks. |
-| Health factor | Current collateral value divided by `cash amount × margin threshold`. At `1.00` the agreed margin is exactly covered. |
-| DemoAsset | Test holding model used to exercise transfers and restrictions without claiming a production token integration. |
-| Feed freshness | Whether a price timestamp is valid under the agreed age limit and is not in the future. It does not establish market accuracy. |
-| Holding | A quantity of one issuer/instrument owned by a party, with applicable viewers and locks. |
-| Instrument identity | Issuer party together with instrument text. Identical symbols from different issuers are distinct. |
-| Liquidation | Dealer-led demo closeout after an expired margin call when a post-cure agreed mark still proves health factor below `1.00`; pledged collateral transfers to the dealer without a sale. |
-| Lock party | Additional authority required by the demo asset model before a restricted holding can move. |
-| Margin call | Dealer action that establishes a cure deadline after the ledger verifies a collateral shortfall. |
-| Margin threshold | Required collateral value relative to cash principal; `1.05` means 105%. |
-| Maturity | Ledger acceptance time plus the agreed term in whole days. |
-| Observer | Party entitled to see a contract; observation alone is not permission to spend an asset. |
-| Oracle | Party publishing a price for an identified collateral/cash pair. The prototype uses manually controlled simulated marks. |
-| Participant | Node that hosts parties, processes their ledger activity and exposes authorized APIs. |
-| Party | Ledger identity used in contract authorization and visibility. A party is distinct from its hosting node or a browser account. |
-| PriceFeed | Versioned contract containing oracle identity, asset pair, price, timestamp and readers. |
-| Purchase price | Cash transferred from dealer to borrower at opening settlement. |
-| Quote | Dealer's proposed rate and validity period for a particular RFQ, with reserved demo funding. |
-| Repurchase | Closing exchange of the full agreed cash amount for the pledged collateral. |
-| Repurchase price | Stored purchase price plus fixed term interest. Early repurchase does not reduce it. |
-| Repo | Agreement represented here as an asset sale and a commitment to repurchase at a fixed price on agreed terms. |
-| RFQ | Request for quote; Symbolon creates a separate request for each dealer. |
-| Signatory | Party whose authority is required to create a contract and whose authorization participates in its choices. |
-| Substitution | Replacement of pledged collateral with dealer-approved collateral while retaining the repo's economic terms. |
-| Synchronizer | Canton infrastructure that supports coordination of participants' transactions. |
-| Tenor | Agreed duration of the repo, represented as whole `termDays`. |
-| Title transfer | Change of ownership recorded for the demo holding; not a legal conclusion about an external underlying asset. |
-| Top-up | Borrower's contribution of additional collateral sufficient to restore required coverage. |
-| Wallet transport | Client route that sends ledger requests through the connected wallet integration. |
-| Witness | Party entitled to learn about an action and relevant transaction consequences under the ledger privacy model. |
+Use this page when a form, offer or position contains an unfamiliar term. Examples are illustrative and use simulated assets.
 
-CBT, pooled vaults and public order-book matching belong to other product models; they are not names for Symbolon's current components.
+## Financing and rates
+
+| Term | Meaning | Example |
+| --- | --- | --- |
+| Borrower | The party receiving cash and agreeing to repay to recover collateral. | Alex requests 1,000 USDCx-demo. |
+| Lender / dealer | The counterparty pricing and funding the agreement. Dealer is the code's field name. | Blair offers 7% APR. |
+| Request / RFQ | A request for quote, before a funded offer exists. | Alex asks registered lenders for 1,000 over 30 days. |
+| Offer / quote | A lender's proposed fixed rate, validity and funded terms. | Blair reserves 1,000 for a 7% offer. |
+| APR | The annualized rate used for simple interest in Symbolon. | 7% APR for 30 days on 1,000 produces about 5.83 interest. |
+| APY | An annual yield measure that can include compounding; it is not the quote field used here. | Do not relabel Symbolon's simple APR as compounded APY. |
+| ACT/360 | Actual agreed term days divided by 360 in the interest calculation. | 30 days uses 30 ÷ 360. |
+| Principal / purchase price | Cash delivered at opening settlement. | The borrower receives 1,000. |
+| Repayment / repurchase price | Full agreed principal plus fixed term interest. | Approximately 1,005.83 for the 7%, 30-day example. |
+| Maturity / tenor | Due time / agreed duration from settlement. | A 30-day term matures 30 days after acceptance. |
+| Repo / repurchase | An asset sale with an agreement to repurchase under defined terms. | Collateral title transfers at settlement and returns after full repayment. |
+
+## Collateral and risk
+
+| Term | Meaning | Example |
+| --- | --- | --- |
+| Collateral | The asset pledged in the financing agreement. | 0.0250 cBTC-demo. |
+| Initial cover | Collateral value as a percentage of cash principal at entry. | 150% cover means 1,500 value for 1,000 cash. |
+| LTV | Loan-to-value: principal divided by collateral value. | 1,000 ÷ 1,500 is about 66.67% LTV. |
+| Maintenance margin | Minimum required collateral value relative to principal. | 105% requires 1,050 for 1,000 principal. |
+| Health factor | Collateral value divided by the maintenance requirement. | 1,500 ÷ 1,050 is about 1.43. |
+| Margin call | Lender action establishing a cure deadline after a fresh shortfall is verified. | A 36,000 mark makes 0.0250 worth 900, below 1,050 required. |
+| Cure window | Time to restore margin after a call. | The agreed example window can be one hour. |
+| Top-up | Additional collateral to restore coverage. | Add 0.0050 at 36,000 to bring value to 1,080. |
+| Substitution | Lender-approved replacement of pledged collateral. | An approved compatible replacement keeps the financing terms fixed. |
+| Liquidation | Permitted lender closeout after cure expiry and a fresh post-cure shortfall. | It releases pledged demo collateral; it is not a sale engine. |
+| Maturity default | Separate closeout for missed repayment at maturity. | Defaulted does not mean cash repayment was received. |
+
+## Accounts, assets and visibility
+
+| Term | Meaning | Example |
+| --- | --- | --- |
+| Party | Canton ledger identity used for authority and visibility. | Alex and Blair have different party IDs. |
+| CanActAs | Account right to submit as a particular party. | Knowing Blair's ID is insufficient to sign as Blair. |
+| Issuer | Party identifying and issuing the asset. | Same-symbol holdings from X and Y remain separate. |
+| Oracle / price feed | Agreed publisher / record containing a mark, asset pair and timestamp. | A simulated cBTC-demo price of 60,000. |
+| Fresh mark | A valid timestamp within the agreed maximum age, not in the future. | An expired one-hour mark cannot authorize a price-sensitive action. |
+| Registered lender | A party opting into future requests for an exact market. | Registration lists Blair; funding is checked when Blair quotes. |
+| Bilateral visibility | A record's direct audience is the relevant two counterparties. | Blair's quote is shared with Alex and Blair. |
+| Observer | A party entitled to read a contract. | Seeing reserved cash does not grant permission to spend it. |
+| Signatory / controller | Authority involved in creating a contract / exercising a choice. | The borrower controls acceptance of its offer. |
+| Atomic settlement | Required effects commit together or do not commit. | Cash and collateral exchange in one acceptance transaction. |
+| Locked / reserved holding | Assets restricted for a quote or position. | Casey's unused quote cash stays reserved until an authorized release. |
+| Contract ID | Identifier for one contract instance. | A consuming update creates a replacement with a new ID. |
+| Participant / synchronizer | Infrastructure hosting parties / coordinating Canton transactions. | They support execution; they are not borrower or lender roles. |
+| Receipt / ClosedRepo | Correlated action evidence / ledger closing record. | Repurchased records full repayment and collateral return. |
+
+## A quick interpretation
+
+“1,000 principal, 7% APR, 30 days, 150% cover, 105% margin” means roughly 5.83 fixed term interest; 1,500 initial collateral value; and a 1,050 maintenance requirement. These figures describe different parts of the agreement and should not be treated as one percentage.

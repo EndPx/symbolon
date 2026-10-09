@@ -1,18 +1,17 @@
 ---
 hidden: true
 ---
-
 # Documentation
 
-Start with Introduction to understand the product, then choose the workflow, user guides, or technical details you need.
+Learn the financing journey, choose a role guide, or inspect the data and permission boundaries.
 
-| Section | What you will find |
+| Section | Start here |
 | --- | --- |
-| [Introduction](introduction/overview.md) | Product overview, problem, solution, features, fixed rates and privacy |
-| [Mission](mission/ecosystem.md) | Canton contribution, roadmap and customer discovery |
-| [How Symbolon Works](how-it-works/README.md) | Requests, funded offers, settlement, collateral management and repayment |
-| [Using Symbolon](guides/README.md) | Getting Started, borrower and lender guides, and FAQ |
-| [Technical Details](architecture/README.md) | Daml, data flow, onchain/offchain data, permissions and governance |
-| [Technical Reference](reference/README.md) | Contract/API vocabulary, financial conventions and limitations |
-| [Deployments](deployments/README.md) | LocalNet, shared DevNet and MainNet requirements |
-| [Links](other/links.md) | Repository, documentation, website and live app |
+| [Introduction](introduction/overview.md) | What Symbolon does, why fixed repayment helps and what privacy means. |
+| [Mission](mission/ecosystem.md) | Canton contribution, roadmap and the proposed customer pilot. |
+| [How Symbolon Works](how-it-works/README.md) | Requests, offers, settlement, health and repayment with one worked example. |
+| [User Guides](guides/README.md) | Getting Started, Borrowers, Lenders, FAQ and Troubleshooting. |
+| [Glossary](reference/glossary.md) | Plain definitions with practical examples. |
+| [Technical Details](architecture/README.md) | System responsibilities, visibility, data storage and permissions. |
+| [Deployments](deployments/README.md) | LocalNet, shared DevNet and MainNet boundaries. |
+| [Other](other/links.md) | Project links and challenge plans. |

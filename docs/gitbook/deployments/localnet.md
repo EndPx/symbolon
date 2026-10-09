@@ -1,25 +1,17 @@
 # LocalNet
 
-Native local Canton supplies the browser repo workflow. A separate official BitSafe starter supplies three Canton participants and three DecMan services for threshold-controlled oracle publication.
+LocalNet is the developer reproduction environment. It uses simulated assets and controlled price marks. It is separate from the hosted shared-DevNet application.
 
-| Setting | Configuration |
-| --- | --- |
-| Core release | symbolon-v2 v0.2.0, Daml SDK 3.5.2 |
-| Native browser assets | Simulated CETH / CUSD |
-| BitSafe assets | Simulated cBTC-demo / USDCx-demo |
-| Starter | Commit 21ffdedf64366b1f2824301c434b427bf4726663 |
-| LocalNet / DecMan | LocalNet 0.6.12 / DecMan v1.8.0 |
-| Governance | 2-of-3 confirmation for the decentralized oracle party |
-| Hosting | Three participants on one disposable CI host; no independent-operator claim |
+## What is demonstrated?
 
-## Active contracts and identifiers
+The standard workflow exercises requests, independently funded quotes, settlement, collateral management and repurchase. The separate BitSafe setup uses three participants and three DecMan managers on one operator host, with a configured 2-of-3 governance rule.
 
-| Identifier | Value or record |
-| --- | --- |
-| Core package | 1d40e972b56e42c279140639d33dc362b432f2c0f608c77ec36410f0395f3e19 |
-| Participant and party mapping | [Public evidence](https://github.com/EndPx/symbolon/blob/codex/submission-devnet/docs/submission/evidence/bitsafe-localnet.json) |
-| Latest recorded reproduction | [Successful run on revision 6c04692](https://github.com/EndPx/symbolon/actions/runs/37353043471) |
+## Example: a governed mark and top-up
 
-These Canton identifiers are not EVM contract addresses. The disposable environment has no public block explorer; evidence and reproducible participant reads provide verification.
+For 1,000 principal and 0.0250 collateral at 60,000, health is about 1.43. A governed 36,000 mark reduces it to about 0.86. The lender issues a margin call, a 0.0050 top-up restores health to about 1.03, and repurchase pays the unchanged agreed amount.
 
-The run rejects one-confirmation execution, publishes a mark after two approvals, triggers margin handling, and completes top-up and repurchase. All participants report matching governance execution IDs. Follow [BitSafe LocalNet integration](../guides/bitsafe-localnet.md) to reproduce it.
+One confirmation fails the threshold; two commit the price-publication action. Retained participant audits identify the same relevant execution. These results demonstrate technical integration, not independent organizations or production price sourcing.
+
+## Reproduce as a developer
+
+Use the [BitSafe LocalNet runbook](https://github.com/EndPx/symbolon/tree/codex/public-devnet-app/infra/decman) and [retained execution evidence](https://github.com/EndPx/symbolon/tree/codex/public-devnet-app/docs/submission/evidence). Local installation and complete developer walkthroughs are kept in the repository rather than the ordinary User Guides.

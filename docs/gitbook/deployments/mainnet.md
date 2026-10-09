@@ -1,19 +1,19 @@
 # MainNet
 
-MainNet is the production target for cBTC collateral and USDCx financing. Trading is disabled. The repository has a runtime profile and release checker, but no verified production deployment or real-token settlement.
+MainNet financing is not enabled in the current release. The intended production pair is cBTC collateral with USDCx cash, subject to verified official token adapters and operating arrangements.
 
-| Setting | Current status |
+## What must be ready?
+
+| Requirement | Why it matters |
 | --- | --- |
-| Intended collateral / cash | Official cBTC / USDCx |
-| Network selection | Runtime deployment profile |
-| Participant / synchronizer | Must be verified for the release |
-| Token packages and administrators | Require verification and supported adapters |
-| Canonical oracle lineage | Required |
-| Realized closeout accounting | Proceeds, surplus, and shortfall remain to be implemented |
-| Trading | Disabled |
+| Supported token adapters and issuer identity | Real assets need their actual transfer and restriction model. |
+| Reliable agreed price sourcing | A structurally valid timestamp does not establish economic accuracy. |
+| Counterparty and participant permissions | Both parties must be able to authorize the intended asset movements. |
+| Complete closeout accounting | Production needs sale/recovery and surplus/shortfall treatment beyond demo collateral release. |
+| Operating and legal arrangements | The recorded workflow does not by itself establish external enforceability or custody terms. |
 
-## Active contracts and addresses
+## Example: why a wallet balance is not enough
 
-No verified Symbolon MainNet contracts or operational treasury/signing parties are available to list. Token names alone do not establish instrument identity or settlement compatibility.
+A user may hold a token called USDCx in a wallet. That does not make it interchangeable with USDCx-demo, or prove the current DemoAsset contracts can transfer that production token. The adapter, issuer and permitted transfer context need verification first.
 
-Promotion requires real-asset adapters, authenticated wallet execution, reviewed oracle control, complete closeout accounting, independent review, and operator readiness. The [release guide](../guides/mainnet-readiness.md) covers the checker and remaining conditions. Changing the profile does not satisfy those conditions.
+There are no active Symbolon MainNet contract addresses to list for this release. Use Shared DevNet for the current hosted test workflow.

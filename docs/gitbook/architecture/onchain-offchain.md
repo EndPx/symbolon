@@ -1,44 +1,40 @@
 # Onchain and Offchain Data
 
-Canton contracts are the authority for Symbolon's financing state. The browser reads a party's permitted contracts and builds a temporary view for display. Editing a form changes no asset balance or repo until a command commits.
+Canton contracts hold the authoritative financial state. The directory and browser store different information for discovery and presentation. A database update does not authorize a cash transfer.
 
-## Authoritative ledger state
+## On the Canton ledger
 
-| Contract | Stored data | Authority |
+| Record | What it stores | Practical example |
 | --- | --- | --- |
-| Holding | Issuer, owner, instrument, quantity, viewers, and locks | Issuer and permitted owner/lock controllers |
-| QuoteRequest | Counterparties, amounts, term, and proposed risk parameters | Borrower; addressed dealer observes |
-| RepoQuote | Fixed rate, expiry, terms, and reserved cash | Joint signatories and permitted choices |
-| RepoPosition | Repurchase amount, maturity, collateral references, oracle, and margin state | Borrower/dealer contract authority |
-| PriceFeed | Pair identity, oracle, value, timestamp, and readers | Named oracle; governed publication in the BitSafe path |
-| SubstitutionProposal | Reserved replacement collateral and approval context | Proposal borrower/dealer authority |
-| ClosedRepo | Outcome, amounts, collateral identity, and closing time | Authorized closing choice |
-| BitSafe governance contracts | Member set, rules, proposals, and execution | Configured decentralized-party governance |
+| Holding | Issuer, owner, instrument, amount and locks. | Blair's exact 1,000 cash slice is reserved for a quote. |
+| QuoteRequest | Counterparties, amount, term and proposed collateral terms. | Alex's request addressed to Blair. |
+| RepoQuote | APR, expiry, terms and reserved funding. | Blair's 7% funded offer. |
+| RepoPosition | Agreed repayment, maturity, pledged collateral and margin state. | The accepted Alex/Blair agreement. |
+| PriceFeed | Oracle, asset identities, mark, timestamp and readers. | A simulated 60,000 mark for the chosen issuer pair. |
+| ClosedRepo | The recorded closing outcome and agreed amounts. | Repurchased after the full contractual amount is paid. |
 
-## Offchain application records
+## Off the ledger
 
-| Location | Purpose | Persistence and limits |
+| Store | Information | Audience and limit |
 | --- | --- | --- |
-| React state | Forms, selected market, contract projection, and action feedback | Browser memory; refresh reads the ledger |
-| /deployment.json | Network profile, reviewed package, and public asset identities | Public configuration; no participant credentials |
-| Wallet session | Party identity and read/submit transport | Session boundary; connection does not create rights |
-| Local setup files | Seeded party mapping and verification logs | Ignored development files under .omc/demo |
-| BitSafe evidence | Update IDs, offsets, threshold rejection, closure, and audits | Run output; public evidence is a curated copy |
+| Neon `symbolon_lenders` table | Lender name, party, market preference and active registration. | Public discovery metadata; no private trade or balance data. |
+| Browser memory | Authorized ledger projection, forms and pending feedback. | Current session; the participant remains authoritative. |
+| Tab-scoped browser storage | Bounded connection preferences and draft inputs. | Cannot restore signing authority or submit a recovered draft. Tokens are not stored there. |
+| Public deployment configuration | Reviewed network, packages and public test-market identities. | Describes the deployment; does not grant account rights. |
+| Downloaded receipt | A confirmed action's correlated record. | User export; not a global transaction index. |
 
-The current app has no Symbolon-operated business database or global transaction index. Active-contract polling is a scoped projection, not a durable accounting archive. An indexer or audit export requires separate implementation and permissions.
+## Example: the path of one request
 
-## From a proposed price to a ledger effect
+Alex reads Blair's public registration from the directory. Alex approves the recipient list, then submits a QuoteRequest to Canton. The request amount and collateral stay in the entitled ledger view; they are not copied into the directory table.
 
 ```mermaid
 flowchart TB
-    Members["Governance members"] --> Proposal["Proposed simulated mark"]
-    Proposal --> Threshold["DecMan and Daml enforce 2-of-3"]
-    Threshold --> Feed["Committed PriceFeed replacement"]
-    Feed --> Read["Authorized browser reads mark"]
-    Feed --> Choice["Dealer submits margin-call choice"]
-    Choice --> Checks["Daml checks identity, freshness, and coverage"]
-    Checks --> Position["Committed UnderCall position"]
-    Position --> UI["UI refreshes and displays update receipt"]
+    Directory["Public lender directory"] --> Review["Borrower reviews recipients and consents"]
+    Review --> Sign["Borrower-authorized request"]
+    Sign --> RFQ["Canton: separate addressed RFQs"]
+    RFQ --> Quote["Lender-authorized funded quote"]
+    Quote --> Accept["Borrower-authorized acceptance"]
+    Accept --> Position["Canton: agreed position and locked assets"]
 ```
 
-A governed mark is a controlled input, not proof of economic accuracy. The margin choice checks the feed and position independently. Stale IDs, wrong issuer/oracle, or invalid marks cause rejection even when a preview looks acceptable.
+There is no durable global index of every Symbolon trade. Active-contract reads and visible closure records are scoped to authorized parties. The dedicated BitSafe LocalNet environment has its own governed price-publication records; it is separate from the public single-operator reference market.

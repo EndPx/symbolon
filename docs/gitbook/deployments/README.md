@@ -1,11 +1,13 @@
 # Chains
 
-Symbolon is built on Canton. The same release uses runtime profiles for DevNet and MainNet; assets, permissions, topology, and execution evidence must match the selected environment.
+Symbolon's financial contracts run on Canton. The repository demonstrates a local environment and shared HackCanton DevNet; MainNet financing is not enabled.
 
-| Network | Current scope |
-| --- | --- |
-| [LocalNet](localnet.md) | Executed repo and three-participant BitSafe governance with simulated assets |
-| [Shared DevNet](devnet.md) | Current release executed governed mark, margin call, top-up and repurchase with simulated assets on one participant |
-| [MainNet](mainnet.md) | Production target; trading disabled until release gates pass |
+| Environment | What it is for | Asset and operating boundary |
+| --- | --- | --- |
+| [LocalNet](localnet.md) | Reproduction and the separate BitSafe governed-price demonstration. | Simulated assets; one operator controls the test environment. |
+| [Shared DevNet](devnet.md) | The public app and retained shared-network financing runs. | Simulated cBTC-demo / USDCx-demo and a public test reference. |
+| [MainNet](mainnet.md) | Planned real-asset release work. | No enabled production financing or real-token settlement is claimed. |
 
-[Network promotion](../guides/network-promotion.md) explains runtime configuration and the integration work that cannot be solved by changing a setting.
+## Example: choose the right environment
+
+To try the hosted Borrow/Lend workflow, use the public DevNet app and your authorized HackCanton account. To reproduce the 2-of-3 BitSafe integration as a developer, use the separate LocalNet runbook. A local governed-price result does not make the public DevNet reference a decentralized live-market oracle.

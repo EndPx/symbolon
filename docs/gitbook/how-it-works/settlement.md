@@ -1,34 +1,34 @@
-# Settlement and repurchase
+# Settlement and Repayment
 
-## Opening exchange
+Acceptance is the point at which financing opens. The ledger checks the quote, asset identities, collateral and agreed mark before committing the cash and collateral movements together.
 
-`AcceptQuote` is the settlement action. It consumes a valid quote, transfers reserved cash to the borrower, transfers collateral title to the dealer under the position's restrictions, and creates `RepoPosition`. Daml transaction atomicity means these effects either commit together or fail together.
+## What moves at settlement?
 
-The settlement does not create a pool share or tradable lender token. It creates an agreement between the identified borrower and dealer. The current demo ledger records the dealer as the owner of the pledged holdings, while the lock mechanism prevents unilateral spending that would defeat the repurchase workflow.
-
-| After successful acceptance | Borrower | Dealer |
+| Asset or record | Before acceptance | After confirmed acceptance |
 | --- | --- | --- |
-| Cash | Receives purchase price | Reserved cash is consumed by settlement |
-| Collateral | No longer owner; retains relevant visibility and contractual authority | Holds title subject to position restrictions |
-| Position | Sees and can perform borrower choices | Sees and can perform dealer choices |
-| Future cash obligation | Full agreed repurchase price | Contractual receipt on successful repurchase |
+| Lender cash | Reserved for the offer. | Transferred to the borrower. |
+| Borrower collateral | Available to the borrower. | Title transfers to the lender, restricted under the position. |
+| Position | No settled repo from this offer. | Repayment, maturity and collateral terms are recorded. |
 
-The trusted demo issuer remains involved in holdings. This is not a production custody arrangement; see [asset adapters](../architecture/adapters.md).
+## Example: opening the repo
 
-## Closing exchange
+Alex accepts Blair's 7% APR offer for 1,000 USDCx-demo over 30 days. Alex receives 1,000 cash. The agreed 0.0250 cBTC-demo moves to Blair under locks, and a position records the fixed repayment and maturity.
 
-Before maturity or an open cure deadline is reached, the borrower can exercise `Repurchase` with cash of the agreed issuer and instrument. The supplied holding must equal the stored repurchase price exactly. The cash moves to the dealer and every pledged holding moves back to the borrower without the position lock. The open position is consumed and a `ClosedRepo` receipt records the result.
+If the quote expired or the agreed mark is unusable, acceptance fails rather than partially transferring one side.
 
-Early repurchase uses the same full amount. It does not prorate interest down to the day of closing. A borrower should therefore use the displayed **repurchase price**, not infer a payoff from the elapsed number of days.
+## Calculate the agreed repayment
 
-## Precision and cash fragmentation
+```text
+Term interest ≈ principal × annualized APR × term days ÷ 360
+Repayment = principal + agreed term interest
+```
 
-An account can own several holdings of the same asset after previous transfers have created change. The browser may merge compatible unlocked holdings and split out the exact amount before submitting the final action. This preparation is separate from the atomic repo settlement and can require multiple commands.
+For this example, 1,000 × 7% × 30 ÷ 360 is approximately 5.83 interest. The exact ledger amount follows Numeric 10 rounding and the contract's operation order; the review dialog displays it before acceptance.
 
-All incoming asset holdings passed into a bilateral repo choice must be exact-sized and unlocked. Split an oversized holding in an owner-only transaction first. This keeps the original balance and change out of the counterparty's bilateral transaction view. The contract rejects both too-small and too-large inputs; sufficient aggregate balance alone is not the input format.
+## Repay and recover collateral
 
-A displayed total must not combine unrelated issuers, locked holdings, and free holdings into one spendable balance. If the transaction cannot find a suitable holding, review asset identity and restrictions as well as the numeric total.
+The borrower pays the full agreed amount using compatible cash before the applicable deadline. The ledger transfers that cash to the lender, returns the pledged collateral and records Repurchased.
 
-## Receipt meaning
+**Example:** paying approximately 1,005.83 returns Alex's pledged 0.0250 cBTC-demo. Paying on day 10 still requires the full contractual amount; interest is not recalculated for ten days.
 
-The closing receipt records counterparties, collateral description, cash instrument, repurchase amount, outcome and time. It is a ledger record of this model's result. It is not a tax statement, bank confirmation, or legal opinion on the transfer of an underlying security.
+Maturity and an open cure deadline can close the ordinary repayment window. Network fees remain separate from contractual principal plus interest.

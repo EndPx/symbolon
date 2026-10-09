@@ -1,41 +1,40 @@
-# Health factor, margin, and liquidation
+# Collateral and Health
 
-## Checking coverage
+A fixed repayment amount does not fix the collateral's value. Symbolon compares the current agreed mark with the position's maintenance requirement.
 
-The position compares collateral quantity multiplied by an agreed price with `cashAmount × marginThresholdPct`. Symbolon calls their ratio the **health factor**:
+## Understand health factor
 
 ```text
-health factor = collateral amount × agreed mark / (cash amount × margin threshold)
+Required collateral value = principal × maintenance cover
+Health factor = collateral quantity × agreed price ÷ required value
 ```
 
-At `1.00`, the agreed margin is exactly covered; below `1.00`, the dealer may issue a margin call. A valid feed must refer to the agreed oracle, collateral identity and cash denomination. It must have a positive price, fall within the configured age window, and not claim a future timestamp. The UI previews the factor; the Daml choices repeat the comparison on the ledger.
+At **1.00**, the agreed requirement is exactly covered. Below **1.00**, a valid fresh mark proves a shortfall. The app's green/amber display bands help reading; they do not change this contract boundary.
 
-A price that passes these structural checks is not necessarily an accurate market price. The oracle operator remains a trust dependency. The prototype oracle is manually controlled and every mark must be described as simulated.
+## Example: where can a margin call start?
 
-## Margin call
+Alex borrowed 1,000, with 105% maintenance cover and 0.0250 cBTC-demo pledged. Required value is 1,050. The threshold price is:
 
-The dealer can issue a margin call only when the current position is active, it is still within its permitted term, and the valid mark demonstrates a shortfall. A healthy position rejects the action. A successful call creates `UnderCall deadline`; the deadline is the earlier of maturity and ledger time plus the agreed cure duration.
+```text
+Margin-call threshold = 1,050 ÷ 0.0250 = 42,000
+```
 
-The margin call is a command from the dealer. The browser's coverage meter does not trigger it automatically. A future risk agent would act under the dealer's authorization and would be subject to the same Daml checks.
+| Simulated price | Collateral value | Health, approximately | Meaning |
+| --- | --- | --- | --- |
+| 60,000 | 1,500 | 1.43 | Covers the maintenance requirement. |
+| 42,000 | 1,050 | 1.00 | Exactly on the boundary. |
+| 36,000 | 900 | 0.86 | A fresh agreed mark can enable a margin call. |
 
-## Top-up
+Crossing 42,000 does not automatically liquidate the position. The lender must issue a margin call, the cure window must expire, and a fresh mark published at or after the cure deadline must still prove a shortfall.
 
-The borrower supplies an additional unlocked holding of the same collateral identity and a positive quantity. The resulting total must restore required coverage under a valid mark. An insufficient contribution fails atomically rather than leaving the position partially cured. A successful top-up creates a replacement active position with the enlarged pledged holdings list.
+## Restore coverage
 
-If the mark recovers without a top-up, the borrower can exercise `ResolveMarginCall` with a fresh agreed feed. This is allowed after the cure deadline but before maturity, provided the health factor is at least `1.00`. A dealer cannot use that recovered mark to liquidate.
+The borrower can add valid collateral that restores the required margin, or propose a lender-approved substitution while the permitted window remains open.
 
-## Substitution
+**Example:** at 36,000, adding 0.0050 cBTC-demo makes the pledged quantity 0.0300. Its value becomes 1,080 and health becomes about 1.03. Financing rate and agreed repayment do not change.
 
-The borrower exercises the position's nonconsuming `ProposeSubstitution` choice with a new issuer/instrument, quantity, exact-sized unlocked holding, and matching feed. That action reserves the replacement holding under the dealer's lock and creates a bilateral proposal. The dealer accepts it to execute the exchange. Execution checks the replacement asset and value, transfers the replacement into the position, and returns the previous collateral in the same transaction. Rate, maturity, purchase price and repurchase price do not change.
+## Expired prices and default
 
-A proposal does not reserve a price forever. By the time the dealer accepts, the position or feed may have changed, or the feed may be stale. Acceptance must fail if its inputs are no longer valid. The borrower can withdraw, or the dealer can reject, a proposal to release its replacement holding even if the referenced position is no longer active. Recreate the proposal from fresh state instead of treating old contract IDs as durable identifiers.
+An expired agreed feed can show a neutral Last mark estimate, which is not current collateral health. Missing, invalid or future-dated prices show no usable estimate. Price-sensitive actions need a current valid mark.
 
-## Cure deadline, liquidation, and maturity default
-
-Repurchase, top-up and substitution close when ledger time reaches maturity or an open cure deadline. An expired cure window does not by itself transfer collateral. For `Liquidate`, the position must still be under a margin call, the cure deadline must have passed, and an agreed oracle mark **published at or after that deadline** must still put the health factor below `1.00`. The dealer submits that choice; the receipt records the closeout mark and factor. A healthy position or a mark from before the deadline rejects liquidation. At maturity, the dealer has a separate `DeclareDefault` choice for missed repurchase.
-
-Both closeout choices consume the position and release the pledged holdings to the dealer. There is no auction, open liquidator network, sale of collateral, surplus calculation, or deficiency claim in the demo. The contract result does not establish how an external agreement would require a dealer to realize collateral or account for its value. A fresh mark's structural validity does not prove its economic correctness; the oracle is trusted and multiple active feeds for one pair are possible.
-
-## Example demo sequence
-
-With 30 CETH marked at 100 and cash of 2,000, a 1.05 threshold requires value 2,100. The health factor is `3,000 / 2,100 = 1.43`. A simulated mark of 60 makes the 30 units worth 1,800, and the factor becomes `0.86`, enabling a call. Adding 5 CETH restores value to exactly 2,100 and the factor to `1.00`. If the borrower does not cure, and a fresh mark still proves a factor below `1.00` after the deadline, the dealer may liquidate. These values demonstrate contract arithmetic and state transitions; they are not proposed risk parameters for a real asset.
+Maturity default is separate from health-factor liquidation. The demo's permitted closeout releases pledged collateral to the lender; it does not model a collateral sale or surplus/deficiency accounting.
