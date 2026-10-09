@@ -21,7 +21,7 @@ export interface DiscoveryStore {
   close(opportunity: StoredOpportunity): Promise<void>;
 }
 const marketKey = (market: LenderMarket) => createHash("sha256").update(lenderMarketKey(market)).digest("hex");
-const timestamp = (value: unknown) => new Date(String(value)).toISOString();
+const timestamp = (value: unknown) => (value instanceof Date ? value : new Date(String(value))).toISOString();
 const opportunityRow = (row: Record<string, unknown>): StoredOpportunity => ({id: String(row.id), market: checkedLenderMarket(row.market),
   borrower: String(row.borrower), terms: checkedDiscoveryTerms(row.terms, checkedLenderMarket(row.market)), status: row.status as "open" | "closed", createdAt: timestamp(row.created_at)});
 const interestRow = (row: Record<string, unknown>): StoredInterest => ({id: String(row.id), opportunityId: String(row.opportunity_id), party: String(row.lender), name: discoveryPartyLabel(String(row.lender), profile.publicDesk?.operator),

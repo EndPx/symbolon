@@ -2,8 +2,14 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import profile from "../public/deployment.json";
-import { OpenRfqError, openRfqActiveQuery, openRfqOperation, openRfqReceiptQuery, openRfqTemplate, type OpenRfqConfig, type OpenRfqStore } from "../server/open-rfq.ts";
+import { OpenRfqError, openRfqActiveQuery, openRfqOperation, openRfqReceiptQuery, openRfqTemplate, openRfqTimestamp, type OpenRfqConfig, type OpenRfqStore } from "../server/open-rfq.ts";
 import { partyEventFormat } from "../src/ledger/canton-v2.ts";
+
+test("database Date values and ledger timestamp strings preserve the same milliseconds", () => {
+  const ledger="2026-10-09T21:59:13.847046Z";
+  assert.equal(openRfqTimestamp(new Date(ledger)),"2026-10-09T21:59:13.847Z");
+  assert.equal(openRfqTimestamp(new Date(ledger)),openRfqTimestamp(ledger));
+});
 import { checkedOpenRfqPricing, checkedOpenRfqPublic, checkedOwnOpenRfq, type OpenRfqQuote, type OpenRfqRequest, type OwnOpenRfq } from "../src/ledger/open-rfq-model.ts";
 import { sameDiscoveryTerms, type DiscoveryTerms } from "../src/ledger/discovery-model.ts";
 import { lenderMarketKey, type LenderMarket } from "../src/ledger/lender-directory-model.ts";

@@ -41,7 +41,8 @@ function deploymentMarket(value: unknown, config: OpenRfqConfig) {
     || market.collateralInstrument !== config.assets.collateral.symbol || market.cashInstrument !== config.assets.cash.symbol) throw new OpenRfqError(400, "Select the configured Symbolon DevNet market.");
   return market;
 }
-const date = (value: unknown) => new Date(String(value)).toISOString();
+export const openRfqTimestamp = (value: unknown) => (value instanceof Date ? value : new Date(String(value))).toISOString();
+const date = openRfqTimestamp;
 function requestRow(row: Record<string, unknown>): OpenRfqRequest {
   const market = checkedLenderMarket(row.market);
   return {id: String(row.id), market, status: row.status as "open" | "closed", createdAt: date(row.created_at), borrower: String(row.borrower),
