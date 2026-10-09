@@ -746,7 +746,9 @@ function Workspace({ session: s, connect, connectBalanceWallet, demoParties, swi
       <nav className="terminal-nav" aria-label="Main navigation"><button type="button" className={view === "markets" || view === "detail" ? "on" : ""} aria-current={view === "markets" || view === "detail" ? "page" : undefined} onClick={() => setView("markets")}>Markets</button>
         <button type="button" className={view === "portfolio" ? "on" : ""} aria-current={view === "portfolio" ? "page" : undefined} onClick={() => setView("portfolio")}>Portfolio</button>
         <button type="button" className={view === "faucet" ? "on" : ""} aria-current={view === "faucet" ? "page" : undefined} onClick={() => setView("faucet")}>Faucet</button></nav>
-      <button type="button" className="terminal-account-button" onClick={() => setAccountOpen(true)} aria-haspopup="dialog"><span>{accountLabel}</span><small>{networkLabel()}{connected && !trading ? " · Read-only" : ""}</small></button>
+      <div className="terminal-header-actions"><a className="terminal-docs-link" href="https://symbolon.gitbook.io/symbolon-docs/" target="_blank" rel="noopener noreferrer" title="Open Symbolon Docs in a new tab">Docs</a>
+        <button type="button" className="terminal-account-button" onClick={() => setAccountOpen(true)} aria-haspopup="dialog"><span>{accountLabel}</span><small>{networkLabel()}{connected && !trading ? " · Read-only" : ""}</small></button>
+      </div>
     </header>
     <main className="terminal-workspace" id="desk-content">
       <div className="terminal-notices" role="region" aria-label="Notifications">

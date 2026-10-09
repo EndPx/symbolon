@@ -668,9 +668,14 @@
 .terminal-head .brand { display: inline-flex; align-items: center; gap: 12px; margin: 0; color: var(--parchment, #f4e9ce); font: 16px "Marcellus", serif; letter-spacing: .12em; white-space: nowrap; }
 .terminal-head .brand img { width: 24px; height: 24px; }
 .terminal-nav { display: flex; align-items: center; height: 100%; gap: 8px; }
-.terminal-nav button, .terminal-nav a { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 8px 16px; border: 0; border-radius: var(--terminal-control-radius); font: 500 14px "Libre Franklin", sans-serif; color: var(--parchment-dim, #d8c89e); background: transparent; text-decoration: none; }
+.terminal-nav button, .terminal-nav a, .terminal-docs-link { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 8px 16px; border: 0; border-radius: var(--terminal-control-radius); font: 500 14px "Libre Franklin", sans-serif; color: var(--parchment-dim, #d8c89e); background: transparent; text-decoration: none; }
 .terminal-nav button[aria-current], .terminal-nav button.active, .terminal-nav a[aria-current] { background: rgba(244,233,206,.08); color: var(--parchment, #f4e9ce); }
 .terminal-account-button { margin-left: auto; min-height: 40px; display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; color: var(--parchment, #f4e9ce); border: 1px solid rgba(216,200,158,.5); border-radius: var(--terminal-control-radius); background: transparent; font: 13px "Libre Franklin", sans-serif; }
+.terminal-header-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; min-width: 0; }
+.terminal-header-actions .terminal-account-button { margin-left: 0; min-width: 0; }
+.terminal-header-actions .terminal-account-button > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.terminal-header-actions .terminal-account-button small, .terminal-docs-link { flex-shrink: 0; }
+.terminal-docs-link:hover { background: rgba(244,233,206,.08); color: var(--parchment, #f4e9ce); }
 .terminal-head button:focus-visible, .terminal-head a:focus-visible { outline-color: var(--antique-gold, #c9a227); }
 .terminal-account-button svg { width: 16px; height: 16px; }
 .terminal-head .terminal-network { margin-left: auto; color: #d8c89e; font-size: 12px; white-space: nowrap; }
