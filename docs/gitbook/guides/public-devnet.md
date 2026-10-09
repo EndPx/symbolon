@@ -1,5 +1,5 @@
 ---
-description: Start with the DevNet financing demo, or rehearse a TestNet wallet connection.
+description: Start with the DevNet financing demo, or rehearse connections with two Grofty TestNet wallets.
 ---
 # Getting Started
 
@@ -36,18 +36,18 @@ The app can prepare an expired **public simulated reference** during request rev
 
 ## Optional: Rehearse a TestNet Wallet Connection
 
-Open the separate [Symbolon TestNet app](https://symbolon-testnet.vercel.app/app) to try connecting a compatible wallet and checking the data available to your own Canton party.
+Open the separate [Symbolon TestNet app](https://symbolon-testnet.vercel.app/app) to rehearse connections with **two Grofty TestNet wallets**. The current TestNet wallet picker offers Grofty. Each wallet should connect its own Canton party.
 
 {% hint style="info" %}
-**The current TestNet scope is connection and reads.** Request submission, funded quotes and settlement are disabled in this profile. The [DevNet app](https://symbolon.endpx.cloud/app) remains the place to try the simulated financing workflow.
+**The current TestNet scope is Grofty connection and read-compatibility checks.** Request submission, funded quotes and settlement are disabled in this profile. The [DevNet app](https://symbolon.endpx.cloud/app) remains the place to try the simulated financing workflow.
 {% endhint %}
 
-1. **Prepare your wallet on TestNet.** Follow the official [Send Connect TestNet guide](https://sigilry.org/guides/send-connect-testnet/) to select TestNet and complete your own wallet setup. If you use Grofty, start with its [TestNet site](https://dex-testnet.grofty.cc/testnet).
-2. **Open Symbolon's TestNet app in that browser.** Approve the wallet's connection request yourself. An installed extension may require reloading the app before it appears.
-3. **Check the network and party.** Confirm TestNet and the party you intend to use. Switching networks does not move assets from another network.
-4. **Inspect the permitted read results.** A successful connection establishes access to an identity; it does not prove that Symbolon's packages, market or token adapters are available for that wallet's participant.
+1. **Prepare two Grofty TestNet wallets.** Start with [Grofty's TestNet site](https://dex-testnet.grofty.cc/testnet) and complete each wallet's setup yourself. Use distinct parties for the two counterparties.
+2. **Connect the first wallet to Symbolon.** Open the TestNet app, choose Grofty and approve the connection yourself. Confirm TestNet and the first party's identity.
+3. **Repeat for the second wallet.** Connect the other Grofty wallet and confirm that its party ID differs. A party belongs to its network; switching networks does not move its assets.
+4. **Check ledger-read compatibility.** A successful wallet connection does not prove that required ledger endpoints, Symbolon packages or token adapters are available. If a required check returns **Unsupported**, that read remains unverified; it is not evidence of a zero balance or an empty market.
 
-**Example:** Alex connects a fresh TestNet wallet and sees its own party. Alex may obtain CBTC from a TestNet faucet, but that does not create a Symbolon cBTC-demo holding or enable a repo with it.
+**Example:** Alex connects Grofty wallet A and Blair connects Grofty wallet B. They confirm two distinct TestNet parties. This rehearses their identities and available reads; it does not create a borrower request or a lender offer. Alex may obtain CBTC from a TestNet faucet, but that does not create a Symbolon cBTC-demo holding or enable a repo with it.
 
 ### TestNet Asset Resources
 
@@ -61,6 +61,6 @@ These services are separate from Symbolon's DevNet demo faucet. Their assets hel
 
 ### Why a Fresh Wallet May Still Show No Symbolon Market
 
-Your wallet participant must support the required packages and read access on the same synchronizer. A fresh party also needs the relevant market records shared with it. The existing registered-lender directory uses DevNet account authorization; connecting a TestNet wallet does not register it through that route.
+Your Grofty wallet participant must support the required ledger reads, packages and access on the same synchronizer. Required Symbolon package vetting and operator access remain unresolved for this TestNet route. A fresh party also needs the relevant market records shared with it. The existing registered-lender directory uses DevNet account authorization; connecting a Grofty TestNet wallet does not register it through that route.
 
 Real-token adapters remain unimplemented in this TestNet profile. Receiving CC, USDCx or CBTC therefore does not enable a Symbolon quote or settlement. Keep the wallet rehearsal and the DevNet financing demo as separate checks.
