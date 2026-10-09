@@ -1,4 +1,4 @@
-# How Symbolon Works
+# Overview
 
 The borrower and dealer agree a private financing deal, settle it on Canton, and manage its collateral until closure. The annualized rate and full repurchase amount are fixed when the quote is accepted. Collateral value can change during the term.
 

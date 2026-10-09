@@ -1,19 +1,27 @@
 ---
-description: Private fixed-rate repo on Canton.
+description: Welcome to Symbolon Docs
+hidden: true
 layout:
+  width: default
+  title:
+    visible: false
+  description:
+    visible: true
   tableOfContents:
     visible: false
   outline:
-    visible: false
+    visible: true
   pagination:
+    visible: false
+  metadata:
     visible: false
 ---
 
 # Welcome to Symbolon Documentation
 
-![Symbolon — a private agreement between counterparties](https://symbolon.endpx.cloud/brand/hero.png)
+<h2 align="center">Welcome to Symbolon Documentation</h2>
 
-Symbolon brings private financing quotes, fixed repayment terms, and collateral management into one Canton application.
+![Symbolon — a private agreement between counterparties](assets/cover.png)
 
 ## Quick Start
 

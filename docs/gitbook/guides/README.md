@@ -1,4 +1,4 @@
-# Using Symbolon
+# Overview
 
 The [Symbolon app](https://symbolon.endpx.cloud/app) opens the financing desk. An authorized Canton party session determines which requests, quotes, holdings, and positions a user can read and which actions they can submit.
 
@@ -6,7 +6,9 @@ The [Symbolon app](https://symbolon.endpx.cloud/app) opens the financing desk. A
 
 For a reproducible environment, follow [Local setup](local-setup.md). It builds the Daml packages, starts Canton, creates simulated assets, and seeds borrower and dealer parties. Open /app on the local server and select a seeded role.
 
-For a configured remote environment, follow [Wallets and DevNet readiness](wallet-devnet.md). A connected wallet identifies a party; the participant, packages, assets, and submission rights must also be available. Remote trading remains paused on the published site while those checks are incomplete.
+For the published DevNet app, follow [Getting Started](public-devnet.md). An existing authorized HackCanton/NODERS account can claim test assets, request a funded reference offer, settle, manage collateral and repurchase. Each account uses its own permitted parties. Borrow and Lend are activities of the selected party, not separate identities allocated automatically on login.
+
+The [Wallets and DevNet readiness](wallet-devnet.md) guide explains participant, package, asset and permission prerequisites for a wallet connection. Independently operated external-account rehearsals and native wallet signing remain separate verification steps.
 
 ## Choose your role
 

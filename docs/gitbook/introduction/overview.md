@@ -1,6 +1,6 @@
-# Product overview
+# Overview
 
-Symbolon is a browser-based private fixed-rate bilateral repo desk. Its main value is a known contractual principal-plus-interest repayment amount: a borrower accepts a dealer's fixed annualized quote instead of leaving that agreement's interest exposed to later floating-rate changes. Proposed initial users are digital-asset fund treasury operators with Canton asset exposure or an adoption plan, plus dealers supplying financing capital. Customer demand and willingness to accept a fixed-rate premium have not yet been established through interviews.
+Symbolon is a browser-based private fixed-rate bilateral repo desk. Its main value is a known contractual principal-plus-interest repayment amount: a borrower accepts a lender's fixed annualized quote instead of leaving that agreement's interest exposed to later floating-rate changes. Proposed initial users are digital-asset fund treasury operators with Canton asset exposure or an adoption plan, plus lenders supplying financing capital. One informal borrower discussion has started human discovery; institutional fit, willingness to switch or pay, and pilot participation remain unvalidated.
 
 ## A trade with two counterparties
 

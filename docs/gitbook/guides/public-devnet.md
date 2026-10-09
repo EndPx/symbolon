@@ -1,4 +1,4 @@
-# Public DevNet access
+# Getting Started
 
 The public product entry is `/app`. HackCanton account sign-in uses authorization
 code with PKCE against the existing NODERS identity provider. The participant
@@ -9,8 +9,8 @@ custody. Access and party allocation require a HackCanton/NODERS account.
 The public access package is vetted and the enabled DevNet profile now references
 an actual dedicated dealer contract. The primary account borrower flow was
 verified through the frontend, including a trade from the public app URL. See
-[public receipts](../../submission/evidence/public-devnet.md) and
-[executed UI coverage](../../submission/evidence/frontend-e2e.md). The connected,
+[public receipts](https://github.com/EndPx/symbolon/blob/codex/public-devnet-app/docs/submission/evidence/public-devnet.md) and
+[executed UI coverage](https://github.com/EndPx/symbolon/blob/codex/public-devnet-app/docs/submission/evidence/frontend-e2e.md). The connected,
 missing-market, read-only and failed-read states are separate; a connected account
 is not asked to connect again because trading is paused.
 

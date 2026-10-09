@@ -31,17 +31,18 @@
 ## Using Symbolon
 
 * [Overview](guides/README.md)
-  * [Getting Started](guides/local-setup.md)
+  * [Getting Started](guides/public-devnet.md)
   * [For Borrowers](guides/borrower.md)
-  * [For Dealers and Oracle Operators](guides/dealer-oracle.md)
+  * [For Lenders and Oracle Operators](guides/dealer-oracle.md)
   * [Frequently Asked Questions](guides/faq.md)
+  * [LocalNet setup](guides/local-setup.md)
   * [Wallets and DevNet access](guides/wallet-devnet.md)
   * [Local repo walkthrough](guides/demo.md)
   * [Troubleshooting](guides/troubleshooting.md)
 
 ## Technical Details
 
-* [Overview](architecture/overview.md)
+* [Overview](architecture/README.md)
   * [Daml contract model](architecture/daml.md)
   * [Frontend and ledger data flow](architecture/frontend.md)
   * [Onchain and Offchain Data](architecture/onchain-offchain.md)
@@ -52,7 +53,10 @@
   * [Deployment and operations](guides/deployment.md)
   * [DevNet to MainNet promotion](guides/network-promotion.md)
   * [MainNet release readiness](guides/mainnet-readiness.md)
-* [Technical Reference](reference/README.md)
+
+## Technical Reference
+
+* [Overview](reference/README.md)
   * [Contract and Ledger API](reference/api.md)
   * [Rate, time, and amount conventions](reference/economics.md)
   * [Glossary](reference/glossary.md)
