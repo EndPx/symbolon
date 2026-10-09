@@ -17,9 +17,9 @@ const lending = [
 
 export function MarketEducation({side}:{side:TradeSide}) {
   const id=useId();
-  const discovery = !!deployment().publicDesk;
+  const discovery = !!deployment().openRfqPackageId;
   const journey = side === "lend" ? lending : borrowing;
-  const first = side === "lend" ? ["Find an opportunity", "Request detail access from the open board. The borrower approves a private request to your party before you set an APR. No lender registration is required."] : ["Publish an opportunity", "Choose the cash amount, collateral and duration. Publish a minimal listing, then approve each lender before sharing your full terms. Publishing does not give you cash."];
+  const first = side === "lend" ? ["Review an open request", "Read the shared financing terms, choose your fixed APR and send a funded quote directly. No lender registration or access approval is required."] : ["Publish a request", "Choose cash, collateral and duration. Share the request once with connected Symbolon users, then compare lenders' private funded offers. Publishing does not give you cash."];
   return <div className="market-education">
     <section className="market-journey" aria-labelledby={`${id}-journey`}>
       <h3 id={`${id}-journey`}>{side==="lend"?"How lending works":"How borrowing works"}</h3>
@@ -35,7 +35,7 @@ export function MarketEducation({side}:{side:TradeSide}) {
           <div><dt>Fees and test assets</dt><dd>This prototype has no Symbolon protocol fee. Network charges are separate. Demo assets and simulated prices do not represent real cBTC/USDCx funding.</dd></div>
         </dl></details>
       </section>
-      <section aria-labelledby={`${id}-privacy`}><h3 id={`${id}-privacy`}>Who can see your deal?</h3><p>{discovery ? "The open board reveals the market and listing status. You choose which lenders receive your identity, amount, collateral quantity and duration. Each receives a separate private request and sees its own quote. The accepted position is shared with the borrower and winning lender." : "A request is visible to its borrower and addressed lender. Each lender sees its own quote; the borrower compares their offers. The accepted position is shared with the borrower and winning lender."}</p><p className="sm muted">The application operator can access stored discovery details. Asset issuers can observe their holdings and asset movements. Hosting operators remain a trust dependency.</p>
+      <section aria-labelledby={`${id}-privacy`}><h3 id={`${id}-privacy`}>Who can see your deal?</h3><p>{discovery ? "Publishing shares the request's borrower identity, amount, collateral and duration with connected Symbolon users. Each lender's APR and funded offer remain between that lender and the borrower. The accepted position is bilateral; competing lenders do not gain access to it." : "A request is visible to its borrower and addressed lender. Each lender sees its own quote; the borrower compares their offers. The accepted position is shared with the borrower and winning lender."}</p><p className="sm muted">The application operator can access stored records. Asset issuers can observe their holdings and asset movements. Hosting operators remain a trust dependency.</p>
         <details className="education-disclosure"><summary>Why Canton?</summary><p>Canton supports party-specific contract visibility and atomic cash/collateral settlement. That lets counterparties agree confidential terms and settle together. Privacy means controlled access, not anonymity.</p></details>
       </section>
     </div>

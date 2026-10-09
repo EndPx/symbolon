@@ -159,6 +159,31 @@ export async function accountDiscoveryRequest(method: "GET" | "POST", value: unk
   if (currentRevision !== revision) throw new LedgerError("The account changed. Refresh discovery from your current account.");
   return result;
 }
+/** Only the configured same-origin open RFQ service receives account authority. */
+export async function accountOpenRfqRequest(method: "GET" | "POST", value: unknown): Promise<unknown> {
+  if (!context) throw new LedgerError("Connect a HackCanton account to use open requests.");
+  const body = value as {party?: unknown; market?: unknown; scope?: unknown; requestId?: unknown};
+  if (!body || typeof body !== "object" || typeof body.party !== "string" || !context.parties.includes(body.party)) throw new LedgerError("Use an authorized party from your current account.");
+  const currentRevision = revision;
+  const token = await validToken();
+  if (currentRevision !== revision || !context) throw new LedgerError("The account changed. Refresh requests from your current account.");
+  const params = new URLSearchParams({market: JSON.stringify(body.market), party: body.party});
+  if (method === "GET") {
+    if (!["mine", "quote", "board"].includes(String(body.scope))) throw new LedgerError("Unsupported open request view.");
+    params.set("scope", String(body.scope));
+    if (body.scope === "quote") {
+      if (typeof body.requestId !== "string") throw new LedgerError("Select an open request first.");
+      params.set("requestId", body.requestId);
+    }
+  }
+  const response = await fetch(`/api/open-rfq${method === "GET" ? `?${params}` : ""}`, {method, credentials: "omit", redirect: "error", signal: AbortSignal.timeout(30000),
+    headers: {Authorization: `Bearer ${token}`, ...(method === "POST" ? {"Content-Type": "application/json"} : {})},
+    ...(method === "POST" ? {body: JSON.stringify(value)} : {})});
+  const result = await response.json().catch(() => null);
+  if (!response.ok) throw new LedgerError(redactedError(typeof result?.error === "string" ? result.error : "Open request status was not confirmed. Refresh before retrying."));
+  if (currentRevision !== revision) throw new LedgerError("The account changed. Refresh open requests.");
+  return result;
+}
 export async function uploadPublicAccessPackage(synchronizerId: string) {
   if (!context || !synchronizerId) throw new LedgerError("Connect an authorized HackCanton operator account first.");
   const file = await fetch("/packages/symbolon-public-0.1.0.dar", {credentials:"omit",signal:AbortSignal.timeout(15000)});

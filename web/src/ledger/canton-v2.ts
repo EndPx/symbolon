@@ -76,15 +76,15 @@ export class CantonV2Client {
   private pending: PendingCommand | null = null;
   private submitting = false;
   constructor(options: {
-    party: string; request: LedgerRequest; corePackageId: string; publicPackageId?: string;
+    party: string; request: LedgerRequest; corePackageId: string; publicPackageId?: string; openRfqPackageId?: string;
     synchronizerId: string; store?: PendingStore;
   }) {
     if (!nonempty(options.party) || !options.party.includes("::") || !nonempty(options.synchronizerId)
-      || !hash(options.corePackageId) || options.publicPackageId && !hash(options.publicPackageId)) {
+      || !hash(options.corePackageId) || options.publicPackageId && !hash(options.publicPackageId) || options.openRfqPackageId && !hash(options.openRfqPackageId)) {
       throw new LedgerError("The party, package and synchronizer must be configured before connecting.");
     }
     this.party = options.party; this.request = options.request;
-    this.packages = [options.corePackageId, ...(options.publicPackageId ? [options.publicPackageId] : [])];
+    this.packages = [options.corePackageId, ...(options.publicPackageId ? [options.publicPackageId] : []), ...(options.openRfqPackageId ? [options.openRfqPackageId] : [])];
     this.synchronizerId = options.synchronizerId; this.store = options.store;
     this.storageKey = `symbolon.pending.v1.${options.party}`;
     try {
@@ -193,11 +193,13 @@ export class CantonV2Client {
       }
     } finally { this.submitting = false; }
   }
-  private transaction(updateId: string) {
-    return this.request("POST", "/v2/updates/transaction-by-id", {
-      updateId, transactionFormat: { eventFormat: partyEventFormat(this.party, true),
-        transactionShape: "TRANSACTION_SHAPE_LEDGER_EFFECTS" },
-    });
+  private async transaction(updateId: string) {
+    const result = object(await this.request("POST", "/v2/updates/update-by-id", {
+      updateId, updateFormat: {includeTransactions: {eventFormat: partyEventFormat(this.party, true),
+        transactionShape: "TRANSACTION_SHAPE_LEDGER_EFFECTS"}},
+    }));
+    const transaction = object(object(object(result.update).Transaction).value);
+    return {transaction};
   }
   private async confirmPending(pending: PendingCommand & { updateId: string }) {
     const result = await this.transaction(pending.updateId);

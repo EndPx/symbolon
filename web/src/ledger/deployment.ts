@@ -17,6 +17,7 @@ export interface Deployment {
   tradingEnabled: boolean;
   releaseEvidence: string | null;
   publicPackageId?: string | null;
+  openRfqPackageId?: string | null;
   publicDesk?: {
     contractId: string; createdEventBlob: string; operator: string; label: string;
     referencePrice: string; rate: string; maxPrincipal: string;
@@ -45,7 +46,7 @@ const packageHash = /^[a-f0-9]{64}$/;
 export function parseDeployment(value: unknown): Deployment {
   if (!value || typeof value !== "object") throw new Error("Missing deployment configuration.");
   const d = value as Deployment;
-  const allowed = ["schemaVersion", "network", "walletNetwork", "participant", "synchronizerId", "corePackageId", "tradingEnabled", "releaseEvidence", "assets", "publicPackageId", "publicDesk"];
+  const allowed = ["schemaVersion", "network", "walletNetwork", "participant", "synchronizerId", "corePackageId", "tradingEnabled", "releaseEvidence", "assets", "publicPackageId", "publicDesk", "openRfqPackageId"];
   if (Object.keys(d).some(key => !allowed.includes(key))) throw new Error("Unexpected deployment field. Credentials must stay outside public configuration.");
   if (d.schemaVersion !== 1 || !["localnet", "devnet", "testnet", "mainnet"].includes(d.network)
     || normalizeNetwork(d.walletNetwork) !== d.network || typeof d.tradingEnabled !== "boolean") {
@@ -56,6 +57,7 @@ export function parseDeployment(value: unknown): Deployment {
   }
   if (d.corePackageId !== null && !packageHash.test(d.corePackageId)) throw new Error("Invalid core package ID.");
   if (d.publicPackageId != null && !packageHash.test(d.publicPackageId)) throw new Error("Invalid public access package ID.");
+  if (d.openRfqPackageId != null && (!packageHash.test(d.openRfqPackageId) || d.network !== "devnet" || !d.publicDesk)) throw new Error("Open RFQ requires its pinned package on the configured DevNet desk.");
   if (d.network === "localnet" && (d.participant !== null || d.tradingEnabled || d.publicDesk != null || d.publicPackageId != null)) {
     throw new Error("LocalNet must use the development proxy with remote signing disabled.");
   }

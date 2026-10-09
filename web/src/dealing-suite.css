@@ -1158,6 +1158,32 @@
 .discovery-public-record p { margin: 4px 0; }
 .discovery-helper { max-width: 68ch; margin-top: 12px; color: var(--terminal-muted); }
 .discovery-connected-party { display: grid; gap: 4px; margin: 12px 0; }
+.open-rfq-sheet { padding: 16px 20px; min-width: 0; }
+.open-rfq-header, .open-rfq-record-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.open-rfq-header { margin-bottom: 12px; }
+.open-rfq-header h2 { margin: 0; }
+.open-rfq-header p, .open-rfq-record-heading p { margin-top: 4px; color: var(--terminal-muted); }
+.open-rfq-list { display: grid; gap: 12px; }
+.open-rfq-record { padding: 12px 16px; background: var(--terminal-soft); border: 1px solid var(--terminal-border); border-radius: var(--terminal-control-radius); }
+.open-rfq-record-heading h3 { margin: 0; }
+.open-rfq-metrics { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; margin: 12px 0 0; }
+.open-rfq-metrics dt { color: var(--terminal-muted); font-size: 12px; margin-bottom: 4px; }
+.open-rfq-metrics dd { margin: 0; font: 400 13px/1.5 "Courier Prime",monospace; overflow-wrap: anywhere; }
+.open-rfq-private-offers { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--terminal-border); }
+.terminal .open-rfq-private-offers > .panel { padding: 0; }
+.open-rfq-private-offers .offer-section { padding: 0; }
+.open-rfq-archive, .open-rfq-private-note { margin-top: 12px; }
+.open-rfq-archive > summary, .open-rfq-private-note > summary { cursor: pointer; min-height: 44px; align-content: center; font-size: 13px; }
+.open-rfq-archive .open-rfq-record { margin-top: 12px; }
+.open-rfq-private-note p { max-width: 78ch; color: var(--terminal-muted); padding-top: 8px; }
+.open-rfq-quote-form { display: grid; gap: 12px; margin-top: 16px; }
+.open-rfq-recovery, .open-rfq-notice { border-left: 2px solid var(--antique-gold,#c9a227); padding: 10px 12px; background: var(--terminal-soft); margin: 12px 0; }
+@media(max-width:580px) {
+  .open-rfq-sheet { padding: 16px; }
+  .open-rfq-record { padding: 12px; }
+  .open-rfq-metrics { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .open-rfq-metrics > :first-child { grid-column: 1/-1; }
+}
 .discovery-notice { padding: 10px 12px; border-left: 2px solid var(--antique-gold,#c9a227); background: var(--terminal-inset); }
 .discovery-sheet .terms-disclosure { margin-top: 12px; }
 @media(max-width:580px) {

@@ -39,10 +39,13 @@ import { LenderRegistration, useLenderDirectory } from "./LenderDirectory";
 import { eligibleLenders, readLenders, type RegisteredLender } from "../ledger/lender-directory";
 import { PendingRequests } from "./PendingRequests";
 import { Dialog } from "./DeskDialog";
-import { Discovery, useDiscovery, type DiscoveryState } from "./Discovery";
-import { publishOpportunity } from "../ledger/discovery";
 import { sendRegisteredRequests } from "./registered-request";
 import { ParticipantCheck } from "./ParticipantCheck";
+import { OpenRequests, OpenProofRecovery, useOpenRfq, useOpenRfqProofRevision, readOpenRfqProof, saveOpenRfqProof, deleteOpenRfqProof, type OpenRfqState } from "./OpenRequests";
+import { closeOpenRfq, publishOpenRfq, type OpenRfqPublishProof, type OwnedOpenRequest } from "../ledger/open-rfq";
+import { OpenRfqProofError, createOpenRequest, acceptOpenRfqQuote } from "./open-rfq-actions";
+import { checkedDiscoveryTerms } from "../ledger/discovery-model";
+import { recoverOpenRfqIntent, clearOpenRfqIntent } from "./open-rfq-intents";
 
 function useDesk(session: Session) {
   const [state, setState] = useState<DeskState | null>(null);
@@ -212,7 +215,7 @@ function Balances({ st, party }: { st: DeskState; party: string }) {
   </Panel>;
 }
 
-function QuoteReview({ quote, st, s, close, onSettled }: { quote: Contract<RepoQuote>; st: DeskState; s: Session; close(): void; onSettled?(): void }) {
+function QuoteReview({ quote, st, s, close, onSettled, openRequest }: { quote: Contract<RepoQuote>; st: DeskState; s: Session; close(): void; onSettled?(): void; openRequest?: OwnedOpenRequest }) {
   const { busy, run } = useContext(Transactions);
   const q = quote.payload;
   const feed = feedFor(st.feeds, q);
@@ -226,10 +229,16 @@ function QuoteReview({ quote, st, s, close, onSettled }: { quote: Contract<RepoQ
     : available < num(q.collateralAmount) ? "You do not have enough available collateral from the agreed issuer." : null;
   const accept = async () => {
     if (reason || !feed) return;
-    if (await run("Repo settled", () => act.acceptQuote(s, quote, feed.contractId))) { close(); onSettled?.(); }
+    if (await run("Repo settled", async () => {
+      if (!openRequest) return act.acceptQuote(s, quote, feed.contractId);
+      const updateId = await acceptOpenRfqQuote(s, quote, feed.contractId, openRequest);
+      if (openRequest.status === "open") saveOpenRfqProof("close", s.party, openRequest.id, {updateId});
+      return updateId;
+    })) { close(); onSettled?.(); }
   };
   return <Dialog title="Review financing offer" close={close} busy={busy}>
     <p className="panel-lede">This offer's terms apply when you accept. Settlement transfers collateral title to the lender and pays the cash below to you in one ledger transaction.</p>
+    {openRequest && <p className="decision-note">{openRequest.status === "open" ? "Acceptance also closes this open request and declines its other recorded active offers in the same transaction, releasing their reserved cash." : "This request is already closed. Acceptance still declines its other recorded active offers in the same transaction, releasing their reserved cash."} Quotes that were not recorded against this request remain separate.</p>}
     <div className="review-terms">
       <Term label="Lender"><Party party={q.dealer} /></Term>
       <Term label="Collateral">{fmtAmount(q.collateralAmount, 10)} {q.collateralInstrument}</Term>
@@ -262,13 +271,25 @@ function QuoteReview({ quote, st, s, close, onSettled }: { quote: Contract<RepoQ
   </Dialog>;
 }
 
-function ReceivedQuotes({ s, st, onSettled }: { s: Session; st: DeskState; onSettled?(): void }) {
+function ReceivedQuotes({ s, st, onSettled, embedded = false, openRfq }: { s: Session; st: DeskState; onSettled?(): void; embedded?: boolean; openRfq?: OpenRfqState }) {
   const { busy, run } = useContext(Transactions);
   const [review, setReview] = useState<Contract<RepoQuote> | null>(null);
   const quotes = st.quotes.filter((q) => q.payload.borrower === s.party).sort((a, b) => num(a.payload.rate) - num(b.payload.rate));
   const requests = st.requests.filter((r) => r.payload.borrower === s.party);
-  return <Panel id="private-quotes" title="Received offers" description="Compare fixed interest and total repayment. Review each offer's full terms before settlement.">
-    {!quotes.length && !requests.length && <p className="empty-state">{deployment().publicDesk ? "No funded offers yet. Publish an opportunity, then approve a lender's access to receive a quote." : "No offers yet. Request a private quote to begin."}</p>}
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const openRequest = review ? openRfq?.own.requests.find(request => request.quotes.some(item => item.quoteContractId === review.contractId)) : undefined;
+  const settled = async () => {
+    if (openRequest?.status === "open") {
+      const proof = readOpenRfqProof<{updateId: string}>("close", s.party, openRequest.id);
+      if (proof) try {await closeOpenRfq(openRequest.market, s.party, openRequest.id, proof.updateId); deleteOpenRfqProof("close", s.party, openRequest.id);}
+      catch (cause) {setSyncError(`Settlement committed. ${(cause as Error).message} Use Retry closure sync on your request to update its board status; do not settle again.`); openRfq?.refresh(); return;}
+      openRfq?.refresh();
+    }
+    onSettled?.();
+  };
+  return <section id="private-quotes" className={embedded ? "open-rfq-offer-section" : "panel"}>{embedded ? <h3>Received funded offers</h3> : <><h2>Received offers</h2><p className="panel-lede">Compare fixed interest and total repayment. Review each offer's full terms before settlement.</p></>}
+    {!quotes.length && !requests.length && <p className="empty-state">{embedded ? "No funded offers yet. Lenders can quote your published request directly." : "No offers yet. Request a private quote to begin."}</p>}
+    {syncError && <p className="err" role="alert">{syncError}</p>}
     {!!quotes.length && <div className="offer-list">{quotes.map((q) => {
       const amounts = offerAmounts(q.payload), expired = Date.now() >= Date.parse(q.payload.validUntil);
       return <article className={`offer-ticket${expired ? " expired" : ""}`} key={q.contractId}>
@@ -284,8 +305,8 @@ function ReceivedQuotes({ s, st, onSettled }: { s: Session; st: DeskState; onSet
     {!!quotes.length && <p className="sm muted offer-note">Amounts are rounded here; review shows 10 decimals. Network charges are separate. Each offer has its own funded contract.</p>}
     <PendingRequests requests={requests} busy={busy} renderLender={party => <Party party={party}/>}
       onWithdraw={request => void run("Request withdrawn", () => act.withdrawRequest(s, request.contractId))}/>
-    {review && <QuoteReview quote={review} st={st} s={s} close={() => setReview(null)} onSettled={onSettled} />}
-  </Panel>;
+    {review && <QuoteReview quote={review} st={st} s={s} close={() => setReview(null)} openRequest={openRequest} onSettled={() => void settled()} />}
+  </section>;
 }
 
 const feedIdentity = (f: PriceFeed) => [f.oracle, f.instrumentIssuer, f.instrument, f.cashIssuer, f.cashInstrument].join("|");
@@ -297,7 +318,7 @@ function latestFeeds(feeds: Contract<PriceFeed>[]) {
   return [...unique.values()];
 }
 
-function BorrowRequest({ s, st, demoParties, initialPair, draftScope, discovery, onSubmitted, onPairChange }: { s: Session; st: DeskState; demoParties: string[]; initialPair: string; draftScope:BorrowDraftScope|null; discovery: DiscoveryState; onSubmitted(): void; onPairChange(pairId: string): void }) {
+function BorrowRequest({ s, st, demoParties, initialPair, draftScope, openRfq, onSubmitted, onPairChange }: { s: Session; st: DeskState; demoParties: string[]; initialPair: string; draftScope:BorrowDraftScope|null; openRfq: OpenRfqState; onSubmitted(): void; onPairChange(pairId: string): void }) {
   const { busy, run } = useContext(Transactions);
   const feeds = latestFeeds(st.feeds);
   const chosen = initialPair;
@@ -318,11 +339,13 @@ function BorrowRequest({ s, st, demoParties, initialPair, draftScope, discovery,
   const [preparationError, setPreparationError] = useState<string | null>(null);
   const [publishing, setPublishing] = useState(false);
   const [publication, setPublication] = useState<string | null>(null);
+  useOpenRfqProofRevision();
+  const hasPublicationProof = !!readOpenRfqProof("publish", s.party, initialPair);
   const publicationLock = useRef(false);
   const visibleFeed = feeds.find((f) => feedIdentity(f.payload) === chosen);
   const selected = prepared && feedIdentity(prepared.payload) === chosen && (!visibleFeed || Date.parse(prepared.payload.asOf) > Date.parse(visibleFeed.payload.asOf)) ? prepared : visibleFeed;
   const feed = selected?.payload;
-  const discoveryMode = s.kind === "account" && !!discovery.market && !!feed && publicMarket(feed, deployment());
+  const discoveryMode = s.kind === "account" && !!openRfq.market && !!feed && publicMarket(feed, deployment());
   const directory = useLenderDirectory(feed, s.party, s.kind === "sandbox" ? demoParties : undefined);
   const purchase = Number(amount);
   const cover = Number(cushion) / 100;
@@ -334,7 +357,7 @@ function BorrowRequest({ s, st, demoParties, initialPair, draftScope, discovery,
   // Round up to the contract's Numeric 10 scale so rounding cannot underfund cover.
   const pledge = priceForPreview > 0 && purchase > 0 ? Math.ceil(purchase * cover / priceForPreview * 1e10) / 1e10 : 0;
   const available = feed ? balanceOf(st.holdings, s.party, feed.instrument, feed.instrumentIssuer) : 0;
-  const validParties = discoveryMode ? !discovery.loading && !discovery.error && !discovery.ownError : !directory.loading && !directory.error && directory.recipients.length > 0;
+  const validParties = discoveryMode ? !openRfq.loading && !openRfq.error && !openRfq.ownError : !directory.loading && !directory.error && directory.recipients.length > 0;
   const validNumbers = purchase > 0 && Number.isFinite(purchase) && Number.isInteger(Number(term)) && Number(term) >= 1 && Number(term) <= 365 &&
     cover >= margin && margin >= 1 && margin <= 2 && Number(cure) >= 1 / 60 && Number(cure) <= 10080 && ageSeconds >= 1 && ageSeconds <= 86400;
   const ready = (discoveryMode || fresh) && validNumbers && pledge > 0 && pledge <= available && validParties;
@@ -375,31 +398,58 @@ function BorrowRequest({ s, st, demoParties, initialPair, draftScope, discovery,
     if (succeeded) { clearBorrowDraft(draftScope); setReview(false); onSubmitted(); }
   };
   const publish = async () => {
-    if (!discoveryMode || !discovery.market || !feed || !ready || !shareConsent || publicationLock.current) return;
+    if (!discoveryMode || !openRfq.market || !feed || !ready || !shareConsent || busy || publicationLock.current) return;
     publicationLock.current = true; setPublishing(true); setPreparationError(null);
     try {
-      const opportunity = await publishOpportunity(discovery.market, s.party, {
+      let terms = {
         oracle: feed.oracle, collateralIssuer: feed.instrumentIssuer, collateralInstrument: feed.instrument, collateralAmount: dec(pledge),
         cashIssuer: feed.cashIssuer, cashInstrument: feed.cashInstrument, cashAmount: dec(purchase), termDays: Number(term),
         marginThresholdPct: dec(margin), cureSeconds: Math.round(Number(cure) * 60), maxPriceAgeSeconds: ageSeconds,
-      });
+      };
+      let proof = readOpenRfqProof<OpenRfqPublishProof>("publish", s.party, chosen);
+      if (proof) {
+        if (!proof.contractId) throw new Error("Recover the original OpenRequest contract ID from its retained ledger receipt before syncing publication.");
+        const original = (await s.read()).find(contract => contract.contractId === proof!.contractId
+          && contract.templateId === `${deployment().openRfqPackageId}:Symbolon.OpenRequest:OpenRequest` && contract.payload.borrower === s.party);
+        if (!original) throw new Error("The original request is not present in your active ledger view. Check its receipt and withdrawal status before publishing again.");
+        const values = Object.fromEntries(Object.keys(terms).map(field => [field, original.payload[field]]));
+        for (const field of ["termDays", "cureSeconds", "maxPriceAgeSeconds"]) if (typeof values[field] === "string") values[field] = Number(values[field]);
+        terms = checkedDiscoveryTerms(values, openRfq.market);
+      }
+      if (!proof) {
+        const confirmed = await run("Open request created", async () => {
+          try {proof = await createOpenRequest(s, terms);}
+          catch (cause) {
+            if (cause instanceof OpenRfqProofError && cause.kind === "publish") {
+              saveOpenRfqProof("publish", s.party, chosen, {updateId: cause.updateId, ...(cause.contractId ? {contractId: cause.contractId} : {})});
+              setPreparationError("The request's ledger update committed, but its complete contract proof could not be read. Recover its original contract ID below; no additional request will be created.");
+            }
+            throw cause;
+          }
+          saveOpenRfqProof("publish", s.party, chosen, proof);
+          return proof.updateId;
+        });
+        if (!confirmed || !proof) return;
+      }
+      const request = await publishOpenRfq(openRfq.market, s.party, terms, proof);
+      deleteOpenRfqProof("publish", s.party, chosen);
       clearBorrowDraft(draftScope); setReview(false); setShareConsent(false);
-      setPublication(`Opportunity ${opportunity.id.slice(0,8)} published. Review lender access requests in Your opportunities.`);
+      setPublication(`Request ${request.id.slice(0,8)} published. Lenders can send their fixed APR directly; compare funded offers in Offers.`);
       onSubmitted();
-    } catch (cause) { setPreparationError(`${(cause as Error).message} Refresh Your opportunities before publishing again.`); }
-    finally { publicationLock.current = false; setPublishing(false); discovery.refresh(); }
+    } catch (cause) { setPreparationError(`${(cause as Error).message} The original ledger receipt is retained. Retry publication sync instead of creating another request.`); }
+    finally { publicationLock.current = false; setPublishing(false); openRfq.refresh(); }
   };
   return <Panel id="request-repo" title="Borrow against collateral">
-    <div className="financing-stage-note"><span>{discoveryMode ? "Publish → Approve access → Quote → Settle" : "New request → Offer → Settle → Repay"}</span><MarketGuide side="borrow"/></div>
+    <div className="financing-stage-note"><span>{discoveryMode ? "Publish → Compare APRs → Settle → Repay" : "New request → Offer → Settle → Repay"}</span><MarketGuide side="borrow"/></div>
     <form className="desk-form" onSubmit={(e) => { e.preventDefault(); void openReview(); }}>
-      <Field label="Borrow amount" hint={feed?.cashInstrument}><input type="number" required min="0.01" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} /></Field>
-      <Field label="Duration (days)" hint="1–365 days from settlement"><input type="number" min="1" max="365" step="1" required value={term} onChange={(e) => setTerm(e.target.value)} /></Field>
+      <Field label="Borrow amount" hint={feed?.cashInstrument}><input type="number" required min="0.01" step="0.01" disabled={hasPublicationProof} value={amount} onChange={(e) => setAmount(e.target.value)} /></Field>
+      <Field label="Duration (days)" hint="1–365 days from settlement"><input type="number" min="1" max="365" step="1" required disabled={hasPublicationProof} value={term} onChange={(e) => setTerm(e.target.value)} /></Field>
       <div className="terminal-collateral-summary"><Term label={automatic && !fresh ? "Estimated collateral" : "Collateral required"}>{fmtAmount(pledge, 4)} {feed?.instrument ?? "—"}</Term>
         <Term label="Available">{fmtAmount(available, 4)} {feed?.instrument ?? "—"}</Term>
-        <Term label="Discovery">{discoveryMode ? "Open · Details private" : "All registered lenders"}</Term></div>
-      {discoveryMode ? <section className="lender-directory" aria-label="Opportunity privacy"><h3>Open discovery, private details</h3><p className="sm">Any Symbolon user can find this market opportunity. Your identity, amount, collateral quantity and duration stay private until you approve a lender's access. Each quote remains bilateral.</p>
-        {(discovery.error || discovery.ownError) && <p className="err" role="alert">{discovery.error ?? discovery.ownError}</p>}
-        {discovery.loading && <p className="sm" role="status">Loading discovery…</p>}
+        <Term label="Requests">{discoveryMode ? "Open · Quotes private" : "All registered lenders"}</Term></div>
+      {discoveryMode ? <section className="lender-directory" aria-label="Open request privacy"><h3>Open requests, private quotes</h3><p className="sm">Publish once for connected Symbolon lenders. They see your identity and financing terms and can quote directly. Each lender's APR and funded offer stay bilateral.</p>
+        {(openRfq.error || openRfq.ownError) && <p className="err" role="alert">{openRfq.error ?? openRfq.ownError}</p>}
+        {openRfq.loading && <p className="sm" role="status">Loading request board…</p>}
       </section> : <section className="lender-directory" aria-label="Request recipients"><h3>All registered lenders</h3>
         <p className="sm">Your request goes to every registered lender for this asset pair and price source, excluding your own party. Each lender sets its own APR; quotes stay bilateral.</p>
         {directory.loading ? <p className="sm" role="status">Loading registered lenders…</p> : directory.error ? <p className="err" role="alert">{directory.error}</p> : <p className="sm">{directory.recipients.length} eligible lender{directory.recipients.length === 1 ? "" : "s"}{!directory.recipients.length && ". Switch to the lender party, open Lend and register for this market first."}</p>}
@@ -421,16 +471,18 @@ function BorrowRequest({ s, st, demoParties, initialPair, draftScope, discovery,
       {pledge > available && <p className="err">{automatic ? "Not enough test collateral. Get assets from Faucet." : "The request needs more available collateral than this party holds."}</p>}
       {preparationError && <p className="err" role="alert">{preparationError}</p>}
       {publication && <p className="discovery-notice sm" role="status">{publication}</p>}
-      <p className="terminal-trade-note">{discoveryMode ? "Publishing lists an opportunity only. You approve each lender before creating a private request; no assets move until you accept a funded offer." : "Sending creates requests only. Lenders enter their APR and send funded offers from Lend. You compare and accept an offer afterward."}</p>
-      <button type="submit" className="seal" disabled={busy || preparing || publishing || !canReview}>{publishing ? "Publishing…" : preparing ? "Preparing market…" : busy ? "Awaiting ledger…" : discoveryMode ? "Review opportunity" : "Review quote request"}</button>
+      <p className="terminal-trade-note">{discoveryMode ? "Publication creates an open Canton request. It does not move assets or select an APR. You compare and accept a funded offer afterward." : "Sending creates requests only. Lenders enter their APR and send funded offers from Lend. You compare and accept an offer afterward."}</p>
+      {hasPublicationProof && <p className="decision-note">An original request receipt is retained. Retry sync to publish that request; no new request will be created.</p>}
+      {hasPublicationProof && <OpenProofRecovery kind="publish" party={s.party} id={chosen} busy={busy || publishing} onRecovered={() => setPreparationError(null)}/>}
+      <button type="submit" className="seal" disabled={busy || preparing || publishing || !canReview}>{publishing ? "Publishing…" : preparing ? "Preparing market…" : busy ? "Awaiting ledger…" : discoveryMode ? hasPublicationProof ? "Review publication sync" : "Review open request" : "Review quote request"}</button>
     </form>
-    {review && feed && discoveryMode && <Dialog title="Review opportunity" close={() => setReview(false)} busy={publishing}>
-      <p className="panel-lede">Publish a minimal market listing. Lenders request access, and you choose who receives your full financing terms.</p>
-      <div className="review-terms"><Term label="Public listing">{feed.instrument} / {feed.cashInstrument} · Open</Term><Term label="Private requested cash">{fmtAmount(purchase,10)} {feed.cashInstrument}</Term><Term label="Private collateral quantity">{fmtAmount(pledge,10)} {feed.instrument}</Term><Term label="Private duration">{term} days from settlement</Term><Term label="Maintenance margin">{threshold}%</Term><Term label="Cure window">{fmtDuration(Number(cure)*60)}</Term><Term label="Maximum mark age">{fmtDuration(ageSeconds)}</Term></div>
-      <p className="decision-note">The board shows the market, a random opportunity ID and listing time. Your identity and full terms are stored privately by Symbolon and are accessible to its database operator. No Canton request, quote or asset transfer is created when publishing. Collateral and fresh-price eligibility are checked again before settlement.</p>
-      <label className="directory-consent"><input type="checkbox" checked={shareConsent} onChange={event => setShareConsent(event.target.checked)}/><span>Publish this minimal market listing and store my financing terms for lender access review.</span></label>
+    {review && feed && discoveryMode && <Dialog title="Publish an open request" close={() => setReview(false)} busy={publishing || busy}>
+      <p className="panel-lede">Share this request once. Any connected Symbolon lender can review the terms and send a private funded quote without requesting access.</p>
+      <div className="review-terms"><Term label="Borrower"><Party party={s.party}/></Term><Term label="Cash requested">{fmtAmount(purchase,10)} {feed.cashInstrument}</Term><Term label="Collateral quantity">{fmtAmount(pledge,10)} {feed.instrument}</Term><Term label="Duration">{term} days from settlement</Term><Term label="Maintenance margin">{threshold}%</Term><Term label="Cure window">{fmtDuration(Number(cure)*60)}</Term><Term label="Maximum mark age">{fmtDuration(ageSeconds)}</Term></div>
+      <p className="decision-note">Your borrower identity, requested amount, collateral and full financing terms become visible to authenticated Symbolon users. Each quote's rate and reserved cash contract remain bilateral. Publication creates a Canton request without transferring assets. The application and participant operators remain trust dependencies.</p>
+      <label className="directory-consent"><input type="checkbox" checked={shareConsent} onChange={event => setShareConsent(event.target.checked)}/><span>Share my borrower identity, requested amount, collateral and full financing terms with all connected Symbolon lenders so they can quote directly.</span></label>
       {preparationError && <p className="err" role="alert">{preparationError}</p>}
-      <button className="seal" disabled={publishing || !ready || !shareConsent} onClick={() => void publish()}>{publishing ? "Publishing…" : "Publish opportunity"}</button>
+      <button className="seal" disabled={busy || publishing || !ready || !shareConsent || hasPublicationProof && !readOpenRfqProof<OpenRfqPublishProof>("publish", s.party, chosen)?.contractId} onClick={() => void publish()}>{publishing || busy ? "Awaiting confirmation…" : hasPublicationProof ? "Retry publication sync" : "Publish open request"}</button>
     </Dialog>}
     {review && feed && !discoveryMode && <Dialog title="Review financing request" close={() => setReview(false)} busy={busy}>
       <p className="panel-lede">Step 1: request an offer. Sending this request does not give you cash or transfer collateral. You review and accept the lender’s fixed repayment in the next stage.</p>
@@ -498,7 +550,7 @@ function LendRequest({ s, st, onSubmitted }: { s: Session; st: DeskState; onSubm
   const selected = requests.find(request => request.contractId === selectedId) ?? requests[0];
   return <Panel id="lender-requests" title="Price a private request">
     <div className="financing-stage-note"><span>Request → Funded offer → Repayment</span><MarketGuide side="lend"/></div>
-    {!requests.length ? <div className="lender-onboarding"><p>No pending private requests for this market.</p>{deployment().publicDesk ? <ol><li>Find a listing in Open opportunities and request detail access.</li><li>The borrower approves sharing a private request with your party.</li><li>Review the terms, set your APR and send a funded offer.</li></ol> : <><p>A borrower sends a request addressed to this lender party.</p><CopyPartyId party={s.party}/></>}<p className="sm muted">Use Faucet for test cash if needed. Each lender sees only requests addressed to its own party.</p></div>
+    {!requests.length ? <div className="lender-onboarding"><p>No pending bilateral requests for this market.</p><p>A borrower can send an existing private request addressed to this lender party.</p><CopyPartyId party={s.party}/><p className="sm muted">Use Faucet for test cash if needed. Existing bilateral requests stay addressed to their original parties.</p></div>
       : <><Field label="Borrow request"><select value={selected?.contractId ?? ""} onChange={event => setSelectedId(event.target.value)}>
         {requests.map(request => <option key={request.contractId} value={request.contractId}>{partyDisplayName(request.payload.borrower)} · {fmtAmount(request.payload.cashAmount)} {request.payload.cashInstrument} · {request.payload.termDays} days</option>)}
       </select></Field>{selected && <LenderRequest key={selected.contractId} request={selected} st={st} s={s} onSubmitted={onSubmitted}/>}</>}
@@ -506,16 +558,16 @@ function LendRequest({ s, st, onSubmitted }: { s: Session; st: DeskState; onSubm
   </Panel>;
 }
 
-function SentOffers({ s, st }: { s: Session; st: DeskState }) {
+function SentOffers({ s, st, embedded = false }: { s: Session; st: DeskState; embedded?: boolean }) {
   const { busy, run } = useContext(Transactions);
   const quotes = st.quotes.filter((q) => q.payload.dealer === s.party);
-  return <Panel title="Sent offers" description="Cash stays reserved until this offer is accepted, declined or revoked. Another lender's settlement does not release your unused offer.">
-    {!quotes.length && <p className="empty-state">No active quotes. Price an incoming request to reserve cash and send one.</p>}
+  return <section className={embedded ? "open-rfq-offer-section" : "panel"}><h3>Sent funded offers</h3><p className="panel-lede">Cash stays reserved until this offer is accepted, declined or revoked. Other requests and unrecorded offers remain separate.</p>
+    {!quotes.length && <p className="empty-state">{embedded ? "No active funded offers. Quote an open request above to begin." : "No active quotes. Price an incoming request to reserve cash and send one."}</p>}
     {quotes.map((q) => <article className="rfq" key={q.contractId}><div className="rfq-head"><Party party={q.payload.borrower} /><strong className="rate">{fmtPct(num(q.payload.rate))}</strong></div>
       <p>{fmtAmount(q.payload.cashAmount)} {q.payload.cashInstrument} reserved</p><p className="sm muted">{Date.now() >= Date.parse(q.payload.validUntil) ? "Expired" : "Valid until"} · {fmtTime(q.payload.validUntil)} · {Intl.DateTimeFormat().resolvedOptions().timeZone}</p>
       <button className="ghost sm" disabled={busy} onClick={() => void run("Quote revoked; cash released", () => act.revokeQuote(s, q.contractId))}>Revoke and release cash</button>
     </article>)}
-  </Panel>;
+  </section>;
 }
 
 function PositionCard({ position, s, st, onRepurchased }: { position: Contract<RepoPosition>; s: Session; st: DeskState; onRepurchased?(): void }) {
@@ -706,7 +758,7 @@ function Workspace({ session: s, connect, connectBalanceWallet, demoParties, swi
   const feed = selected?.payload ?? (publicPair && marketIdentity(publicPair) === selectedId ? publicPair : undefined);
   const draftScope=feed?createBorrowDraftScope(s,deployment(),feed):null;
   const scoped = st && feed ? marketDesk(st, feed) : null;
-  const discovery = useDiscovery(feed && publicMarket(feed, deployment()) ? feed : undefined, s);
+  const openRfq = useOpenRfq(feed && publicMarket(feed, deployment()) ? feed : undefined, s);
   const busy = receipt?.phase === "pending";
   const connected = s.kind !== "browse";
   const trading = canTrade(s);
@@ -784,6 +836,8 @@ function Workspace({ session: s, connect, connectBalanceWallet, demoParties, swi
         {s.pendingCommand?.() && <div className="ledger-error" role="status"><strong>Check the original transaction</strong><p>New submissions are paused until this command is confirmed or rejected.</p><details><summary>Pending command</summary><code>{s.pendingCommand!()!.commandId}</code></details><button className="ghost sm" disabled={busy} onClick={() => {
           void s.reconcilePending?.().then(async result => {
             const ledger = s.lastReceipt?.();
+            if (result.status === "committed" && ledger && ledger.updateId === result.updateId) recoverOpenRfqIntent(s, ledger, saveOpenRfqProof);
+            if (result.status === "failed") clearOpenRfqIntent(s);
             setReceipt({phase: result.status === "committed" ? "succeeded" : result.status === "failed" ? "failed" : "unconfirmed",
               label: "Original transaction status", updateId: result.updateId,
               ...(result.status === "committed" && ledger && ledger.updateId === result.updateId ? {ledger} : {}),
@@ -819,17 +873,18 @@ function Workspace({ session: s, connect, connectBalanceWallet, demoParties, swi
       <section ref={marketDetailsRef} className="terminal-main" aria-label="Market details">
         <TerminalTabs<ContentTab> id="market" label="Market content" value={content} options={contentOptions} onChange={setContent}/>
         <TerminalPanels id="market" value={content} values={["overview","offers","positions","activity"]}>
-          {content === "overview" ? <div className="terminal-overview"><Panel title="Market overview"><p className="overview-intro">Private financing with a fixed repayment agreed before settlement. Choose Borrow to request an offer, or Lend to price a request addressed to you.</p>
+          {content === "overview" ? <div className="terminal-overview"><Panel title="Market overview"><p className="overview-intro">Private financing with a fixed repayment agreed before settlement. Choose Borrow to publish a request, or Lend to review open requests and send your fixed APR.</p>
             <div className="terminal-overview-summary"><Term label="Repayment">Fixed in each accepted offer</Term><Term label="Rate convention">Simple interest · ACT/360</Term><Term label="Early repayment">Full agreed amount</Term>
-              {publicDesk && feed?.oracle === publicDesk.operator && <Term label="Discovery">Open · Details shared by approval</Term>}</div>
+              {publicDesk && feed?.oracle === publicDesk.operator && <Term label="Requests">{openRfq.market ? "Open · Quotes remain bilateral" : "Private requests"}</Term>}</div>
             <MarketEducation side={side}/>
             <details className="terms-disclosure"><summary>Collateral and closeout terms</summary><p>At settlement, collateral title transfers to the lender and assets stay locked. Borrowers can top up or propose substitution with lender approval. An uncured margin call needs a fresh post-cure mark below required cover for liquidation. Maturity default is separate; this prototype releases collateral without modelling a sale, surplus accounting or net cash recovery.</p></details>
             {feed && <details className="party-detail"><summary>Market identities</summary><dl className="identity-grid"><div><dt>Collateral issuer</dt><dd><code>{feed.instrumentIssuer}</code></dd></div><div><dt>Cash issuer</dt><dd><code>{feed.cashIssuer}</code></dd></div><div><dt>Agreed oracle</dt><dd><code>{feed.oracle}</code></dd></div>{selected&&<div><dt>Last simulated mark</dt><dd>{fmtTime(selected.payload.asOf)}</dd></div>}</dl><p className="sm muted">An issuer identifies the asset provider; matching symbols from different issuers stay separate. The agreed oracle supplies the price used for margin checks.</p></details>}
           </Panel>{connected && ownRequests.length > 0 && <p className="terminal-trade-note">{ownRequests.length} private request{ownRequests.length === 1 ? "" : "s"} awaiting a quote. {side==="lend"?"Review and price incoming requests in the Lend panel.":"Track or withdraw your requests in Offers."}</p>}</div>
             : !connected ? <div className="terminal-empty"><h2>Your private {content}</h2><p>Connect to see the ledger records authorized for your account.</p><button className="seal" onClick={connectionAction}>Connect</button></div>
             : !scoped ? <p className="empty-state" role="status">{st && !feed ? "Selected market no longer available. Open All markets to choose a visible pair." : error ? "The ledger view is unavailable." : "Loading your authorized ledger view…"}</p>
-            : content === "offers" ? <div className="offers-workspace">{side==="lend"?<SentOffers s={s} st={scoped}/>:<ReceivedQuotes s={s} st={scoped} onSettled={() => setContent("positions")}/>}
-              {feed && publicMarket(feed, deployment()) && <Discovery key={`${s.kind}:${s.party}:${selectedId}`} embedded session={s} state={scoped} discovery={discovery} side={side} busy={transactions.busy} run={run} connect={connectionAction}/>}</div>
+            : content === "offers" ? <div className="offers-workspace">{openRfq.market ? <OpenRequests key={`${s.kind}:${s.party}:${selectedId}`} session={s} state={scoped} openRfq={openRfq} side={side} busy={transactions.busy} run={run} connect={connectionAction}>
+              {side === "lend" ? <SentOffers embedded s={s} st={scoped}/> : <ReceivedQuotes embedded s={s} st={scoped} openRfq={openRfq} onSettled={() => setContent("positions")}/>}</OpenRequests>
+              : side === "lend" ? <SentOffers s={s} st={scoped}/> : <ReceivedQuotes s={s} st={scoped} onSettled={() => setContent("positions")}/>}</div>
             : content === "positions" ? <Positions s={s} st={scoped} onRepurchased={() => setContent("activity")}/> : <Activity s={s} st={scoped}/>}
         </TerminalPanels>
       </section>
@@ -841,14 +896,16 @@ function Workspace({ session: s, connect, connectBalanceWallet, demoParties, swi
             : !st ? <p className="empty-state" role="status">{error ? "The ledger view is unavailable." : "Loading your account…"}</p>
             : !feed ? <p className="empty-state" role="status">Selected market no longer available. Open All markets to choose a visible pair.</p>
             : !selected && publicMarket(feed,deployment()) ? <Panel title="Start borrowing"><p>Get test collateral and cash for this wallet. Faucet also creates your authorized price feed.</p><button className="seal" disabled={!trading || !!error || busy} onClick={()=>setView("faucet")}>Get test assets</button></Panel>
-            : <><BorrowRequest key={`${selectedId}:${JSON.stringify(draftScope)}`} draftScope={draftScope} discovery={discovery} s={s} st={st} demoParties={s.kind === "sandbox" ? demoParties : []} initialPair={selectedId} onSubmitted={() => setContent("offers")} onPairChange={setSelectedId}/>{unavailable && <p className="terminal-trade-note" role="status">{unavailable}</p>}</>}
+            : <><BorrowRequest key={`${selectedId}:${JSON.stringify(draftScope)}`} draftScope={draftScope} openRfq={openRfq} s={s} st={st} demoParties={s.kind === "sandbox" ? demoParties : []} initialPair={selectedId} onSubmitted={() => setContent("offers")} onPairChange={setSelectedId}/>{unavailable && <p className="terminal-trade-note" role="status">{unavailable}</p>}</>}
         </div>
       <div className="terminal-trade-panel" role="tabpanel" id="trade-panel-lend" aria-labelledby="trade-tab-lend" hidden={side !== "lend"}>
           {connected && trading && feed && s.kind === "account" && !publicMarket(feed, deployment()) && <LenderRegistration key={`${s.party}:${marketIdentity(feed)}`} session={s} feed={feed}/>}
           {!connected ? <Panel title="Quote a private request"><p>Connect to view requests addressed to your account.</p><button className="seal" onClick={connectionAction}>Connect</button></Panel>
             : !scoped ? <p className="empty-state" role="status">{st && !feed ? "Selected market no longer available. Open All markets to choose a visible pair." : error ? "The ledger view is unavailable." : "Loading your account…"}</p>
             : !selected && feed && publicMarket(feed,deployment()) ? <Panel title="Start lending"><p>Get test cash for this wallet, then quote requests addressed to your party.</p><button className="seal" disabled={!trading || !!error || busy} onClick={()=>setView("faucet")}>Get test assets</button></Panel>
-            : <><LendRequest s={s} st={scoped} onSubmitted={() => setContent("offers")}/>{unavailable && <p className="terminal-trade-note" role="status">{unavailable}</p>}</>}
+            : <>{openRfq.market ? <Panel title="Lend at your fixed APR"><div className="financing-stage-note"><span>Open request → Quote → Settlement</span><MarketGuide side="lend"/></div><p className="sm">Browse borrower requests in Offers, enter your APR and send a funded quote directly. Borrowers compare offers privately.</p><button className="seal" type="button" onClick={() => jumpToContent("offers")}>Browse open requests</button><p className="terminal-trade-note">No lender registration or borrower access review. Sending a quote reserves your cash; it does not settle financing.</p>
+                {scoped.requests.some(request => request.payload.dealer === s.party) && <details className="terms-disclosure"><summary>Existing bilateral requests</summary><LendRequest s={s} st={scoped} onSubmitted={() => setContent("offers")}/></details>}</Panel>
+                : <LendRequest s={s} st={scoped} onSubmitted={() => setContent("offers")}/>} {unavailable && <p className="terminal-trade-note" role="status">{unavailable}</p>}</>}
         </div>
       </aside>
       </div>}

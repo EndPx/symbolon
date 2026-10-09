@@ -1,0 +1,315 @@
+-- Named actors below are deterministic test scenarios, not human validation.
+module Symbolon.OpenRequestTest where
+
+import DA.Assert ((===))
+import DA.Foldable (forA_)
+import DA.Time
+import Daml.Script
+import Symbolon.DemoAsset
+import Symbolon.OpenRequest
+import Symbolon.Repo
+
+data Actors = Actors with
+  issuer : Party
+  oracle : Party
+  borrower : Party
+  lenderA : Party
+  lenderB : Party
+  outsider : Party
+
+actors : () -> Script Actors
+actors () = do
+  issuer <- allocateParty "open-issuer"
+  oracle <- allocateParty "open-oracle"
+  borrower <- allocateParty "open-borrower"
+  lenderA <- allocateParty "open-lender-a"
+  lenderB <- allocateParty "open-lender-b"
+  outsider <- allocateParty "open-outsider"
+  pure Actors with issuer; oracle; borrower; lenderA; lenderB; outsider
+
+terms : Actors -> OpenRequest
+terms a = OpenRequest with
+  borrower = a.borrower; oracle = a.oracle
+  collateralIssuer = a.issuer; collateralInstrument = "cBTC-demo"; collateralAmount = 0.025
+  cashIssuer = a.issuer; cashInstrument = "USDCx-demo"; cashAmount = 1000.0
+  termDays = 30; marginThresholdPct = 1.05; cureSeconds = 600; maxPriceAgeSeconds = 3600
+
+publish : Actors -> Script (ContractId OpenRequest, Disclosure)
+publish a = do
+  cid <- submit a.borrower $ createCmd (terms a)
+  Some disclosure <- queryDisclosure a.borrower cid
+  pure (cid, disclosure)
+
+mint : Party -> Party -> Text -> Decimal -> [Party] -> Script (ContractId Holding)
+mint issuer owner instrument amount lockParties = submit issuer $ createCmd Holding with
+  issuer; owner; instrument; amount; viewers = []; lockParties
+
+cash : Actors -> Party -> Script (ContractId Holding)
+cash a lender = mint a.issuer lender "USDCx-demo" 1000.0 []
+
+quote : Party -> ContractId OpenRequest -> Disclosure -> ContractId Holding -> Decimal -> Script (ContractId RepoQuote)
+quote lender requestCid disclosure cashCid rate =
+  submit (actAs lender <> disclose disclosure) $ exerciseCmd requestCid SubmitOpenQuote with
+    dealer = lender; rate; validSeconds = 3600; cashCid
+
+availableBalance : Party -> Party -> Text -> Script Decimal
+availableBalance owner issuer instrument = do
+  holdings <- queryFilter @Holding owner (\h -> h.owner == owner && h.issuer == issuer
+    && h.instrument == instrument && null h.lockParties)
+  pure $ sum [h.amount | (_, h) <- holdings]
+
+mark : Actors -> Script (ContractId PriceFeed)
+mark a = do
+  now <- getTime
+  submit a.oracle $ createCmd PriceFeed with
+    oracle = a.oracle; instrumentIssuer = a.issuer; instrument = "cBTC-demo"
+    cashIssuer = a.issuer; cashInstrument = "USDCx-demo"; price = 60000.0
+    asOf = now; readers = [a.borrower, a.lenderA, a.lenderB]
+
+publishedRequestAllowsIndependentFundedQuotes : Script ()
+publishedRequestAllowsIndependentFundedQuotes = script do
+  original <- actors ()
+  (requestCid, disclosure) <- publish original
+  freshLender <- allocateParty "lender-joining-after-publication"
+  let a = original with lenderB = freshLender
+  aCash <- cash a a.lenderA
+  bCash <- cash a a.lenderB
+  -- Neither lender has blanket read-as rights or an observer entry.
+  query @OpenRequest a.lenderA >>= (=== [])
+  query @OpenRequest a.lenderB >>= (=== [])
+  submitMustFail a.lenderA $ exerciseCmd requestCid SubmitOpenQuote with
+    dealer = a.lenderA; rate = 0.07; validSeconds = 3600; cashCid = aCash
+  quoteA <- quote a.lenderA requestCid disclosure aCash 0.07
+  quoteB <- quote a.lenderB requestCid disclosure bCash 0.075
+  Some qa <- queryContractId a.borrower quoteA
+  Some qb <- queryContractId a.borrower quoteB
+  -- Disclosure provides visibility, never general borrower signing authority.
+  submitMustFail (actAs a.lenderA <> disclose disclosure) $ createCmd qa
+  qa.rate === 0.07
+  qb.rate === 0.075
+  query @QuoteRequest a.borrower >>= (=== [])
+  query @RepoQuote a.borrower >>= (\qs -> length qs === 2)
+  query @RepoQuote a.lenderA >>= (\qs -> map fst qs === [quoteA])
+  query @RepoQuote a.lenderB >>= (\qs -> map fst qs === [quoteB])
+  query @RepoQuote a.outsider >>= (=== [])
+  query @RepoQuote a.oracle >>= (=== [])
+  query @RepoQuote a.issuer >>= (=== [])
+  queryContractId a.borrower requestCid >>= (=== Some (terms a))
+  query @OpenRequest a.lenderA >>= (=== [])
+  Some reservedA <- queryContractId a.lenderA qa.cashCid
+  Some reservedB <- queryContractId a.lenderB qb.cashCid
+  reservedA.amount === 1000.0
+  reservedA.owner === a.lenderA
+  reservedA.lockParties === [a.borrower]
+  reservedB.lockParties === [a.borrower]
+  availableBalance a.borrower a.issuer "USDCx-demo" >>= (=== 0.0)
+  query @RepoPosition a.borrower >>= (=== [])
+
+publicationRequiresBorrowerAndValidTerms : Script ()
+publicationRequiresBorrowerAndValidTerms = script do
+  a <- actors ()
+  submitMustFail a.outsider $ createCmd (terms a)
+  submitMustFail a.lenderA $ createCmd (terms a)
+  let t = terms a
+  forA_ [ t with cashAmount = 0.0
+        , t with collateralAmount = -0.025
+        , t with collateralInstrument = ""
+        , t with cashInstrument = ""
+        , t with termDays = 0
+        , t with termDays = 366
+        , t with marginThresholdPct = 0.99
+        , t with marginThresholdPct = 2.01
+        , t with cureSeconds = 0
+        , t with cureSeconds = 604801
+        , t with maxPriceAgeSeconds = 0
+        , t with maxPriceAgeSeconds = 86401
+        ] $ \invalid -> submitMustFail a.borrower $ createCmd invalid
+  query @OpenRequest a.borrower >>= (=== [])
+  _ <- submit a.borrower $ createCmd t
+  pure ()
+
+onlyMatchingAvailableLenderCashCanFundQuote : Script ()
+onlyMatchingAvailableLenderCashCanFundQuote = script do
+  a <- actors ()
+  (requestCid, disclosure) <- publish a
+  otherCash <- cash a a.lenderB
+  Some otherCashDisclosure <- queryDisclosure a.lenderB otherCash
+  -- Even deliberately disclosed foreign cash cannot be spent by the lender.
+  submitMustFail (actAs a.lenderA <> disclose disclosure <> disclose otherCashDisclosure) $
+    exerciseCmd requestCid SubmitOpenQuote with
+      dealer = a.lenderA; rate = 0.07; validSeconds = 3600; cashCid = otherCash
+  wrongIssuer <- mint a.outsider a.lenderA "USDCx-demo" 1000.0 []
+  wrongInstrument <- mint a.issuer a.lenderA "different-cash" 1000.0 []
+  tooSmall <- mint a.issuer a.lenderA "USDCx-demo" 999.0 []
+  tooLarge <- mint a.issuer a.lenderA "USDCx-demo" 1001.0 []
+  locked <- mint a.issuer a.lenderA "USDCx-demo" 1000.0 [a.borrower]
+  forA_ [wrongIssuer, wrongInstrument, tooSmall, tooLarge, locked] $ \badCash ->
+    submitMustFail (actAs a.lenderA <> disclose disclosure) $ exerciseCmd requestCid SubmitOpenQuote with
+      dealer = a.lenderA; rate = 0.07; validSeconds = 3600; cashCid = badCash
+  correctCash <- cash a a.lenderA
+  submitMustFail (actAs a.lenderA <> disclose disclosure) $ exerciseCmd requestCid SubmitOpenQuote with
+    dealer = a.lenderB; rate = 0.07; validSeconds = 3600; cashCid = correctCash
+  borrowerCash <- cash a a.borrower
+  submitMustFail a.borrower $ exerciseCmd requestCid SubmitOpenQuote with
+    dealer = a.borrower; rate = 0.07; validSeconds = 3600; cashCid = borrowerCash
+  query @RepoQuote a.borrower >>= (=== [])
+  queryContractId a.lenderA correctCash >>= (\h -> case h of
+    Some value -> value.lockParties === []
+    None -> abort "failed quotation consumed cash")
+  _ <- quote a.lenderA requestCid disclosure correctCash 0.07
+  pure ()
+
+quoteRateAndValidityRemainLedgerEnforced : Script ()
+quoteRateAndValidityRemainLedgerEnforced = script do
+  a <- actors ()
+  (requestCid, disclosure) <- publish a
+  cashCid <- cash a a.lenderA
+  forA_ [(-0.0001, 3600), (1.0001, 3600), (0.07, 0), (0.07, 86401)] $ \(rate, validSeconds) ->
+    submitMustFail (actAs a.lenderA <> disclose disclosure) $ exerciseCmd requestCid SubmitOpenQuote with
+      dealer = a.lenderA; rate; validSeconds; cashCid
+  query @RepoQuote a.borrower >>= (=== [])
+  zeroQuote <- quote a.lenderA requestCid disclosure cashCid 0.0
+  Some q <- queryContractId a.borrower zeroQuote
+  q.rate === 0.0
+
+fundingCannotBeReusedForRepeatedQuotes : Script ()
+fundingCannotBeReusedForRepeatedQuotes = script do
+  a <- actors ()
+  (requestCid, disclosure) <- publish a
+  originalCash <- cash a a.lenderA
+  quoteCid <- quote a.lenderA requestCid disclosure originalCash 0.07
+  Some q <- queryContractId a.lenderA quoteCid
+  submitMustFail (actAs a.lenderA <> disclose disclosure) $ exerciseCmd requestCid SubmitOpenQuote with
+    dealer = a.lenderA; rate = 0.08; validSeconds = 3600; cashCid = originalCash
+  submitMustFail (actAs a.lenderA <> disclose disclosure) $ exerciseCmd requestCid SubmitOpenQuote with
+    dealer = a.lenderA; rate = 0.08; validSeconds = 3600; cashCid = q.cashCid
+  freshCash <- cash a a.lenderA
+  _ <- quote a.lenderA requestCid disclosure freshCash 0.08
+  query @RepoQuote a.borrower >>= (\qs -> length qs === 2)
+  availableBalance a.lenderA a.issuer "USDCx-demo" >>= (=== 0.0)
+
+withdrawalRejectsStaleDisclosureAndPreservesQuotes : Script ()
+withdrawalRejectsStaleDisclosureAndPreservesQuotes = script do
+  a <- actors ()
+  (requestCid, disclosure) <- publish a
+  cashA <- cash a a.lenderA
+  cashB <- cash a a.lenderB
+  quoteA <- quote a.lenderA requestCid disclosure cashA 0.07
+  submitMustFail (actAs a.lenderB <> disclose disclosure) $ exerciseCmd requestCid WithdrawOpenRequest
+  submit a.borrower $ exerciseCmd requestCid WithdrawOpenRequest
+  query @OpenRequest a.borrower >>= (=== [])
+  submitMustFail (actAs a.lenderB <> disclose disclosure) $ exerciseCmd requestCid SubmitOpenQuote with
+    dealer = a.lenderB; rate = 0.075; validSeconds = 3600; cashCid = cashB
+  Some _ <- queryContractId a.lenderB cashB
+  Some _ <- queryContractId a.lenderA quoteA
+  submit a.lenderA $ exerciseCmd quoteA RevokeQuote
+  query @RepoQuote a.borrower >>= (=== [])
+  availableBalance a.lenderA a.issuer "USDCx-demo" >>= (=== 1000.0)
+
+acceptedQuoteSettlesAndRepaysPrivately : Script ()
+acceptedQuoteSettlesAndRepaysPrivately = script do
+  a <- actors ()
+  (requestCid, disclosure) <- publish a
+  cashA <- cash a a.lenderA
+  cashB <- cash a a.lenderB
+  collateralCid <- mint a.issuer a.borrower "cBTC-demo" 0.025 []
+  feedCid <- mark a
+  quoteA <- quote a.lenderA requestCid disclosure cashA 0.07
+  quoteB <- quote a.lenderB requestCid disclosure cashB 0.075
+  -- The borrower can close public discovery before accepting an existing quote.
+  submit a.borrower $ exerciseCmd requestCid WithdrawOpenRequest
+  positionCid <- submit a.borrower $ exerciseCmd quoteA AcceptQuote with collateralCid; feedCid
+  Some p <- queryContractId a.borrower positionCid
+  p.repurchasePrice === 1005.8333333333
+  p.rate === 0.07
+  availableBalance a.borrower a.issuer "USDCx-demo" >>= (=== 1000.0)
+  availableBalance a.borrower a.issuer "cBTC-demo" >>= (=== 0.0)
+  [pledgedCid] <- pure p.pledgedCids
+  Some pledged <- queryContractId a.borrower pledgedCid
+  pledged.owner === a.lenderA
+  pledged.amount === 0.025
+  pledged.lockParties === [a.borrower]
+  query @RepoPosition a.lenderA >>= (\ps -> map fst ps === [positionCid])
+  query @RepoPosition a.lenderB >>= (=== [])
+  query @RepoPosition a.outsider >>= (=== [])
+  query @RepoPosition a.oracle >>= (=== [])
+  query @RepoPosition a.issuer >>= (=== [])
+  -- Supply just the interest in this simulated fixture, then merge the cash
+  -- received at settlement. Repurchase pays the existing fixed core amount.
+  interestCid <- mint a.issuer a.borrower "USDCx-demo" 5.8333333333 []
+  [(receivedCash, _)] <- queryFilter @Holding a.borrower (\h -> h.owner == a.borrower
+    && h.issuer == a.issuer && h.instrument == "USDCx-demo" && h.amount == 1000.0 && null h.lockParties)
+  repaymentCash <- submit a.borrower $ exerciseCmd receivedCash Merge with otherCid = interestCid
+  closedCid <- submit a.borrower $ exerciseCmd positionCid Repurchase with cashCid = repaymentCash
+  Some closed <- queryContractId a.borrower closedCid
+  closed.outcome === Repurchased
+  closed.repurchasePrice === 1005.8333333333
+  availableBalance a.borrower a.issuer "cBTC-demo" >>= (=== 0.025)
+  availableBalance a.borrower a.issuer "USDCx-demo" >>= (=== 0.0)
+  availableBalance a.lenderA a.issuer "USDCx-demo" >>= (=== 1005.8333333333)
+  query @ClosedRepo a.lenderB >>= (=== [])
+  query @ClosedRepo a.outsider >>= (=== [])
+  submit a.lenderB $ exerciseCmd quoteB RevokeQuote
+  availableBalance a.lenderB a.issuer "USDCx-demo" >>= (=== 1000.0)
+
+expiredQuoteCannotSettleDespiteOpenRequest : Script ()
+expiredQuoteCannotSettleDespiteOpenRequest = script do
+  a <- actors ()
+  (requestCid, disclosure) <- publish a
+  cashCid <- cash a a.lenderA
+  collateralCid <- mint a.issuer a.borrower "cBTC-demo" 0.025 []
+  feedCid <- mark a
+  quoteCid <- submit (actAs a.lenderA <> disclose disclosure) $ exerciseCmd requestCid SubmitOpenQuote with
+    dealer = a.lenderA; rate = 0.07; validSeconds = 1; cashCid
+  passTime (seconds 2)
+  submitMustFail a.borrower $ exerciseCmd quoteCid AcceptQuote with collateralCid; feedCid
+  Some _ <- queryContractId a.borrower collateralCid
+  Some _ <- queryContractId a.borrower requestCid
+  Some _ <- queryContractId a.lenderA quoteCid
+  availableBalance a.borrower a.issuer "USDCx-demo" >>= (=== 0.0)
+  submit a.lenderA $ exerciseCmd quoteCid RevokeQuote
+  availableBalance a.lenderA a.issuer "USDCx-demo" >>= (=== 1000.0)
+
+-- This is the application's cleanup convention for its known linked quotes,
+-- not a core guarantee that no other bilateral quote can ever be accepted.
+acceptingOneQuoteAtomicallyClosesRequestAndRejectsKnownAlternative : Script ()
+acceptingOneQuoteAtomicallyClosesRequestAndRejectsKnownAlternative = script do
+  a <- actors ()
+  (requestCid, disclosure) <- publish a
+  cashA <- cash a a.lenderA
+  cashB <- cash a a.lenderB
+  collateralCid <- mint a.issuer a.borrower "cBTC-demo" 0.025 []
+  wrongCollateralCid <- mint a.outsider a.borrower "cBTC-demo" 0.025 []
+  feedCid <- mark a
+  quoteA <- quote a.lenderA requestCid disclosure cashA 0.07
+  quoteB <- quote a.lenderB requestCid disclosure cashB 0.075
+  -- Failed acceptance must leave all three active contracts and funding intact.
+  submitMustFail a.borrower $
+    exerciseCmd quoteA (AcceptQuote with collateralCid = wrongCollateralCid; feedCid)
+      <* exerciseCmd requestCid WithdrawOpenRequest
+      <* exerciseCmd quoteB RejectQuote
+  Some _ <- queryContractId a.borrower requestCid
+  Some _ <- queryContractId a.borrower quoteA
+  Some _ <- queryContractId a.borrower quoteB
+  query @RepoPosition a.borrower >>= (=== [])
+  availableBalance a.borrower a.issuer "cBTC-demo" >>= (=== 0.025)
+  availableBalance a.lenderB a.issuer "USDCx-demo" >>= (=== 0.0)
+  positionCid <- submit a.borrower $
+    exerciseCmd quoteA (AcceptQuote with collateralCid; feedCid)
+      <* exerciseCmd requestCid WithdrawOpenRequest
+      <* exerciseCmd quoteB RejectQuote
+  Some p <- queryContractId a.borrower positionCid
+  p.dealer === a.lenderA
+  p.status === Active
+  p.repurchasePrice === 1005.8333333333
+  query @OpenRequest a.borrower >>= (=== [])
+  query @RepoQuote a.borrower >>= (=== [])
+  query @RepoPosition a.lenderB >>= (=== [])
+  availableBalance a.borrower a.issuer "USDCx-demo" >>= (=== 1000.0)
+  availableBalance a.lenderB a.issuer "USDCx-demo" >>= (=== 1000.0)
+  [(returnedCash, returnedHolding)] <- queryFilter @Holding a.lenderB (\h -> h.owner == a.lenderB
+    && h.issuer == a.issuer && h.instrument == "USDCx-demo" && null h.lockParties)
+  returnedHolding.amount === 1000.0
+  submitMustFail (actAs a.lenderB <> disclose disclosure) $ exerciseCmd requestCid SubmitOpenQuote with
+    dealer = a.lenderB; rate = 0.075; validSeconds = 3600; cashCid = returnedCash
+  availableBalance a.lenderB a.issuer "USDCx-demo" >>= (=== 1000.0)

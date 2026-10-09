@@ -1,0 +1,61 @@
+-- Borrower-authorized open requests with independently funded bilateral quotes.
+-- Publishing the created-event disclosure makes these request terms readable.
+-- The core quote, settlement and repayment contracts remain unchanged.
+module Symbolon.OpenRequest where
+
+import Symbolon.DemoAsset (Holding)
+import Symbolon.Repo
+
+-- Same term bounds as the pinned core, without choosing a dealer at creation.
+validOpenTerms : Text -> Decimal -> Text -> Decimal -> Int -> Decimal -> Int -> Int -> Bool
+validOpenTerms collateralInstrument collateralAmount cashInstrument cashAmount termDays marginThresholdPct cureSeconds maxPriceAgeSeconds =
+  collateralInstrument /= "" && cashInstrument /= ""
+  && collateralAmount > 0.0 && cashAmount > 0.0
+  && termDays >= 1 && termDays <= 365
+  && marginThresholdPct >= 1.0 && marginThresholdPct <= 2.0
+  && cureSeconds >= 1 && cureSeconds <= 604800
+  && maxPriceAgeSeconds >= 1 && maxPriceAgeSeconds <= 86400
+
+template OpenRequest
+  with
+    borrower : Party
+    oracle : Party
+    collateralIssuer : Party
+    collateralInstrument : Text
+    collateralAmount : Decimal
+    cashIssuer : Party
+    cashInstrument : Text
+    cashAmount : Decimal
+    termDays : Int
+    marginThresholdPct : Decimal
+    cureSeconds : Int
+    maxPriceAgeSeconds : Int
+  where
+    signatory borrower
+    ensure validOpenTerms collateralInstrument collateralAmount cashInstrument cashAmount termDays marginThresholdPct cureSeconds maxPriceAgeSeconds
+
+    -- The borrower authorizes this exact request once. A lender supplies only
+    -- its own act-as authority and exact available cash. The transient private
+    -- QuoteRequest is created and consumed in this transaction; no assets are
+    -- issued here, and no collateral moves until the borrower accepts a quote.
+    -- Keeping the open request active lets other lenders quote independently.
+    nonconsuming choice SubmitOpenQuote : ContractId RepoQuote
+      with
+        dealer : Party
+        rate : Decimal
+        validSeconds : Int
+        cashCid : ContractId Holding
+      controller dealer
+      do
+        assertMsg "borrower cannot quote its own open request" (dealer /= borrower)
+        requestCid <- create QuoteRequest with
+          borrower; dealer; oracle; collateralIssuer; collateralInstrument
+          collateralAmount; cashIssuer; cashInstrument; cashAmount; termDays
+          marginThresholdPct; cureSeconds; maxPriceAgeSeconds
+        exercise requestCid SubmitQuote with rate; validSeconds; cashCid
+
+    -- Closing discovery cannot undo a funded quote or an accepted position.
+    -- Those remain governed by their existing bilateral core choices.
+    choice WithdrawOpenRequest : ()
+      controller borrower
+      do pure ()

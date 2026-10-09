@@ -294,6 +294,7 @@ function accountSession(account: AccountContext, party: string): Session {
   }
   const client = new CantonV2Client({ party, request: account.request, corePackageId: d.corePackageId,
     ...(d.publicPackageId ? { publicPackageId: d.publicPackageId } : {}), synchronizerId: d.synchronizerId,
+    ...(d.openRfqPackageId ? {openRfqPackageId: d.openRfqPackageId} : {}),
     store: typeof sessionStorage === "undefined" ? undefined : sessionStorage });
   let disposed = false;
   const bound = () => {

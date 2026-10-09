@@ -63,7 +63,7 @@ test("ambiguous submission survives reload and blocks another command until its 
   await assert.rejects(first.submit([create("#symbolon-v2:Symbolon.Repo:QuoteRequest",{})]),SubmissionUncertain);
   const restored=new CantonV2Client({party,corePackageId:core,synchronizerId:sync,store,request:async(_method,path)=>{
     if(path.includes("completions"))return [{completionResponse:{Completion:{value:{commandId,actAs:[party],updateId:"ledger-update"}}}}];
-    if(path.includes("transaction-by-id"))return receipt(commandId);
+    if(path.includes("update-by-id"))return {update:{Transaction:{value:receipt(commandId).transaction}}};
     throw new Error("unexpected request");
   }});
   await assert.rejects(restored.submit([create("#symbolon-v2:Symbolon.Repo:QuoteRequest",{})]),SubmissionUncertain);
@@ -93,9 +93,10 @@ test("an executed wallet update survives a failed receipt lookup and is reconcil
   }),SubmissionUncertain);
   assert.equal(first.pendingCommand()?.updateId,"ledger-update");
   const restored=new CantonV2Client({party,corePackageId:core,synchronizerId:sync,store,request:async(_method,path,body:any)=>{
-    assert.ok(path.includes("transaction-by-id"),"Reconciliation must use the known update, not the completion stream");
+    assert.ok(path.includes("update-by-id"),"Reconciliation must use the known update, not the completion stream");
     assert.equal(body.updateId,"ledger-update");
-    return receipt(commandId);
+    assert.equal(body.updateFormat.includeTransactions.transactionShape,"TRANSACTION_SHAPE_LEDGER_EFFECTS");
+    return {update:{Transaction:{value:receipt(commandId).transaction}}};
   }});
   await assert.rejects(restored.submit([create("#symbolon-v2:Symbolon.Repo:QuoteRequest",{})]),SubmissionUncertain);
   assert.equal((await restored.reconcile()).status,"committed");
