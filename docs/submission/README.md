@@ -33,7 +33,11 @@ The primary value is a known contractual principal-plus-interest amount rather t
 
 ## Delivery files
 
-- [Pitch deck](symbolon-pitch-final.pptx)
+- [Final pitch deck PDF — 12 slides](symbolon-pitch-final-v6.pdf)
+- [Editable pitch deck PPTX](symbolon-pitch-final-v6.pptx)
+- [Pitch narration](symbolon-pitch-final-v6-narration.md)
+- [Latest DevNet application demo — Albary voice and captions](https://symbolon.endpx.cloud/demo/symbolon-app-demo-devnet.mp4)
+- [Application-demo subtitles](symbolon-app-demo-devnet.srt)
 - [60-second pitch](pitch.md)
 - [Demo recording storyboard](demo-video.md)
 - [Recorded local UI demo, 2 min 26 sec](symbolon-local-demo.mp4)

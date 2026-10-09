@@ -1,0 +1,67 @@
+1
+00:00:00,650 --> 00:00:04,149
+This is Symbolon, fixed-rate financing on Canton DevNet.
+
+2
+00:00:06,650 --> 00:00:10,843
+This walkthrough uses simulated assets and authorized demo parties.
+
+3
+00:00:12,800 --> 00:00:16,203
+The faucet supplies demo collateral and demo cash.
+
+4
+00:00:18,850 --> 00:00:22,864
+The borrower requests one thousand dollars for thirty days.
+
+5
+00:00:25,850 --> 00:00:29,861
+Publishing shares the request terms with connected Symbolon users.
+
+6
+00:00:32,800 --> 00:00:36,187
+Publishing does not move assets or select a rate.
+
+7
+00:00:46,850 --> 00:00:50,235
+The lender reads the request and chooses seven percent.
+
+8
+00:00:53,700 --> 00:00:57,151
+Sending this funded quote reserves the lender's cash.
+
+9
+00:00:59,850 --> 00:01:03,446
+Other lenders cannot see this private quote or APR.
+
+10
+00:01:07,850 --> 00:01:11,721
+The borrower reviews the fixed interest and total repayment.
+
+11
+00:01:15,800 --> 00:01:20,506
+Repayment is agreed before settlement, using annualized simple interest.
+
+12
+00:01:23,700 --> 00:01:27,667
+Settlement exchanges cash for locked collateral in one transaction.
+
+13
+00:01:31,650 --> 00:01:35,286
+The accepted request closes, and the position becomes active.
+
+14
+00:01:37,650 --> 00:01:41,421
+The repayment stays fixed, while collateral risk remains.
+
+15
+00:01:48,700 --> 00:01:52,343
+Repayment returns the collateral and closes the agreement.
+
+16
+00:02:01,750 --> 00:02:05,667
+The confirmed ledger receipt verifies this repurchased position.
+
+17
+00:02:13,800 --> 00:02:17,719
+Try the public DevNet app, and explore the documentation.

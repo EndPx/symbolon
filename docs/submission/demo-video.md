@@ -1,5 +1,15 @@
 # Three-minute demo storyboard
 
+## Final application video
+
+Watch the latest [shared-DevNet app demo](https://symbolon.endpx.cloud/demo/symbolon-app-demo-devnet.mp4), **2 minutes 20 seconds**, with Albary narration generated through ElevenLabs and burned-in English subtitles. [SRT subtitles](symbolon-app-demo-devnet.srt) and [timed narration](symbolon-app-demo-devnet-narration.md) are supplied separately. There is no pitch-deck video.
+
+The genuine browser screencast shows the Symbolon demo faucet, borrower publication with sharing consent, direct lender quotation at 7% APR, private offer review, cash/collateral settlement, position health, full repayment and the confirmed Repurchased receipt at offset **2791970**. It uses cBTC-demo / USDCx-demo, a simulated mark and two founder-operated synthetic parties authorized under one account. Waiting time is condensed; static views are held for reading. It does not demonstrate external customer use, native tokens or independent operators.
+
+The edit uses **17 separate voice clips**, each **3.08–4.41 seconds**, with at least **2.25 seconds of silence** between clips. The [recording evidence](evidence/app-demo-devnet.json) identifies the actual cycle and media checks. Raw screen frames, timing manifest, original voice assets and unedited screen capture are retained locally under `.omc/app-demo-oct10/`.
+
+## Retained LocalNet recording
+
 The [recorded local UI demo](symbolon-local-demo.mp4) is an edited, silent browser screencast with captions, about 2 min 26 sec. It shows two quotes, acceptance, a simulated price drop, margin call, top-up and repurchase through `/app`, ending with a committed update receipt. [Browser evidence](evidence/browser-repurchase.json) records the exact amounts and closing ID. Its assets are simulated CETH/CUSD on a native local Canton sandbox; the BitSafe three-participant proof is a separate CI artifact.
 
 The storyboard below is suitable for a later narrated recording of the application and its committed ledger actions. Keep the environment disclosure visible. Do not show credentials, participant administration tokens or unrelated accounts.

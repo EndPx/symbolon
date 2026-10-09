@@ -1,0 +1,51 @@
+{
+  "kind": "edited genuine browser screencast",
+  "application": "https://symbolon.endpx.cloud/app",
+  "video": "https://symbolon.endpx.cloud/demo/symbolon-app-demo-devnet.mp4",
+  "testedCodeRevision": "739e508fb3e503d1f623dda39a3947936810bb4e",
+  "network": "shared HackCanton DevNet",
+  "assets": [
+    "cBTC-demo",
+    "USDCx-demo"
+  ],
+  "founderOperatedSyntheticParties": true,
+  "externalCustomerCycle": false,
+  "nativeAssets": false,
+  "requestIndex": {
+    "id": "b037a105-ba6b-4493-be8a-52eb5975233c",
+    "status": "closed",
+    "request_contract_id": "008bf089bc4986cc327211ce6cbe6b4e9adaa1c8a0b2012e7d07ac8c19b197814fca12122018798f8a9372df7717d4e88c7271fa469c2d3a2cabc8823f3a6f0308812a11e1",
+    "publish_update_id": "122030e1dc25077bed1a5bffd7715bfbb05291ba9a6bdda49772c933f12f4ef1da8b",
+    "closed_update_id": "12209e19911bc11977c18a716500d1104888d67ad91ad8b8ea8d7cc653560e8c8fb9",
+    "closed_at": "2026-10-09T21:32:15.950Z",
+    "quote_contract_id": "002befdcbeb3f90e4f16b4d657f8225a46a0e9ef5adb19702766a550596177e8e1ca121220cdb7f8e04a933b591de92566c2f79eb351b24fee4fcf7ddeebe0adaec355220c",
+    "quote_update_id": "12201f414b9d5debe7a8421ffc7c84237fc0faf1dbd370c40785ca7b1af276ab4e1b",
+    "rate": "0.0700000000"
+  },
+  "repurchase": {
+    "updateId": "1220f651d87b587e49e19fd38fbca080d1118d6809f8900fa74fc877734c982ee087",
+    "commandId": "symbolon-public-d7e7b7ed-036a-4683-b4eb-cefb11938436",
+    "ledgerOffset": "2791970",
+    "recordedAt": "2026-10-09T21:33:32.436558Z",
+    "paidAmount": "1005.8333333333",
+    "returnedCollateral": "0.0250000000",
+    "outcome": "Repurchased"
+  },
+  "videoChecks": {
+    "durationSeconds": 140,
+    "resolution": "1920x1080",
+    "fps": 25,
+    "narrationVoice": "Albary",
+    "provider": "ElevenLabs",
+    "shortNarrationClips": 17,
+    "minClipDurationSeconds": 3.085125,
+    "maxClipDurationSeconds": 4.4058125,
+    "minSilenceBetweenClipsSeconds": 2.2568125,
+    "burnedInEnglishSubtitles": true,
+    "srtSupplied": true,
+    "recordedBrowserFrames": 232,
+    "waitingTimeCondensed": true,
+    "completeDecodePassed": true
+  },
+  "rawTransactionExport": false
+}
