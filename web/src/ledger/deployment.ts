@@ -38,7 +38,8 @@ export function walletConnectionError(error: unknown) {
   if (typeof mismatch?.actual === "string" && typeof mismatch.expected === "string") {
     return `Your wallet is on Canton ${networkLabel(mismatch.actual)}. Symbolon is on Canton ${networkLabel(mismatch.expected)}. Switch the wallet to ${networkLabel(mismatch.expected)}, then reconnect.`;
   }
-  return error instanceof Error ? error.message : "The wallet connection could not be completed. Open your wallet and try again.";
+  const message = (error as {message?: unknown} | null)?.message;
+  return error instanceof Error ? error.message : typeof message === "string" ? message.slice(0,300) : "The wallet connection could not be completed. Open your wallet and try again.";
 }
 const packageHash = /^[a-f0-9]{64}$/;
 export function parseDeployment(value: unknown): Deployment {

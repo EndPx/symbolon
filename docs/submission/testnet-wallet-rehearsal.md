@@ -2,7 +2,7 @@
 
 Prepared 9 October 2026. This is a connection/read rehearsal, not a completed TestNet financing deployment. The default public app remains shared HackCanton DevNet.
 
-Public connection app: https://symbolon-testnet.vercel.app/app . Its production alias was verified without Vercel authentication. Build/deployment evidence does not demonstrate a wallet signature or financing transaction.
+Public connection app: https://symbolon-testnet.vercel.app/app . Its production alias was verified without Vercel authentication. A later real Send connection and own-party read succeeded; see [direct-check evidence](evidence/testnet-wallet-read.md). This does not demonstrate a financing signature or transaction.
 
 ## Public build
 
@@ -12,14 +12,14 @@ Use `npm.cmd run build:testnet` for the separately published TestNet connection 
 
 From `web`, run `npm.cmd run dev:testnet`, then open `http://127.0.0.1:5174/app` in the browser/profile containing the TestNet wallet extension. The in-app browser does not necessarily contain those extensions.
 
-This profile serves `deployment.testnet.json`, includes Send Connect and Grofty Wallet TestNet, disables the LocalNet party picker and has no local ledger proxy. Package, participant and synchronizer fields are deliberately empty. TestNet financing stays blocked even if configuration copies DevNet values or changes `tradingEnabled`.
+This profile serves `deployment.testnet.json`, exposes only Grofty Wallet TestNet, disables the LocalNet party picker and has no local ledger proxy. Send was removed from this profile's picker and restoration path when the user chose two Grofty accounts. Package, participant and synchronizer fields are deliberately empty. TestNet financing stays blocked even if configuration copies DevNet values or changes `tradingEnabled`.
 
-Grofty checks the provider version, allocated primary party and live network around reads. Send checks its live connection, allocated party and network around its own-party Ledger API reads. Switching party or network invalidates the old session. Neither TestNet path submits financing commands.
+Grofty checks the provider version, allocated primary party and live network around reads. Send uses native Sigilry 3 discovery and the wallet's announced target, checks live status/network, and selects the unique primary party from `listAccounts`. Switching party or network invalidates the old session. Neither TestNet path submits financing commands. Account includes a read-only package/synchronizer check and a bounded DAR upload attempt through wallet-provided authority only.
 
 ## Prepare the two wallets
 
-1. **Send:** select TestNet in Send Connect, finish setup at [testnet.cantonwallet.com](https://testnet.cantonwallet.com), then connect on the app page. Check the reported network and allocated party. [Official guide](https://sigilry.org/guides/send-connect-testnet/).
-2. **Grofty:** install the separate TestNet extension, create a new wallet and obtain a personal invitation code if required. The wallet's Party Hint is a name, not a financing role. Complete password/recovery-phrase steps yourself. [Official guide](https://dex-testnet.grofty.cc/testnet).
+1. **Grofty account A:** install the separate TestNet extension, create a new wallet and obtain a personal invitation code if required. The Party Hint is a name, not a financing role. Complete password/recovery-phrase steps yourself. [Official guide](https://dex-testnet.grofty.cc/testnet).
+2. **Grofty account B:** use a separate wallet/account for the lender. Connect through its own browser/profile and verify the active primary party; Borrow/Lend does not switch the wallet signer. Both accounts must be on TestNet. Do not connect a MainNet extension to this profile.
 3. **Test cBTC:** [BitSafe Faucet](https://cbtc-faucet.bitsafe.finance/?network=testnet&token=cbtc) exposes TestNet CBTC. On 9 October 2026 it offered a fixed 0.001 CBTC request. The recipient must accept the transfer and its node must have DA Utility Registry installed. Verify the accepted holding and issuer identity; a request alone is not a received balance.
 4. **CC/USDCx:** follow the wallet team's TestNet funding and preapproval instructions. Same-name balances on another network or issuer are not interchangeable.
 
@@ -38,7 +38,7 @@ Before enabling financing, obtain:
 
 Suggested message to the wallet teams (draft only):
 
-> We are preparing Symbolon, a bilateral fixed-rate repo app, for Canton TestNet with one Grofty wallet and one Send wallet. Can your TestNet participant upload and vet our custom Symbolon DARs, and what is the process? We also need the supported synchronizer and token-standard interfaces for cBTC/USDCx allocation and atomic settlement. Is DA Utility Registry installed for receiving BitSafe faucet cBTC? We will keep financing disabled until package and asset compatibility are verified.
+> We are preparing Symbolon, a bilateral fixed-rate repo app, for Canton TestNet with two Grofty wallets. Can your TestNet participant upload and vet our custom Symbolon DARs, and what is the process? We also need the supported synchronizer and token-standard interfaces for cBTC/USDCx allocation and atomic settlement. Is DA Utility Registry installed for receiving BitSafe faucet cBTC? We will keep financing disabled until package and asset compatibility are verified.
 
 ## Submission environment boundaries
 

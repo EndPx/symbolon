@@ -9,6 +9,7 @@ import { resumedParty } from "./account-resume";
 import { CantonV2Client, type CommittedReceipt, type PendingCommand } from "./canton-v2";
 import type { WalletBalanceSnapshot } from "./wallet-balances";
 import { attachSendLedger, attachSendReadOnly } from "./send-ledger";
+import type { ParticipantProbe } from "./participant-probe";
 
 export interface Session {
   readonly kind: "browse" | "sandbox" | "wallet" | "account";
@@ -23,6 +24,8 @@ export interface Session {
   reconcilePending?(): Promise<{status: "pending" | "committed" | "failed";updateId?:string}>;
   lastReceipt?(): CommittedReceipt | null;
   walletBalances?(): Promise<WalletBalanceSnapshot>;
+  inspectParticipant?(): Promise<ParticipantProbe>;
+  tryInstallApplication?(): Promise<ParticipantProbe>;
   read(): ReturnType<LedgerApi["activeContracts"]>;
   submit(commands: Command[], options?: SubmissionOptions): Promise<string>;
   onInvalidated?(listener: (reason: string) => void): () => void;
@@ -146,8 +149,8 @@ const walletMarks: Record<string, string> = {
 export async function listWalletOptions(network = walletNetwork()): Promise<WalletOption[]> {
   if (deployment().network === "localnet") return [];
   if (deployment().network === "testnet") {
-    const [wallets, grofty] = await Promise.all([listSecondaryWallets(network), discoverGrofty(network)]);
-    return [...wallets.filter(wallet => wallet.id === "send"), {
+    const grofty = await discoverGrofty(network);
+    return [{
       id: GROFTY_WALLET_ID, name: "Grofty Wallet TestNet", network,
       minimumVersion: GROFTY_MIN_VERSION, ...grofty,
     }];
@@ -230,6 +233,9 @@ export function cancelWalletConnection() { connectionRevision++; }
 export async function connectWallet(walletId?: string, network = walletNetwork()): Promise<Session> {
   if (deployment().network === "localnet") throw new Error("Use the LocalNet development party picker. Remote wallet connections are disabled in this profile.");
   const revision = ++connectionRevision;
+  if (walletId === "send" && deployment().network === "testnet") {
+    throw new Error("This TestNet app uses Grofty Wallet. Connect your Grofty TestNet account.");
+  }
   if (walletId === "console") {
     const { openConsoleSession } = await import("./console");
     const session = await openConsoleSession(true);
@@ -342,6 +348,10 @@ export async function restoreSession(): Promise<Session | null> {
     } else {
       if (deployment().network === "localnet") { remember(null); return null; }
       if (saved.network !== walletNetwork()) { remember(null); return null; }
+      if (saved.walletId === "send" && deployment().network === "testnet") {
+        remember(null);
+        return null;
+      }
       if(saved.walletId === "console") {
         const { openConsoleSession } = await import("./console");
         const restored = await openConsoleSession(false);

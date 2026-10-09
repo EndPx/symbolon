@@ -37,6 +37,7 @@ import { partyDisplayName, priceFeedLabel } from "./market-label";
 import { LenderRegistration, useLenderDirectory } from "./LenderDirectory";
 import { eligibleLenders, readLenders, type RegisteredLender } from "../ledger/lender-directory";
 import { sendRegisteredRequests } from "./registered-request";
+import { ParticipantCheck } from "./ParticipantCheck";
 
 function useDesk(session: Session) {
   const [state, setState] = useState<DeskState | null>(null);
@@ -151,7 +152,7 @@ function ConnectDialog({ connected, close, walletOnly = false }: { connected(s: 
   const [attempt, setAttempt] = useState(0);
   const connectionAttempt = useRef(0);
   const pendingConnection = useRef(false);
-  const availableWallets = walletOnly ? wallets?.filter(wallet => wallet.id === "console") ?? wallets : wallets;
+  const availableWallets = walletOnly && deployment().network !== "testnet" ? wallets?.filter(wallet => wallet.id === "console") ?? wallets : wallets;
   useEffect(() => () => {
     connectionAttempt.current++;
     if (pendingConnection.current) cancelWalletConnection();
@@ -168,7 +169,7 @@ function ConnectDialog({ connected, close, walletOnly = false }: { connected(s: 
     pendingConnection.current = true;
     setBusy(id); setError(null);
     try {
-      const session = await connectWallet(id, id === "grofty" ? "mainnet" : walletNetwork());
+      const session = await connectWallet(id, walletNetwork());
       if (revision !== connectionAttempt.current) { session.dispose?.(); return; }
       pendingConnection.current = false;
       connected(session);
@@ -185,7 +186,7 @@ function ConnectDialog({ connected, close, walletOnly = false }: { connected(s: 
     <p className="panel-lede">Open Account, then Advanced account controls to choose a seeded LocalNet party.</p>
     <p className="connection-network">LocalNet · Demo assets and simulated oracle marks · No real funds</p>
   </Dialog>;
-  return <Dialog title={walletOnly ? "Connect Console Wallet" : "Connect to Symbolon"} close={dismiss} busy={busy === "account"}>
+  return <Dialog title={walletOnly && deployment().network !== "testnet" ? "Connect Console Wallet" : "Connect to Symbolon"} close={dismiss} busy={busy === "account"}>
     <p className="panel-lede">{deployment().network === "testnet" ? <>Connect to verify your Canton TestNet party and ledger access. Financing is not enabled for this rehearsal.</> : walletOnly ? `Connect Console Wallet on Canton ${networkLabel()} to read its token balances. The wallet party becomes your Symbolon account.` : <>Connect on Canton {networkLabel()} to access your private quotes and positions.</>}</p>
     {!walletOnly && deployment().network === "devnet" && <button className="wallet-row account-connect" disabled={busy !== null} onClick={()=>{
       setBusy("account");void startAccountConnection().catch(e=>{setError(e.message);setBusy(null);});
@@ -749,7 +750,7 @@ function Workspace({ session: s, connect, connectBalanceWallet, demoParties, swi
     </header>
     <main className="terminal-workspace" id="desk-content">
       {deployment().network === "testnet" && <section className="terminal-overview" aria-label="TestNet connection rehearsal"><Panel title="Connect your TestNet wallet">
-        <p>Use Send Connect or Grofty Wallet on Canton TestNet to check your party and its ledger access. Symbolon financing is not deployed on this network yet; requests, quotes and settlement remain disabled.</p>
+        <p>Use Grofty Wallet on Canton TestNet to check your party and its ledger access. Symbolon financing is not deployed on this network yet; requests, quotes and settlement remain disabled.</p>
         {!connected && <button className="seal" onClick={connectionAction}>Connect TestNet wallet</button>}
         <p className="sm">Test cBTC and USDCx belong to their token issuers. They are separate from the simulated holdings used in the current shared DevNet demo.</p>
       </Panel></section>}
@@ -831,6 +832,8 @@ function Workspace({ session: s, connect, connectBalanceWallet, demoParties, swi
       <div className="review-terms"><Term label="Account">{connected ? accountLabel : "Not connected"}</Term><Term label="Network">Canton {networkLabel()}</Term>{connected && !trading && <Term label="Access">Read-only</Term>}</div>
       {connected && <details className="party-detail"><summary>Full account identity</summary><code>{s.party}</code><p>{s.wallet ?? (s.kind === "account" ? "Hosted HackCanton account" : "LocalNet test account")}</p></details>}
       {connected&&<CopyPartyId party={s.party}/>}
+      {connected && deployment().network === "testnet" && <ParticipantCheck key={`${s.wallet}:${s.party}`} session={s}/>}
+      {connected && deployment().network === "testnet" && <button className="ghost sm" onClick={() => {setAccountOpen(false);connect();}}>Connect another TestNet wallet</button>}
       <div className="ledger-status"><span className="sm muted">{readAt ? `Last ledger read ${readAt.toLocaleTimeString()} · ${Intl.DateTimeFormat().resolvedOptions().timeZone}` : s.kind === "browse" && !s.ledgerRead ? "Connect to read your private ledger view" : error ? "Ledger read failed" : "Reading ledger…"}</span><button className="ghost sm" disabled={busy || s.kind === "browse" && !s.ledgerRead} onClick={() => void refresh()}>Refresh</button></div>
       {receipt && <details className="terms-disclosure"><summary>Latest transaction</summary><ReceiptDetails receipt={receipt}/></details>}
       {!connected && deployment().network !== "localnet" && <button className="seal" onClick={() => { setAccountOpen(false); connect(); }}>Connect account</button>}

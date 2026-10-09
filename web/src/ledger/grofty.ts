@@ -5,6 +5,7 @@ import { LedgerApi, LedgerError, parseResponse, type Method, type SubmissionOpti
 import type { Session } from "./session";
 import { partyLabel } from "./symbolon";
 import { normalizeNetwork, networkLabel } from "./deployment";
+import { probeParticipant, probeError, symbolonCorePackage } from "./participant-probe";
 
 export const GROFTY_WALLET_ID = "grofty";
 export const GROFTY_NETWORK_ID = "canton:da-mainnet";
@@ -57,7 +58,8 @@ function checkProvider(status: StatusEvent, expectedNetwork = GROFTY_NETWORK_ID)
     throw new Error(`Grofty Wallet ${GROFTY_MIN_VERSION} or newer is required. Reported version: ${status.provider.version || "unknown"}.`);
   }
   if (status.network && normalizeNetwork(status.network.networkId) !== normalizeNetwork(expectedNetwork)) {
-    throw new WalletSessionChanged(`Grofty must report Canton ${networkLabel(expectedNetwork)}. Reconnect on the configured network.`);
+    const reported = typeof status.network.networkId === "string" ? status.network.networkId.slice(0,100) : "unknown";
+    throw new WalletSessionChanged(`Grofty reports ${reported}. Select Canton ${networkLabel(expectedNetwork)} in the wallet, then reconnect.`);
   }
 }
 
@@ -246,6 +248,24 @@ function bindGroftySession(client: GroftyClient, account: CantonAccount, version
     networkId: account.networkId, walletVersion: version,
     async read() { await verifyBound(); return api.activeContracts(party); },
     submit: (commands, options) => api.submit(party, commands, options),
+    async inspectParticipant() {
+      await verifyBound();
+      const result = await probeParticipant(party, async resource => {
+        await verifyBound();
+        const value = await client.request("ledgerApi", {requestMethod: "GET", resource});
+        await verifyBound();
+        const wrapped = value as {response?: unknown};
+        return parseResponse(wrapped?.response ?? value);
+      });
+      try {
+        const value = await client.getActiveContracts({templateIds:[`${symbolonCorePackage}:Symbolon.Repo:QuoteRequest`],includeCreatedEventBlob:false});
+        const wrapped = value as {response?:unknown};
+        const rows = parseResponse(wrapped?.response ?? value);
+        if (!Array.isArray(rows)) throw new Error("The wallet returned no contract-query result.");
+        result.checks.push({label:"Symbolon template query",status:"passed",detail:`The permitted contract-query endpoint accepted the filter and returned ${rows.length} record(s). This alone does not establish installation or vetting.`});
+      } catch (error) { result.checks.push({label:"Symbolon template query",status:"unavailable",detail:probeError(error)}); }
+      await verifyBound(); return result;
+    },
     onInvalidated(listener) {
       if (invalidReason) listener(invalidReason);
       else listeners.add(listener);
